@@ -1,6 +1,7 @@
 import { Route, Routes } from 'react-router-dom';
 import { lazy, Suspense } from 'react';
 import { Loader } from './Loader/Loader';
+import ScrollToTop from './ScrollToTop/ScrollToTop';
 const Header = lazy(() => import('./Header/Header'));
 const Home = lazy(() => import('../pages/Home'));
 const Movies = lazy(() => import('../pages/Movies'));
@@ -14,6 +15,7 @@ const NotFound = lazy(() => import('../pages/NotFound'));
 export const App = () => {
   return (
     <div>
+      <ScrollToTop />
       <Suspense fallback={<Loader />}>
         <Routes>
           <Route path="/" element={<Header />}>

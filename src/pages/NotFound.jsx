@@ -1,17 +1,22 @@
 import { Link } from 'react-router-dom';
+import css from './NotFound.module.css';
 
-export const Movies = () => {
+export const NotFound = () => {
   return (
-    <div style={{ textAlign: 'center' }}>
-      <h1>Oops, this page is not found =(</h1>
-
-      <Link to="/">
-        <button style={{ borderRadius: 10, padding: 10 }}>
-          Go back to Home page
-        </button>
-      </Link>
+    <div className={css.notFoundWrapper}>
+      <div className={css.content}>
+        <h1 className={css.errorCode}>404</h1>
+        <h2 className={css.errorMessage}>Oops, this page is not found =(</h2>
+        <p className={css.description}>
+          The movie or page you are looking for might have been moved or
+          deleted.
+        </p>
+        <Link to="/">
+          <button className={css.homeBtn}>Go back to Home page</button>
+        </Link>
+      </div>
     </div>
   );
 };
 
-export default Movies;
+export default NotFound;

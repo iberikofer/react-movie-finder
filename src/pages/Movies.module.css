@@ -1,0 +1,92 @@
+.searchSection {
+	padding: 30px;
+}
+
+.searchForm {
+	display: flex;
+	justify-content: center;
+	gap: 15px;
+	margin-bottom: 50px;
+}
+
+.searchInput {
+	padding: 12px 20px;
+	width: 350px;
+	border: 2px solid teal;
+	border-radius: 10px;
+	font-size: 1rem;
+	outline: none;
+	transition: box-shadow 0.3s;
+}
+
+.searchInput:focus {
+	box-shadow: 0 0 10px rgba(0, 128, 128, 0.2);
+}
+
+.searchBtn {
+	padding: 10px 30px;
+	background-color: teal;
+	color: white;
+	border: none;
+	border-radius: 10px;
+	font-weight: bold;
+	cursor: pointer;
+	transition: background 0.2s;
+}
+
+.searchBtn:hover {
+	background-color: #006d6d;
+}
+
+.movieGrid {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+	gap: 25px;
+	list-style: none;
+	padding: 0;
+}
+
+.movieCard {
+	background: white;
+	border-radius: 12px;
+	overflow: hidden;
+	box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+	transition: transform 0.3s ease;
+}
+
+.movieCard:hover {
+	transform: translateY(-5px);
+}
+
+.movieLink {
+	text-decoration: none;
+	color: inherit;
+}
+
+.poster {
+	width: 100%;
+	height: 270px;
+	object-fit: cover;
+}
+
+.titleWrapper {
+	padding: 12px;
+	text-align: center;
+	min-height: 50px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.movieTitle {
+	font-weight: 600;
+	font-size: 0.95rem;
+	color: #2c3e50;
+}
+
+.noResults {
+	text-align: center;
+	color: #666;
+	font-size: 1.2rem;
+	margin-top: 50px;
+}

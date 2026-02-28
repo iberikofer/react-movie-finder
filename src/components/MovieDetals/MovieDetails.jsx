@@ -1,6 +1,7 @@
 import { getMovieDetails } from 'fetch';
 import { useState, useEffect } from 'react';
 import { useParams, useLocation, Link, Outlet } from 'react-router-dom';
+import css from './MovieDetails.module.css';
 
 export const MovieDetails = () => {
   const [selectedMovie, setSelectedMovie] = useState({});
@@ -18,53 +19,59 @@ export const MovieDetails = () => {
   }, [movieId]);
 
   return (
-    <div>
-      <div style={{ display: 'flex', alignItems: 'center' }}>
-        <div style={{ textAlign: 'center' }}>
-          <Link to={backLinkHref}>
-            <button style={{ borderRadius: 10, padding: 10, marginTop: 10 }}>
-              ☚ Go back
-            </button>
-          </Link>
-          <div style={{ padding: 20 }}>
-            {
-              <img
-                src={
-                  selectedMovie.poster_path
-                    ? `https://image.tmdb.org/t/p/w185${selectedMovie.poster_path}`
-                    : 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSmVm-NOFWAwzSDCG2503S24gnb6ij0l6Qz1URGonjsEqkf6fmGza-C7SW9iuHQaJj_7sA&usqp=CAU'
-                }
-                alt={selectedMovie.title}
-              />
-            }
+    <div className={css.pageWrapper}>
+      <Link to={backLinkHref}>
+        <button className={css.btn} style={{ marginLeft: '30px' }}>
+          ☚ Go back
+        </button>
+      </Link>
+      <div className={css.detailsContainer}>
+        <div className={css.sidebar}>
+          <div className={css.posterWrapper}>
+            <img
+              className={css.poster}
+              src={
+                selectedMovie.poster_path
+                  ? `https://image.tmdb.org/t/p/w342${selectedMovie.poster_path}`
+                  : 'https://via.placeholder.com/342x513?text=No+Poster'
+              }
+              alt={selectedMovie.title}
+            />
           </div>
         </div>
 
-        <div>
+        <div className={css.infoContent}>
           <h2>{selectedMovie.title}</h2>
-          <h3>User Score: </h3>
-          {selectedMovie.vote_average}
+          <p className={css.score}>
+            <strong>User Score:</strong>{' '}
+            {Math.round(selectedMovie.vote_average * 10)}%
+          </p>
+
           <h3>Overview</h3>
-          <span>{selectedMovie.overview}</span>
+          <p className={css.overviewText}>{selectedMovie.overview}</p>
+
           <h3>Genres</h3>
-          <div style={{ display: 'flex' }}>
-            {selectedMovie.genres?.map((genre, index) => {
-              return (
-                <div
-                  key={selectedMovie.title + index}
-                  style={{ paddingRight: 10 }}
-                >
-                  {genre.name}
-                </div>
-              );
-            })}
+          <div className={css.genres}>
+            {selectedMovie.genres?.map(genre => (
+              <span key={genre.id} className={css.genreTag}>
+                {genre.name}
+              </span>
+            ))}
           </div>
-          <Link to={`/movies/${movieId}/cast`}>
-            <button style={{ margin: 20 }}>Cast</button>
-          </Link>
-          <Link to={`/movies/${movieId}/reviews`}>
-            <button style={{ margin: 20 }}>Reviews</button>
-          </Link>
+
+          <div className={css.actions}>
+            <Link to={`/movies/${movieId}/cast`} state={{ from: backLinkHref }}>
+              <button className={`${css.btn} ${css.btnSecondary}`}>Cast</button>
+            </Link>
+            <Link
+              to={`/movies/${movieId}/reviews`}
+              state={{ from: backLinkHref }}
+            >
+              <button className={`${css.btn} ${css.btnSecondary}`}>
+                Reviews
+              </button>
+            </Link>
+          </div>
         </div>
       </div>
       <Outlet />

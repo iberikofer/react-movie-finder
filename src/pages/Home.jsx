@@ -1,6 +1,7 @@
 import { getTrendingMovies } from 'fetch';
 import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import css from './Home.module.css';
 
 export const Home = () => {
   const [moviesArr, setMoviesArr] = useState([]);
@@ -19,24 +20,38 @@ export const Home = () => {
     fetchTrendingMovies();
   }, []);
 
-  const moviesMarkup = moviesArr.map(movie => {
-    if (movie.title) {
-      return (
-        <li key={movie.id} style={{ marginBottom: 10 }}>
-          <Link to={`/movies/${movie.id}`} state={{ from: location }}>
-            {movie.title}
-          </Link>
-        </li>
-      );
-    } else {
-      return '';
-    }
-  });
+const moviesMarkup = moviesArr.map(movie => {
+  if (movie.title) {
+    return (
+      <li key={movie.id} className={css.movieCard}>
+        <Link
+          to={`/movies/${movie.id}`}
+          state={{ from: location }}
+          className={css.movieLink}
+        >
+          <img
+            src={
+              movie.poster_path
+                ? `https://image.tmdb.org/t/p/w342${movie.poster_path}`
+                : 'https://via.placeholder.com/342x513?text=No+Poster'
+            }
+            alt={movie.title}
+            className={css.poster}
+          />
+          <div className={css.titleWrapper}>
+            <span className={css.movieTitle}>{movie.title}</span>
+          </div>
+        </Link>
+      </li>
+    );
+  }
+  return null;
+});
 
   return (
-    <div>
-      <h1 style={{ marginLeft: 40 }}>Movies on trend for today:</h1>
-      <ul>{moviesMarkup}</ul>
+    <div className={css.container}>
+      <h1 className={css.mainTitle}>Trending Today</h1>
+      <ul className={css.movieGrid}>{moviesMarkup}</ul>
     </div>
   );
 };

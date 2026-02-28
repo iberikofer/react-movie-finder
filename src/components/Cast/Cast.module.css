@@ -1,0 +1,32 @@
+.castList {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+	gap: 20px;
+	padding: 20px 0;
+}
+
+.castItem {
+	text-align: center;
+	background: rgba(255, 255, 255, 0.4);
+	padding: 10px;
+	border-radius: 10px;
+}
+
+.castImage {
+	width: 100%;
+	height: 200px;
+	object-fit: cover;
+	border-radius: 8px;
+	margin-bottom: 10px;
+}
+
+.actorName {
+	font-weight: bold;
+	font-size: 0.9rem;
+	margin: 5px 0;
+}
+
+.characterName {
+	font-size: 0.8rem;
+	color: #555;
+}

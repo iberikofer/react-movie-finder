@@ -1,0 +1,53 @@
+.container {
+	padding: 20px 40px;
+}
+
+.mainTitle {
+	color: #2c3e50;
+	margin-bottom: 30px;
+}
+
+.movieGrid {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+	gap: 30px;
+	list-style: none;
+	padding: 0;
+}
+
+.movieCard {
+	background: white;
+	border-radius: 10px;
+	overflow: hidden;
+	box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+	transition: transform 0.3s ease;
+	height: 100%;
+}
+
+.movieCard:hover {
+	transform: translateY(-5px);
+}
+
+.poster {
+	width: 100%;
+	height: 300px;
+	object-fit: cover;
+}
+
+.titleWrapper {
+	padding: 15px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	min-height: 60px;
+}
+
+.movieLink {
+	text-decoration: none;
+	color: inherit;
+}
+
+.movieTitle {
+	font-weight: bold;
+	text-align: center;
+}

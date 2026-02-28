@@ -1,6 +1,7 @@
 import { getMovieCredits } from 'fetch';
 import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
+import css from './Cast.module.css'
 
 export const Cast = () => {
   const { movieId } = useParams();
@@ -19,32 +20,35 @@ export const Cast = () => {
     fetchMovieCredits();
   }, [movieId]);
 
-  const creditsMarkup =
-    imageCredits.cast &&
-    imageCredits.cast.map(person => {
-      return (
-        <li
-          key={person.id}
-          style={{
-            display: 'flex',
-            flexDirection: 'column',
-            marginBottom: 40,
-          }}
-        >
-          <img
-            src={
-              person.profile_path
-                ? `https://image.tmdb.org/t/p/w185${person.profile_path}`
-                : 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSmVm-NOFWAwzSDCG2503S24gnb6ij0l6Qz1URGonjsEqkf6fmGza-C7SW9iuHQaJj_7sA&usqp=CAU'
-            }
-            alt={person.name + 'photo'}
-            width="200"
-          />
-          <p style={{ fontWeight: 'bold', margin: 0 }}>{person.name}</p>
-          <p style={{ margin: 0 }}>Character: {person.character}</p>
-        </li>
-      );
-    });
+  const creditsMarkup = (
+    <div className={css.castContainer}>
+      {imageCredits.cast && imageCredits.cast.length > 0 ? (
+        <ul className={css.castList}>
+          {imageCredits.cast.map(person => (
+            <li key={person.id} className={css.castItem}>
+              <img
+                src={
+                  person.profile_path
+                    ? `https://image.tmdb.org/t/p/w185${person.profile_path}`
+                    : 'https://via.placeholder.com/185x278?text=No+Photo'
+                }
+                alt={person.name}
+                className={css.castImage}
+              />
+              <div className={css.actorInfo}>
+                <p className={css.actorName}>{person.name}</p>
+                <p className={css.characterName}>
+                  Character: {person.character}
+                </p>
+              </div>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p>No information about the cast.</p>
+      )}
+    </div>
+  );
 
   return (
     <div style={{ paddingLeft: 30 }}>
