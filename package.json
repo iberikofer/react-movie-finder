@@ -38,5 +38,10 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
+  },
+  "devDependencies": {
+    "@types/jest": "^30.0.0",
+    "ajv": "^8.18.0",
+    "ajv-keywords": "^5.1.0"
   }
 }
