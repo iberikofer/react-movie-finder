@@ -1,29 +1,29 @@
 {
   "files": {
-    "main.css": "/react-movie-finder/static/css/main.68b7ab1a.css",
-    "main.js": "/react-movie-finder/static/js/main.de2c807f.js",
-    "static/css/9.78c5f8e6.chunk.css": "/react-movie-finder/static/css/9.78c5f8e6.chunk.css",
-    "static/js/9.f32f9cc6.chunk.js": "/react-movie-finder/static/js/9.f32f9cc6.chunk.js",
-    "static/js/415.687810f3.chunk.js": "/react-movie-finder/static/js/415.687810f3.chunk.js",
-    "static/js/134.81be3609.chunk.js": "/react-movie-finder/static/js/134.81be3609.chunk.js",
-    "static/js/735.48108c34.chunk.js": "/react-movie-finder/static/js/735.48108c34.chunk.js",
-    "static/js/247.7cdc15cd.chunk.js": "/react-movie-finder/static/js/247.7cdc15cd.chunk.js",
-    "static/js/186.90977210.chunk.js": "/react-movie-finder/static/js/186.90977210.chunk.js",
-    "static/js/805.0bb5b598.chunk.js": "/react-movie-finder/static/js/805.0bb5b598.chunk.js",
+    "main.css": "/react-movie-finder/static/css/main.683fbcfe.css",
+    "main.js": "/react-movie-finder/static/js/main.3a2b3e8c.js",
+    "static/css/540.dc9ce9a5.chunk.css": "/react-movie-finder/static/css/540.dc9ce9a5.chunk.css",
+    "static/js/540.96d8e5cc.chunk.js": "/react-movie-finder/static/js/540.96d8e5cc.chunk.js",
+    "static/js/264.b5da1437.chunk.js": "/react-movie-finder/static/js/264.b5da1437.chunk.js",
+    "static/js/174.e9884e11.chunk.js": "/react-movie-finder/static/js/174.e9884e11.chunk.js",
+    "static/js/555.8db75ddf.chunk.js": "/react-movie-finder/static/js/555.8db75ddf.chunk.js",
+    "static/js/602.9f31601a.chunk.js": "/react-movie-finder/static/js/602.9f31601a.chunk.js",
+    "static/js/242.26e7dada.chunk.js": "/react-movie-finder/static/js/242.26e7dada.chunk.js",
+    "static/js/44.1ef04202.chunk.js": "/react-movie-finder/static/js/44.1ef04202.chunk.js",
     "index.html": "/react-movie-finder/index.html",
-    "main.68b7ab1a.css.map": "/react-movie-finder/static/css/main.68b7ab1a.css.map",
-    "main.de2c807f.js.map": "/react-movie-finder/static/js/main.de2c807f.js.map",
-    "9.78c5f8e6.chunk.css.map": "/react-movie-finder/static/css/9.78c5f8e6.chunk.css.map",
-    "9.f32f9cc6.chunk.js.map": "/react-movie-finder/static/js/9.f32f9cc6.chunk.js.map",
-    "415.687810f3.chunk.js.map": "/react-movie-finder/static/js/415.687810f3.chunk.js.map",
-    "134.81be3609.chunk.js.map": "/react-movie-finder/static/js/134.81be3609.chunk.js.map",
-    "735.48108c34.chunk.js.map": "/react-movie-finder/static/js/735.48108c34.chunk.js.map",
-    "247.7cdc15cd.chunk.js.map": "/react-movie-finder/static/js/247.7cdc15cd.chunk.js.map",
-    "186.90977210.chunk.js.map": "/react-movie-finder/static/js/186.90977210.chunk.js.map",
-    "805.0bb5b598.chunk.js.map": "/react-movie-finder/static/js/805.0bb5b598.chunk.js.map"
+    "main.683fbcfe.css.map": "/react-movie-finder/static/css/main.683fbcfe.css.map",
+    "main.3a2b3e8c.js.map": "/react-movie-finder/static/js/main.3a2b3e8c.js.map",
+    "540.dc9ce9a5.chunk.css.map": "/react-movie-finder/static/css/540.dc9ce9a5.chunk.css.map",
+    "540.96d8e5cc.chunk.js.map": "/react-movie-finder/static/js/540.96d8e5cc.chunk.js.map",
+    "264.b5da1437.chunk.js.map": "/react-movie-finder/static/js/264.b5da1437.chunk.js.map",
+    "174.e9884e11.chunk.js.map": "/react-movie-finder/static/js/174.e9884e11.chunk.js.map",
+    "555.8db75ddf.chunk.js.map": "/react-movie-finder/static/js/555.8db75ddf.chunk.js.map",
+    "602.9f31601a.chunk.js.map": "/react-movie-finder/static/js/602.9f31601a.chunk.js.map",
+    "242.26e7dada.chunk.js.map": "/react-movie-finder/static/js/242.26e7dada.chunk.js.map",
+    "44.1ef04202.chunk.js.map": "/react-movie-finder/static/js/44.1ef04202.chunk.js.map"
   },
   "entrypoints": [
-    "static/css/main.68b7ab1a.css",
-    "static/js/main.de2c807f.js"
+    "static/css/main.683fbcfe.css",
+    "static/js/main.3a2b3e8c.js"
   ]
 }
