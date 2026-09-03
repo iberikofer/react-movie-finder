@@ -3,43 +3,62 @@ import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import css from './Reviews.module.css';
 
-
 export const Reviews = () => {
   const { movieId } = useParams();
-  const [imageReviews, setImageReviews] = useState({});
+  const [reviews, setReviews] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    let isMounted = true;
+    setIsLoading(true);
+
     const fetchMovieReviews = async () => {
       try {
-        await getMovieReviews(movieId)
-          .then(response => response.json())
-          .then(response => setImageReviews(response));
+        const data = await getMovieReviews(movieId);
+        if (isMounted) {
+          setReviews(data.results || []);
+        }
       } catch (error) {
-        console.log(error);
+        console.error('Failed to load reviews:', error);
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
       }
     };
+
     fetchMovieReviews();
+    return () => {
+      isMounted = false;
+    };
   }, [movieId]);
 
   return (
-    <div className={css.reviewsContainer}>
+    <section className={css.reviewsContainer}>
       <h2>Reviews:</h2>
-      {imageReviews.results && imageReviews.results.length > 0 ? (
+      {reviews.length > 0 ? (
         <ul className={css.reviewList}>
-          {imageReviews.results.map(review => (
-            <li key={review.id} className={css.reviewCard}>
-              <span className={css.author}>Author: {review.author}</span>
-              <p className={css.content}>{review.content}</p>
-              <p className={css.date}>
-                {new Date(review.created_at).toLocaleDateString()}
-              </p>
-            </li>
-          ))}
+          {reviews.map(review => {
+            const date = review.created_at
+              ? new Date(review.created_at).toLocaleDateString()
+              : null;
+            return (
+              <li key={review.id} className={css.reviewCard}>
+                <span className={css.author}>Author: {review.author}</span>
+                <p className={css.content}>{review.content}</p>
+                {date && <p className={css.date}>{date}</p>}
+              </li>
+            );
+          })}
         </ul>
       ) : (
-        <p>Sorry, no reviews for this movie =(</p>
+        <p>
+          {isLoading
+            ? 'Loading reviews...'
+            : 'Sorry, no reviews for this movie =('}
+        </p>
       )}
-    </div>
+    </section>
   );
 };
 

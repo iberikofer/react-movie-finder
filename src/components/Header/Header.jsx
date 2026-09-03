@@ -3,17 +3,19 @@ import css from './Header.module.css';
 
 export const Header = () => {
   return (
-    <div>
+    <>
       <header>
-        <nav className={css.navigation}>
+        <nav className={css.navigation} aria-label="Main navigation">
           <NavLink to="/" end>
             Home
           </NavLink>
           <NavLink to="/movies">Search</NavLink>
         </nav>
       </header>
-      <Outlet />
-    </div>
+      <main>
+        <Outlet />
+      </main>
+    </>
   );
 };
 

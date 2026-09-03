@@ -13,6 +13,8 @@
 }
 
 .btn {
+	display: inline-block;
+	text-decoration: none;
 	padding: 10px 20px;
 	margin-top: 20px;
 	border: none;
@@ -32,6 +34,11 @@
 	composes: btn;
 	background: #444;
 	margin-right: 15px;
+}
+
+.backBtn {
+	composes: btn;
+	margin-left: 30px;
 }
 
 .genres {

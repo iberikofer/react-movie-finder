@@ -25,6 +25,8 @@
 }
 
 .homeBtn {
+	display: inline-block;
+	text-decoration: none;
 	background-color: teal;
 	color: white;
 	border: none;

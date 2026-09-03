@@ -1,113 +1,85 @@
-# React homework template
+# 🎬 React Movie Finder
 
-Этот проект был создан при помощи
-[Create React App](https://github.com/facebook/create-react-app). Для знакомства
-и настройки дополнительных возможностей
-[обратись к документации](https://facebook.github.io/create-react-app/docs/getting-started).
+A modern, responsive web application for exploring trending films, searching movies, and browsing details, cast, and user reviews, powered by [The Movie Database (TMDB) API](https://www.themoviedb.org/).
 
-## Создание репозитория по шаблону
+Live Demo: [https://iberikofer.github.io/react-movie-finder/](https://iberikofer.github.io/react-movie-finder/)
 
-Используй этот репозиторий организации GoIT как шаблон для создания репозитория
-своего проекта. Для этого нажми на кнопку `«Use this template»` и выбери опцию
-`«Create a new repository»`, как показано на изображении.
+---
 
-![Creating repo from a template step 1](./assets/template-step-1.png)
+## ✨ Features
 
-На следующем шаге откроется страница создания нового репозитория. Заполни поле
-его имени, убедись что репозиторий публичный, после чего нажми кнопку
-`«Create repository from template»`.
+- **Trending Movies**: Discover what's popular today on the big screen.
+- **Instant Search**: Search films with live debounced input and auto-updating query parameters.
+- **Rich Movie Details**: High-resolution movie posters, user ratings, synopsis, and genres.
+- **Cast & Reviews**: Nested views exploring the cast members with photos and authentic viewer reviews.
+- **Navigation & UX**: Seamless client-side routing, "Go back" history restoration, and smooth "Scroll to top".
+- **Responsive Layout**: Optimized experience across mobile, tablet, and desktop screens.
 
-![Creating repo from a template step 2](./assets/template-step-2.png)
+---
 
-После того как репозиторий будет создан, необходимо перейти в настройки
-созданного репозитория на вкладку `Settings` > `Actions` > `General` как
-показано на изображении.
+## 🛠️ Tech Stack
 
-![Settings GitHub Actions permissions step 1](./assets/gh-actions-perm-1.png)
+- **React 18** (Functional components, Hooks, Suspense & React.lazy)
+- **React Router DOM v6** (Nested routes, dynamic parameters, URL search params)
+- **CSS Modules & Pure CSS** (Modular, scoped styles with responsive flexbox and grid)
+- **The Movie Database (TMDB) API v3**
+- **GitHub Actions** (Automated CI/CD deployment to GitHub Pages)
 
-Проскролив страницу до самого конца, в секции `«Workflow permissions»` выбери
-опцию `«Read and write permissions»` и поставь галочку в чекбоксе. Это
-необходимо для автоматизации процесса деплоя проекта.
+---
 
-![Settings GitHub Actions permissions step 2](./assets/gh-actions-perm-2.png)
+## 🚀 Getting Started
 
-Теперь у тебя есть личный репозиторий проекта, со структурой файлов и папок
-репозитория-шаблона. Далее работай с ним как с любым другим личным репозиторием,
-клонируй его себе на компьютер, пиши код, делай коммиты и отправляй их на
-GitHub.
+### Prerequisites
 
-## Подготовка к работе
+Ensure you have **Node.js** (v18 or newer) and **npm** installed.
 
-1. Убедись что на компьютере установлена LTS-версия Node.js.
-   [Скачай и установи](https://nodejs.org/en/) её если необходимо.
-2. Установи базовые зависимости проекта командой `npm install`.
-3. Запусти режим разработки, выполнив команду `npm start`.
-4. Перейди в браузере по адресу [http://localhost:3000](http://localhost:3000).
-   Эта страница будет автоматически перезагружаться после сохранения изменений в
-   файлах проекта.
+### 1. Clone the repository
 
-## Деплой
-
-Продакшн версия проекта будет автоматически проходить линтинг, собираться и
-деплоиться на GitHub Pages, в ветку `gh-pages`, каждый раз когда обновляется
-ветка `main`. Например, после прямого пуша или принятого пул-реквеста. Для этого
-необходимо в файле `package.json` отредактировать поле `homepage`, заменив
-`your_username` и `your_repo_name` на свои, и отправить изменения на GitHub.
-
-```json
-"homepage": "https://your_username.github.io/your_repo_name/"
+```bash
+git clone https://github.com/iberikofer/react-movie-finder.git
+cd react-movie-finder
 ```
 
-Далее необходимо зайти в настройки GitHub-репозитория (`Settings` > `Pages`) и
-выставить раздачу продакшн версии файлов из папки `/root` ветки `gh-pages`, если
-это небыло сделано автоматически.
+### 2. Install dependencies
 
-![GitHub Pages settings](./assets/repo-settings.png)
-
-### Статус деплоя
-
-Статус деплоя крайнего коммита отображается иконкой возле его идентификатора.
-
-- **Желтый цвет** - выполняется сборка и деплой проекта.
-- **Зеленый цвет** - деплой завершился успешно.
-- **Красный цвет** - во время линтинга, сборки или деплоя произошла ошибка.
-
-Более детальную информацию о статусе можно посмотреть кликнув по иконке, и в
-выпадающем окне перейти по ссылке `Details`.
-
-![Deployment status](./assets/deploy-status.png)
-
-### Живая страница
-
-Через какое-то время, обычно пару минут, живую страницу можно будет посмотреть
-по адресу указанному в отредактированном свойстве `homepage`. Например, вот
-ссылка на живую версию для этого репозитория
-[https://goitacademy.github.io/react-homework-template](https://goitacademy.github.io/react-homework-template).
-
-Если открывается пустая страница, убедись что во вкладке `Console` нет ошибок
-связанных с неправильными путями к CSS и JS файлам проекта (**404**). Скорее
-всего у тебя неправильное значение свойства `homepage` в файле `package.json`.
-
-### Маршрутизация
-
-Если приложение использует библиотеку `react-router-dom` для маршрутизации,
-необходимо дополнительно настроить компонент `<BrowserRouter>`, передав в пропе
-`basename` точное название твоего репозитория. Слеш в начале строки обязателен.
-
-```jsx
-<BrowserRouter basename="/your_repo_name">
-  <App />
-</BrowserRouter>
+```bash
+npm install
 ```
 
-## Как это работает
+### 3. Environment Variables
 
-![How it works](./assets/how-it-works.png)
+Create a `.env` file in the root directory (refer to `.env.example`):
 
-1. После каждого пуша в ветку `main` GitHub-репозитория, запускается специальный
-   скрипт (GitHub Action) из файла `.github/workflows/deploy.yml`.
-2. Все файлы репозитория копируются на сервер, где проект инициализируется и
-   проходит линтинг и сборку перед деплоем.
-3. Если все шаги прошли успешно, собранная продакшн версия файлов проекта
-   отправляется в ветку `gh-pages`. В противном случае, в логе выполнения
-   скрипта будет указано в чем проблема.
+```bash
+REACT_APP_TMDB_TOKEN=your_tmdb_bearer_token_here
+```
+
+> Get a free API Read Access Token (v4 auth) from your [TMDB Account Settings](https://www.themoviedb.org/settings/api).
+
+### 4. Start development server
+
+```bash
+npm start
+```
+
+Open [http://localhost:3000](http://localhost:3000) in your browser.
+
+---
+
+## 📜 Available Scripts
+
+- `npm start` — Runs the app in development mode with hot reload.
+- `npm run build` — Builds the optimized production bundle to the `build/` folder.
+- `npm run lint:js` — Checks source files with ESLint for syntax and style errors.
+
+---
+
+## 🌐 Deployment
+
+The project automatically builds and deploys to GitHub Pages on every push to the `main` branch via GitHub Actions (`.github/workflows/deploy.yml`).
+
+---
+
+## 📄 License
+
+This project is open source and available under the [MIT License](LICENSE).

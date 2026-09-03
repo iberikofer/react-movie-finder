@@ -11,8 +11,8 @@ export const NotFound = () => {
           The movie or page you are looking for might have been moved or
           deleted.
         </p>
-        <Link to="/">
-          <button className={css.homeBtn}>Go back to Home page</button>
+        <Link to="/" className={css.homeBtn}>
+          Go back to Home page
         </Link>
       </div>
     </div>

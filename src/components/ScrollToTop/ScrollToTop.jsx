@@ -1,20 +1,16 @@
 import { useState, useEffect } from 'react';
 import css from './ScrollToTop.module.css';
 
-const ScrollToTop = () => {
+export const ScrollToTop = () => {
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
     const toggleVisibility = () => {
-      const scrolled = document.documentElement.scrollTop || window.pageYOffset;
-      if (scrolled > 300) {
-        setIsVisible(true);
-      } else {
-        setIsVisible(false);
-      }
+      const scrolled = window.scrollY || document.documentElement.scrollTop;
+      setIsVisible(scrolled > 300);
     };
 
-    window.addEventListener('scroll', toggleVisibility);
+    window.addEventListener('scroll', toggleVisibility, { passive: true });
     return () => window.removeEventListener('scroll', toggleVisibility);
   }, []);
 

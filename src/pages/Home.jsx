@@ -8,50 +8,55 @@ export const Home = () => {
   const location = useLocation();
 
   useEffect(() => {
+    let isMounted = true;
     const fetchTrendingMovies = async () => {
       try {
-        await getTrendingMovies()
-          .then(response => response.json())
-          .then(response => setMoviesArr(response.results));
+        const data = await getTrendingMovies();
+        if (isMounted) {
+          setMoviesArr(data.results || []);
+        }
       } catch (error) {
-        console.error(error);
+        console.error('Failed to fetch trending movies:', error);
       }
     };
     fetchTrendingMovies();
+    return () => {
+      isMounted = false;
+    };
   }, []);
-
-const moviesMarkup = moviesArr.map(movie => {
-  if (movie.title) {
-    return (
-      <li key={movie.id} className={css.movieCard}>
-        <Link
-          to={`/movies/${movie.id}`}
-          state={{ from: location }}
-          className={css.movieLink}
-        >
-          <img
-            src={
-              movie.poster_path
-                ? `https://image.tmdb.org/t/p/w342${movie.poster_path}`
-                : 'https://via.placeholder.com/342x513?text=No+Poster'
-            }
-            alt={movie.title}
-            className={css.poster}
-          />
-          <div className={css.titleWrapper}>
-            <span className={css.movieTitle}>{movie.title}</span>
-          </div>
-        </Link>
-      </li>
-    );
-  }
-  return null;
-});
 
   return (
     <div className={css.container}>
       <h1 className={css.mainTitle}>Trending Today</h1>
-      <ul className={css.movieGrid}>{moviesMarkup}</ul>
+      <ul className={css.movieGrid}>
+        {moviesArr
+          .filter(movie => movie.title || movie.name)
+          .map(movie => {
+            const title = movie.title || movie.name;
+            return (
+              <li key={movie.id} className={css.movieCard}>
+                <Link
+                  to={`/movies/${movie.id}`}
+                  state={{ from: location }}
+                  className={css.movieLink}
+                >
+                  <img
+                    src={
+                      movie.poster_path
+                        ? `https://image.tmdb.org/t/p/w342${movie.poster_path}`
+                        : 'https://placehold.co/342x513/2a2a2a/ffffff?text=No+Poster'
+                    }
+                    alt={title}
+                    className={css.poster}
+                  />
+                  <div className={css.titleWrapper}>
+                    <span className={css.movieTitle}>{title}</span>
+                  </div>
+                </Link>
+              </li>
+            );
+          })}
+      </ul>
     </div>
   );
 };
