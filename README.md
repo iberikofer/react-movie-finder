@@ -2,8 +2,6 @@
 
 A modern, responsive web application for exploring trending films, searching movies, and browsing details, cast, and user reviews, powered by [The Movie Database (TMDB) API](https://www.themoviedb.org/).
 
-Live Demo: [https://iberikofer.github.io/react-movie-finder/](https://iberikofer.github.io/react-movie-finder/)
-
 ---
 
 ## ✨ Features
@@ -77,9 +75,3 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 ## 🌐 Deployment
 
 The project automatically builds and deploys to GitHub Pages on every push to the `main` branch via GitHub Actions (`.github/workflows/deploy.yml`).
-
----
-
-## 📄 License
-
-This project is open source and available under the [MIT License](LICENSE).
