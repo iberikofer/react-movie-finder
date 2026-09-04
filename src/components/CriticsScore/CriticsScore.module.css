@@ -237,20 +237,21 @@
   border-radius: 50%;
   box-shadow: 0 0 10px rgba(245, 158, 11, 0.9), 0 0 4px #ffffff;
   transform: translate(-50%, -50%);
-  animation: particleFly 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  pointer-events: none;
+  animation: particleFly 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 @keyframes particleFly {
   0% {
-    transform: translate(-50%, -50%) rotate(var(--angle)) translateY(0) scale(0.6);
+    transform: translate(-50%, -50%) rotate(var(--angle)) translateY(0) scale(0.4);
     opacity: 1;
   }
-  30% {
-    transform: translate(-50%, -50%) rotate(var(--angle)) translateY(calc(var(--dist) * 0.5)) scale(1.3);
-    opacity: 1;
+  35% {
+    transform: translate(-50%, -50%) rotate(var(--angle)) translateY(var(--dist-mid, 22px)) scale(1.25);
+    opacity: 0.95;
   }
   100% {
-    transform: translate(-50%, -50%) rotate(var(--angle)) translateY(var(--dist)) scale(0);
+    transform: translate(-50%, -50%) rotate(var(--angle)) translateY(var(--dist, 48px)) scale(0);
     opacity: 0;
   }
 }

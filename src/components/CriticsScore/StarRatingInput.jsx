@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import StarIcon from './StarIcon';
 import css from './CriticsScore.module.css';
 
@@ -16,24 +16,32 @@ const TOOLTIP_LABELS = {
 };
 
 const BURST_PARTICLES = [
-  { id: 1, angle: '0deg', dist: '48px', size: '11px' },
-  { id: 2, angle: '30deg', dist: '42px', size: '9px' },
-  { id: 3, angle: '60deg', dist: '46px', size: '12px' },
-  { id: 4, angle: '90deg', dist: '50px', size: '10px' },
-  { id: 5, angle: '120deg', dist: '44px', size: '11px' },
-  { id: 6, angle: '150deg', dist: '48px', size: '9px' },
-  { id: 7, angle: '180deg', dist: '50px', size: '12px' },
-  { id: 8, angle: '210deg', dist: '42px', size: '9px' },
-  { id: 9, angle: '240deg', dist: '46px', size: '11px' },
-  { id: 10, angle: '270deg', dist: '50px', size: '10px' },
-  { id: 11, angle: '300deg', dist: '44px', size: '12px' },
-  { id: 12, angle: '330deg', dist: '48px', size: '9px' },
+  { id: 1, angle: '0deg', dist: '48px', distMid: '24px', size: '11px' },
+  { id: 2, angle: '30deg', dist: '42px', distMid: '20px', size: '9px' },
+  { id: 3, angle: '60deg', dist: '46px', distMid: '22px', size: '12px' },
+  { id: 4, angle: '90deg', dist: '50px', distMid: '24px', size: '10px' },
+  { id: 5, angle: '120deg', dist: '44px', distMid: '22px', size: '11px' },
+  { id: 6, angle: '150deg', dist: '48px', distMid: '24px', size: '9px' },
+  { id: 7, angle: '180deg', dist: '50px', distMid: '25px', size: '12px' },
+  { id: 8, angle: '210deg', dist: '42px', distMid: '20px', size: '9px' },
+  { id: 9, angle: '240deg', dist: '46px', distMid: '22px', size: '11px' },
+  { id: 10, angle: '270deg', dist: '50px', distMid: '24px', size: '10px' },
+  { id: 11, angle: '300deg', dist: '44px', distMid: '22px', size: '12px' },
+  { id: 12, angle: '330deg', dist: '48px', distMid: '24px', size: '9px' },
 ];
 
 export const StarRatingInput = ({ onRate }) => {
   const [hoverValue, setHoverValue] = useState(null);
   const [burstInfo, setBurstInfo] = useState(null);
   const burstTimerRef = useRef(null);
+
+  useEffect(() => {
+    return () => {
+      if (burstTimerRef.current) {
+        clearTimeout(burstTimerRef.current);
+      }
+    };
+  }, []);
 
   const handleRate = (value, starIndex) => {
     if (onRate) {
@@ -47,7 +55,7 @@ export const StarRatingInput = ({ onRate }) => {
     setBurstInfo({ starIndex, id: Date.now() });
     burstTimerRef.current = setTimeout(() => {
       setBurstInfo(null);
-    }, 850);
+    }, 550);
   };
 
   return (
@@ -113,14 +121,18 @@ export const StarRatingInput = ({ onRate }) => {
 
               {/* Burst particles */}
               {isBursting && (
-                <div className={css.burstContainer}>
+                <div
+                  key={burstInfo.id}
+                  className={css.burstContainer}
+                >
                   {BURST_PARTICLES.map(p => (
                     <span
-                      key={p.id}
+                      key={`${burstInfo.id}-${p.id}`}
                       className={css.burstParticle}
                       style={{
                         '--angle': p.angle,
                         '--dist': p.dist,
+                        '--dist-mid': p.distMid,
                         '--size': p.size,
                       }}
                     />

@@ -1,5 +1,5 @@
 import { getMovieDetails } from 'fetch';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useParams, useLocation, Link, NavLink, Outlet } from 'react-router-dom';
 import CriticsScore from '../CriticsScore/CriticsScore';
 import Loader from '../Loader/Loader';
@@ -103,7 +103,12 @@ export const MovieDetails = () => {
           <nav className={css.subnavGrid} aria-label="Movie sections">
             <NavLink
               to="rating"
+              preventScrollReset={true}
               state={{ from: backLinkHref }}
+              onClick={() => {
+                const currentY = window.scrollY;
+                setTimeout(() => window.scrollTo({ top: currentY, behavior: 'instant' }), 0);
+              }}
               className={({ isActive }) =>
                 `${css.navTile} ${isActive ? css.navTileActive : ''}`
               }
@@ -113,7 +118,12 @@ export const MovieDetails = () => {
             </NavLink>
             <NavLink
               to="cast"
+              preventScrollReset={true}
               state={{ from: backLinkHref }}
+              onClick={() => {
+                const currentY = window.scrollY;
+                setTimeout(() => window.scrollTo({ top: currentY, behavior: 'instant' }), 0);
+              }}
               className={({ isActive }) =>
                 `${css.navTile} ${isActive ? css.navTileActive : ''}`
               }
@@ -123,7 +133,12 @@ export const MovieDetails = () => {
             </NavLink>
             <NavLink
               to="reviews"
+              preventScrollReset={true}
               state={{ from: backLinkHref }}
+              onClick={() => {
+                const currentY = window.scrollY;
+                setTimeout(() => window.scrollTo({ top: currentY, behavior: 'instant' }), 0);
+              }}
               className={({ isActive }) =>
                 `${css.navTile} ${isActive ? css.navTileActive : ''}`
               }
@@ -134,7 +149,9 @@ export const MovieDetails = () => {
           </nav>
 
           <div key={location.pathname} className={css.outletWrapper}>
-            <Outlet />
+            <Suspense fallback={<Loader caption="Loading section..." />}>
+              <Outlet />
+            </Suspense>
           </div>
         </>
       )}
