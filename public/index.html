@@ -40,6 +40,16 @@
   </head>
   <body>
     <noscript>You need to enable JavaScript to run this app.</noscript>
+    <!-- Persistent animated iridescent gradient background (pure seamless gradient, no circles) -->
+    <div id="ambient-gradient" class="ambientGradient" aria-hidden="true"></div>
+    <script>
+      (function () {
+        var now = Date.now() / 1000;
+        var r = document.documentElement;
+        r.style.setProperty('--gradient-delay', '-' + (now % 28).toFixed(2) + 's');
+        r.style.setProperty('--gradient-delay-2', '-' + (now % 36).toFixed(2) + 's');
+      })();
+    </script>
     <div id="root"></div>
   </body>
 </html>
