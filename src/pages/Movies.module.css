@@ -5,16 +5,36 @@
   animation: pageFadeSlideIn 0.35s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
+.headerSection {
+  text-align: center;
+  margin-bottom: 28px;
+}
+
+.mainTitle {
+  font-size: 2.6rem;
+  font-weight: 800;
+  letter-spacing: -0.6px;
+  color: var(--color-text);
+  margin: 0;
+}
+
 .searchForm {
   display: flex;
   justify-content: center;
   margin-bottom: 40px;
 }
 
-.searchInput {
-  padding: 14px 22px;
+.inputWrapper {
+  position: relative;
   width: 100%;
-  max-width: 480px;
+  max-width: 500px;
+  display: flex;
+  align-items: center;
+}
+
+.searchInput {
+  padding: 14px 50px 14px 22px;
+  width: 100%;
   background: rgba(42, 8, 12, 0.6);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
@@ -28,14 +48,54 @@
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
 }
 
+.searchInput::-webkit-search-cancel-button,
+.searchInput::-webkit-search-decoration {
+  -webkit-appearance: none;
+  appearance: none;
+  display: none;
+}
+
 .searchInput::placeholder {
-  color: rgba(254, 243, 199, 0.5);
+  color: rgba(254, 243, 199, 0.45);
 }
 
 .searchInput:focus {
   border-color: #0fa37f;
   box-shadow: 0 0 20px rgba(15, 163, 127, 0.35);
   background: rgba(42, 8, 12, 0.8);
+}
+
+.clearBtn {
+  position: absolute;
+  right: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: transparent;
+  border: none;
+  color: rgba(254, 243, 199, 0.7);
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.3rem;
+  font-weight: 800;
+  line-height: 1;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  padding: 0;
+  user-select: none;
+}
+
+.clearBtn:hover {
+  background: rgba(254, 243, 199, 0.14);
+  color: #ffffff;
+  transform: translateY(-50%) scale(1.18);
+}
+
+.clearBtn:active {
+  transform: translateY(-50%) scale(0.95);
 }
 
 .movieGrid {
@@ -122,6 +182,10 @@
 @media (max-width: 768px) {
   .searchSection {
     padding: 20px 14px 40px 14px;
+  }
+
+  .mainTitle {
+    font-size: 2rem;
   }
 
   .movieGrid {

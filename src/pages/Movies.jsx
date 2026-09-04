@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useSearchParams, Link, useLocation } from 'react-router-dom';
 import { getMovies } from 'fetch';
 import MovieCardRatingBadge from '../components/CriticsScore/MovieCardRatingBadge';
@@ -10,6 +10,7 @@ export const Movies = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
   const location = useLocation();
+  const inputRef = useRef(null);
   const queryText = searchParams.get('query') || '';
 
   useEffect(() => {
@@ -57,18 +58,43 @@ export const Movies = () => {
     }
   };
 
+  const handleClear = () => {
+    setSearchParams({});
+    if (inputRef.current) {
+      inputRef.current.focus();
+    }
+  };
+
   return (
     <div className={css.searchSection}>
+      <div className={css.headerSection}>
+        <h1 className={css.mainTitle}>Search movies by title</h1>
+      </div>
+
       <form className={css.searchForm} onSubmit={handleSubmit} role="search">
-        <input
-          className={css.searchInput}
-          type="search"
-          placeholder="Search movies by title..."
-          aria-label="Search movies"
-          value={queryText}
-          onChange={handleInputChange}
-          autoFocus
-        />
+        <div className={css.inputWrapper}>
+          <input
+            ref={inputRef}
+            className={css.searchInput}
+            type="search"
+            placeholder="e.g. Batman Ninja"
+            aria-label="Search movies by title"
+            value={queryText}
+            onChange={handleInputChange}
+            autoFocus
+          />
+          {queryText && (
+            <button
+              type="button"
+              className={css.clearBtn}
+              onClick={handleClear}
+              aria-label="Clear search input"
+              title="Clear search"
+            >
+              ✕
+            </button>
+          )}
+        </div>
       </form>
 
       {isLoading ? (
