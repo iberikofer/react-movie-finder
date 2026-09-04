@@ -1,38 +1,90 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
-  <!-- Background with site yellow color (#d5d68f) -->
-  <rect width="512" height="512" rx="128" fill="#d5d68f" />
+  <defs>
+    <!-- Velvet Cherry Background Gradient -->
+    <linearGradient id="cherryBg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#4a0e18" />
+      <stop offset="50%" stop-color="#340810" />
+      <stop offset="100%" stop-color="#20050a" />
+    </linearGradient>
 
-  <!-- Minimalist Teal Magnifying Glass (#008080) -->
-  <g>
-    <!-- Handle -->
-    <line
-      x1="295"
-      y1="295"
-      x2="412"
-      y2="412"
-      stroke="#008080"
-      stroke-width="40"
-      stroke-linecap="round"
-    />
+    <!-- Vibrant Emerald Gradient for Accents -->
+    <linearGradient id="emeraldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#34d399" />
+      <stop offset="50%" stop-color="#10b981" />
+      <stop offset="100%" stop-color="#059669" />
+    </linearGradient>
 
-    <!-- Lens Rim -->
-    <circle
-      cx="220"
-      cy="220"
-      r="105"
-      fill="none"
-      stroke="#008080"
-      stroke-width="38"
-    />
+    <!-- Clip path for top clapper stick -->
+    <clipPath id="topStickClip">
+      <rect x="100" y="146" width="312" height="52" rx="10" />
+    </clipPath>
 
-    <!-- Subtle Glare Arc -->
-    <path
-      d="M165 185 A 65 65 0 0 1 220 155"
-      fill="none"
-      stroke="#008080"
-      stroke-width="12"
-      stroke-linecap="round"
-      opacity="0.45"
-    />
+    <!-- Clip path for bottom clapper stick -->
+    <clipPath id="bottomStickClip">
+      <rect x="100" y="202" width="312" height="42" rx="6" />
+    </clipPath>
+  </defs>
+
+  <!-- 1. Background: Deep Cherry Rounded Tile with Subtle Emerald Edge -->
+  <rect width="512" height="512" rx="120" fill="url(#cherryBg)" />
+  <rect width="504" height="504" x="4" y="4" rx="116" fill="none" stroke="#10b981" stroke-width="8" stroke-opacity="0.25" />
+
+  <!-- 2. Cinema Clapperboard Base Board -->
+  <rect
+    x="100"
+    y="244"
+    width="312"
+    height="176"
+    rx="14"
+    fill="#04221b"
+    stroke="#10b981"
+    stroke-width="12"
+    stroke-linejoin="round"
+  />
+
+  <!-- Clapperboard Body Details: Production Lines & Star Emblem -->
+  <!-- Scene / Take divider lines -->
+  <line x1="130" y1="284" x2="240" y2="284" stroke="#10b981" stroke-width="7" stroke-linecap="round" stroke-opacity="0.4" />
+  <line x1="130" y1="316" x2="210" y2="316" stroke="#10b981" stroke-width="7" stroke-linecap="round" stroke-opacity="0.4" />
+  <line x1="130" y1="348" x2="230" y2="348" stroke="#10b981" stroke-width="7" stroke-linecap="round" stroke-opacity="0.4" />
+  <line x1="130" y1="380" x2="190" y2="380" stroke="#10b981" stroke-width="7" stroke-linecap="round" stroke-opacity="0.4" />
+
+  <!-- Bold Emerald Star Rating / Cinema Emblem -->
+  <path
+    d="M325,280 L337,308 L367,311 L344,331 L351,360 L325,345 L299,360 L306,331 L283,311 L313,308 Z"
+    fill="url(#emeraldGrad)"
+    stroke="#34d399"
+    stroke-width="3"
+    stroke-linejoin="round"
+  />
+
+  <!-- 3. Clapper Bottom Stick (Fixed Bar) -->
+  <g clip-path="url(#bottomStickClip)">
+    <rect x="100" y="202" width="312" height="42" fill="#04221b" />
+    <!-- Diagonal Emerald Stripes -->
+    <polygon points="120,202 150,202 120,244 90,244" fill="#10b981" />
+    <polygon points="180,202 210,202 180,244 150,244" fill="#10b981" />
+    <polygon points="240,202 270,202 240,244 210,244" fill="#10b981" />
+    <polygon points="300,202 330,202 300,244 270,244" fill="#10b981" />
+    <polygon points="360,202 390,202 360,244 330,244" fill="#10b981" />
+    <polygon points="420,202 450,202 420,244 390,244" fill="#10b981" />
+  </g>
+  <rect x="100" y="202" width="312" height="42" rx="6" fill="none" stroke="#10b981" stroke-width="10" stroke-linejoin="round" />
+
+  <!-- 4. Clapper Top Stick (Angled Upward ~14 deg) -->
+  <g transform="rotate(-15, 106, 204)">
+    <g clip-path="url(#topStickClip)">
+      <rect x="100" y="146" width="312" height="52" fill="#04221b" />
+      <!-- Diagonal Emerald Stripes on Upper Stick -->
+      <polygon points="120,146 154,146 120,198 86,198" fill="#10b981" />
+      <polygon points="180,146 214,146 180,198 146,198" fill="#10b981" />
+      <polygon points="240,146 274,146 240,198 206,198" fill="#10b981" />
+      <polygon points="300,146 334,146 300,198 266,198" fill="#10b981" />
+      <polygon points="360,146 394,146 360,198 326,198" fill="#10b981" />
+      <polygon points="420,146 454,146 420,198 386,198" fill="#10b981" />
+    </g>
+    <rect x="100" y="146" width="312" height="52" rx="10" fill="none" stroke="#10b981" stroke-width="10" stroke-linejoin="round" />
+    <!-- Pivot Hinge Pin -->
+    <circle cx="116" cy="172" r="10" fill="#34d399" stroke="#04221b" stroke-width="4" />
   </g>
 </svg>
