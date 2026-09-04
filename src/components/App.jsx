@@ -5,6 +5,7 @@ import ScrollToTop from './ScrollToTop/ScrollToTop';
 
 const Header = lazy(() => import('./Header/Header'));
 const Home = lazy(() => import('../pages/Home'));
+const Trending = lazy(() => import('../pages/Trending'));
 const Movies = lazy(() => import('../pages/Movies'));
 const MovieDetails = lazy(() => import('./MovieDetails/MovieDetails'));
 const Cast = lazy(() => import('./Cast/Cast'));
@@ -22,6 +23,7 @@ export const App = () => {
         <Routes>
           <Route path="/" element={<Header />}>
             <Route index element={<Home />} />
+            <Route path="trending" element={<Trending />} />
             <Route path="movies" element={<Movies />} />
             <Route path="movies/:movieId" element={<MovieDetails />}>
               <Route path="cast" element={<Cast />} />

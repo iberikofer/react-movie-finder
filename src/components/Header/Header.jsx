@@ -110,6 +110,14 @@ export const Header = () => {
               Home
             </NavLink>
             <NavLink
+              to="/trending"
+              className={({ isActive }) =>
+                `${css.navLink} ${isActive ? css.activeLink : ''}`
+              }
+            >
+              Trending
+            </NavLink>
+            <NavLink
               to="/movies"
               className={({ isActive }) =>
                 `${css.navLink} ${isActive ? css.activeLink : ''}`
@@ -145,10 +153,10 @@ export const Header = () => {
               </span>
               <span className={css.clearBtnText}>
                 {status === 'confirming'
-                  ? 'Confirm Clear All?'
+                  ? 'Confirm Clearing ALL Ratings'
                   : status === 'deleted'
                   ? 'All ratings deleted'
-                  : 'Clear All Ratings'}
+                  : 'Clear ALL Ratings'}
               </span>
             </button>
           </div>

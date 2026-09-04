@@ -35,7 +35,7 @@ body {
   position: relative;
 }
 
-/* Persistent Pure Animated Iridescent Gradient Background (Dominant Emerald Green with subtle Cherry) */
+/* Persistent Pure Animated Iridescent Gradient Background (Proportional 50/50 Emerald & Cherry) */
 .ambientGradient {
   position: fixed;
   top: 0;
@@ -46,12 +46,11 @@ body {
   pointer-events: none;
   background: linear-gradient(
     135deg,
-    #021b16 0%,
-    #084236 20%,
-    #052f26 42%,
-    #2c0910 60%,
-    #0a5243 78%,
-    #021b16 100%
+    #062c26 0%,
+    #2e0910 25%,
+    #084236 50%,
+    #420d18 75%,
+    #062c26 100%
   );
   background-size: 260% 260%;
   animation: pureGradientFlow 28s ease-in-out infinite;
@@ -65,11 +64,11 @@ body {
   inset: 0;
   background: linear-gradient(
     -45deg,
-    rgba(15, 163, 127, 0.28) 0%,
-    transparent 32%,
-    rgba(16, 185, 129, 0.2) 64%,
-    rgba(82, 14, 26, 0.16) 84%,
-    transparent 100%
+    rgba(15, 163, 127, 0.26) 0%,
+    transparent 25%,
+    rgba(190, 24, 60, 0.24) 50%,
+    transparent 75%,
+    rgba(15, 163, 127, 0.26) 100%
   );
   background-size: 220% 220%;
   animation: counterGradientFlow 36s ease-in-out infinite;

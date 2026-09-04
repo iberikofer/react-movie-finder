@@ -89,45 +89,41 @@
 
 .inputSection {
   position: relative;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 8px;
-  padding: 14px 16px;
+  display: inline-flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 14px;
+  padding: 8px 16px;
   background: rgba(6, 44, 38, 0.45);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(15, 163, 127, 0.2);
+  border: 1px solid rgba(15, 163, 127, 0.25);
   border-radius: 12px;
   width: fit-content;
   max-width: 100%;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
 }
 
 .inputHeading {
-  font-size: 0.85rem;
+  font-size: 0.82rem;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 1px;
+  letter-spacing: 0.8px;
   color: var(--color-text-muted);
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: 8px;
-  width: 100%;
-}
-
-.inputHeading::after {
-  content: '';
-  flex: 1;
-  height: 1px;
-  background: rgba(254, 243, 199, 0.15);
+  white-space: nowrap;
+  user-select: none;
+  padding-right: 14px;
+  border-right: 1px solid rgba(254, 243, 199, 0.18);
 }
 
 .starInputGroup {
   position: relative;
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 4px 0;
+  gap: 4px;
+  padding: 2px 0;
   touch-action: manipulation;
 }
 
@@ -138,8 +134,8 @@
   justify-content: center;
   cursor: pointer;
   user-select: none;
-  width: 36px;
-  height: 36px;
+  width: 34px;
+  height: 34px;
   transition: transform 0.15s ease;
 }
 
@@ -469,6 +465,17 @@
 }
 
 @media (max-width: 480px) {
+  .inputSection {
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 10px 14px;
+  }
+
+  .inputHeading {
+    border-right: none;
+    padding-right: 0;
+  }
+
   .summaryContainer {
     flex-direction: column;
     align-items: flex-start;
