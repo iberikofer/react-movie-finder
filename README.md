@@ -6,12 +6,23 @@ A modern, responsive web application for exploring trending films, searching mov
 
 ## ✨ Features
 
-- **Trending Movies**: Discover what's popular today on the big screen.
+- **Dedicated Home & Feature Showcase**: Landing page presenting project architecture, capabilities, and live metrics.
+- **Trending Movies**: Discover what's popular today on the big screen at `/trending`.
+- **Critics Score & Rating Analytics**: Custom 5-star evaluation system with 0.5-star precision, satisfaction score metrics, and cross-tab persistence (inspired by [react-feedback-page](https://github.com/iberikofer/react-feedback-page)).
 - **Instant Search**: Search films with live debounced input and auto-updating query parameters.
 - **Rich Movie Details**: High-resolution movie posters, user ratings, synopsis, and genres.
-- **Cast & Reviews**: Nested views exploring the cast members with photos and authentic viewer reviews.
-- **Navigation & UX**: Seamless client-side routing, "Go back" history restoration, and smooth "Scroll to top".
+- **Cast & Dynamic Reviews**: Nested views exploring cast members and community reviews with dynamic soft-accent palettes.
+- **Cinematic Clapperboard Loader**: Bespoke vector clapperboard loader with snap-shut and hold animation.
+- **Ambient Iridescent Background**: Continuous 50/50 emerald-and-cherry animated gradient flowing seamlessly across routes without reload reset.
+- **Navigation & UX**: Seamless client-side routing, "Go back" history restoration, and frosted "Scroll to top" button.
 - **Responsive Layout**: Optimized experience across mobile, tablet, and desktop screens.
+
+---
+
+## 💡 Acknowledgements & Inspiration
+
+The interactive movie rating engine and feedback analytics architecture was inspired by and adapted from my other repository:
+👉 **[iberikofer/react-feedback-page](https://github.com/iberikofer/react-feedback-page)** — Interactive feedback collection and customer satisfaction scoring application.
 
 ---
 
