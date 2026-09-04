@@ -1,55 +1,288 @@
-.detailsContainer {
-	display: flex;
-	gap: 40px;
-	padding: 30px;
-	background: rgba(255, 255, 255, 0.5);
-	border-radius: 12px;
-	margin-top: 20px;
-}
-
-.poster {
-	border-radius: 8px;
-	box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
-}
-
-.btn {
-	display: inline-block;
-	text-decoration: none;
-	padding: 10px 20px;
-	margin-top: 20px;
-	border: none;
-	border-radius: 6px;
-	background-color: teal;
-	color: white;
-	cursor: pointer;
-	font-weight: 500;
-	transition: background 0.2s;
-}
-
-.btn:hover {
-	background-color: #006d6d;
-}
-
-.btnSecondary {
-	composes: btn;
-	background: #444;
-	margin-right: 15px;
+.pageWrapper {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 24px 20px 60px 20px;
+  animation: pageFadeSlideIn 0.35s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .backBtn {
-	composes: btn;
-	margin-left: 30px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+  padding: 9px 18px;
+  border-radius: 8px;
+  background: rgba(254, 243, 199, 0.08);
+  border: 1px solid rgba(254, 243, 199, 0.2);
+  color: var(--color-text);
+  font-weight: 600;
+  font-size: 0.95rem;
+  transition: all 0.2s ease;
+  margin-bottom: 20px;
+}
+
+.backBtn:hover {
+  background: rgba(254, 243, 199, 0.18);
+  border-color: rgba(254, 243, 199, 0.35);
+  transform: translateX(-3px);
+  color: #fff;
+}
+
+/* ==========================================================================
+   Movie Details Card (No rounded corners as requested)
+   ========================================================================== */
+
+.detailsContainer {
+  display: flex;
+  gap: 36px;
+  padding: 32px;
+  background: rgba(42, 8, 12, 0.65);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--bg-card-border);
+  border-bottom: none;
+  border-radius: 0;
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.3);
+}
+
+.sidebar {
+  flex-shrink: 0;
+}
+
+.posterWrapper {
+  border-radius: 0;
+  overflow: hidden;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.45);
+  border: 1px solid rgba(254, 243, 199, 0.12);
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.poster {
+  display: block;
+  width: 100%;
+  max-width: 320px;
+  height: auto;
+  object-fit: cover;
+  border-radius: 0;
+  transition: transform 0.3s ease;
+}
+
+.poster:hover {
+  transform: scale(1.02);
+}
+
+.infoContent {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.movieTitle {
+  font-size: 2.3rem;
+  font-weight: 800;
+  color: var(--color-text);
+  margin: 0 0 16px 0;
+  line-height: 1.2;
+  letter-spacing: -0.5px;
+}
+
+.scoreSection {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.score {
+  margin: 0;
+  font-size: 1.05rem;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.tmdbBadge {
+  color: var(--color-text-muted);
+  font-weight: 700;
+}
+
+.tmdbValue {
+  color: #51e5ff;
+  background: rgba(81, 229, 255, 0.12);
+  border: 1px solid rgba(81, 229, 255, 0.3);
+  padding: 3px 10px;
+  border-radius: 6px;
+  font-weight: 800;
+  font-size: 0.95rem;
+  letter-spacing: 0.3px;
+}
+
+.overviewText {
+  line-height: 1.65;
+  color: var(--color-text-muted);
+  font-size: 1.02rem;
+  margin: 0 0 8px 0;
+}
+
+.infoContent h2 {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--color-text);
+  margin: 20px 0 10px 0;
+  letter-spacing: 0.2px;
 }
 
 .genres {
-	display: flex;
-	gap: 10px;
-	margin: 20px 0px 50px 0px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 10px 0 12px 0;
 }
 
 .genreTag {
-	background: #eee;
-	padding: 4px 12px;
-	border-radius: 15px;
-	font-size: 0.9rem;
+  background: rgba(6, 44, 38, 0.75);
+  border: 1px solid rgba(15, 163, 127, 0.35);
+  color: #fef3c7;
+  padding: 6px 16px;
+  border-radius: 20px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+}
+
+/* ==========================================================================
+   3 Full-Width Tiled Navigation Buttons directly attached under Movie Block
+   ========================================================================== */
+
+.subnavGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  width: 100%;
+  background: rgba(42, 8, 12, 0.75);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--bg-card-border);
+  border-radius: 0;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.3);
+  overflow: hidden;
+}
+
+.navTile {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 18px 24px;
+  text-decoration: none;
+  color: var(--color-text-muted);
+  font-weight: 700;
+  font-size: 1.02rem;
+  background: rgba(42, 8, 12, 0.45);
+  border-right: 1px solid var(--bg-card-border);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  cursor: pointer;
+  position: relative;
+}
+
+.navTile:last-child {
+  border-right: none;
+}
+
+.navTile:hover {
+  color: var(--color-text);
+  background: rgba(254, 243, 199, 0.08);
+}
+
+.navTileActive {
+  background: linear-gradient(135deg, rgba(15, 163, 127, 0.85), rgba(6, 91, 76, 0.95)) !important;
+  color: #ffffff !important;
+  box-shadow: inset 0 -3px 0 #fef3c7, 0 0 16px rgba(15, 163, 127, 0.35);
+}
+
+.navTileIcon {
+  font-size: 1.2rem;
+}
+
+.navTileLabel {
+  letter-spacing: 0.3px;
+}
+
+/* ==========================================================================
+   Outlet Sub-Page Content Transition & Container
+   ========================================================================== */
+
+.outletWrapper {
+  margin-top: 28px;
+  animation: tabContentIn 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* ==========================================================================
+   Responsive Rules
+   ========================================================================== */
+
+@media (max-width: 900px) {
+  .detailsContainer {
+    gap: 24px;
+    padding: 24px;
+  }
+
+  .poster {
+    max-width: 250px;
+  }
+}
+
+@media (max-width: 768px) {
+  .pageWrapper {
+    padding: 16px 14px 40px 14px;
+  }
+
+  .detailsContainer {
+    flex-direction: column;
+    align-items: center;
+    padding: 20px 16px;
+    gap: 20px;
+  }
+
+  .sidebar {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+  }
+
+  .posterWrapper {
+    max-width: 260px;
+    width: 100%;
+  }
+
+  .movieTitle {
+    font-size: 1.8rem;
+    text-align: center;
+  }
+
+  .score {
+    justify-content: center;
+  }
+
+  .subnavGrid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .navTile {
+    padding: 12px 6px;
+    font-size: 0.82rem;
+    flex-direction: column;
+    gap: 4px;
+    text-align: center;
+  }
+
+  .navTileIcon {
+    font-size: 1.05rem;
+  }
+}
+
+@media (max-width: 440px) {
+  .navTileLabel {
+    font-size: 0.76rem;
+  }
 }

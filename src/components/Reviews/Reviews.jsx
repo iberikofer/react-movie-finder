@@ -1,6 +1,7 @@
 import { getMovieReviews } from 'fetch';
 import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
+import Loader from '../Loader/Loader';
 import css from './Reviews.module.css';
 
 export const Reviews = () => {
@@ -35,8 +36,10 @@ export const Reviews = () => {
 
   return (
     <section className={css.reviewsContainer}>
-      <h2>Reviews:</h2>
-      {reviews.length > 0 ? (
+      <h2>Community Reviews:</h2>
+      {isLoading ? (
+        <Loader caption="Loading reviews..." />
+      ) : reviews.length > 0 ? (
         <ul className={css.reviewList}>
           {reviews.map(review => {
             const date = review.created_at
@@ -52,10 +55,8 @@ export const Reviews = () => {
           })}
         </ul>
       ) : (
-        <p>
-          {isLoading
-            ? 'Loading reviews...'
-            : 'Sorry, no reviews for this movie =('}
+        <p style={{ textAlign: 'center', color: 'var(--color-text-muted)', padding: '20px' }}>
+          No reviews available for this movie yet.
         </p>
       )}
     </section>

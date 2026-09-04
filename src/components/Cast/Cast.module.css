@@ -1,36 +1,76 @@
 .castSection {
-	padding: 0 30px;
+  margin: 0;
+  padding: 24px;
+  background: rgba(42, 8, 12, 0.55);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--bg-card-border);
+  border-radius: 0;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+}
+
+.castSection h2 {
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: var(--color-text);
+  margin: 0 0 16px 0;
 }
 
 .castList {
-	display: grid;
-	grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-	gap: 20px;
-	padding: 20px 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 18px;
+  padding: 0;
+  list-style: none;
 }
 
 .castItem {
-	text-align: center;
-	background: rgba(255, 255, 255, 0.4);
-	padding: 10px;
-	border-radius: 10px;
+  text-align: center;
+  background: rgba(6, 44, 38, 0.45);
+  border: 1px solid rgba(254, 243, 199, 0.12);
+  padding: 10px;
+  border-radius: 12px;
+  transition: transform 0.2s ease, border-color 0.2s ease;
+}
+
+.castItem:hover {
+  transform: translateY(-4px);
+  border-color: rgba(15, 163, 127, 0.4);
 }
 
 .castImage {
-	width: 100%;
-	height: 200px;
-	object-fit: cover;
-	border-radius: 8px;
-	margin-bottom: 10px;
+  width: 100%;
+  height: 190px;
+  object-fit: cover;
+  border-radius: 8px;
+  margin-bottom: 8px;
+  display: block;
 }
 
 .actorName {
-	font-weight: bold;
-	font-size: 0.9rem;
-	margin: 5px 0;
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: var(--color-text);
+  margin: 4px 0 2px 0;
 }
 
 .characterName {
-	font-size: 0.8rem;
-	color: #555;
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+  margin: 0;
+}
+
+@media (max-width: 600px) {
+  .castSection {
+    padding: 16px;
+  }
+
+  .castList {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+
+  .castImage {
+    height: 160px;
+  }
 }

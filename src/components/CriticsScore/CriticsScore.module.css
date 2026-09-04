@@ -1,0 +1,487 @@
+/* ==========================================================================
+   CriticsScore Container & Common
+   ========================================================================== */
+
+.criticsScoreWrapper {
+  margin: 16px 0 24px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* ==========================================================================
+   ScoreSummary (Compact Row beneath TMDB Score)
+   ========================================================================== */
+
+.summaryContainer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 14px;
+  padding: 12px 16px;
+  background: rgba(42, 8, 12, 0.45);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--bg-card-border);
+  border-radius: 12px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15);
+}
+
+.summaryLabel {
+  font-weight: 700;
+  font-size: 1.05rem;
+  color: var(--color-text);
+  letter-spacing: 0.3px;
+}
+
+.starsRow {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.numericScore {
+  font-weight: 800;
+  font-size: 1.15rem;
+  color: var(--color-text);
+  margin-left: 2px;
+}
+
+.voteCount {
+  color: var(--color-text-muted);
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.emptyInvite {
+  color: var(--color-text-muted);
+  font-style: italic;
+  font-size: 0.95rem;
+  letter-spacing: 0.2px;
+}
+
+.resetBtn {
+  margin-left: auto;
+  background: rgba(254, 243, 199, 0.08);
+  border: 1px solid rgba(254, 243, 199, 0.2);
+  color: var(--color-text-muted);
+  padding: 5px 12px;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.resetBtn:hover {
+  background: rgba(244, 63, 94, 0.2);
+  border-color: rgba(244, 63, 94, 0.5);
+  color: #ff9dae;
+  transform: translateY(-1px);
+}
+
+/* ==========================================================================
+   StarRatingInput (Interactive Rating Scale)
+   ========================================================================== */
+
+.inputSection {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 14px 16px;
+  background: rgba(6, 44, 38, 0.45);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(15, 163, 127, 0.2);
+  border-radius: 12px;
+  width: fit-content;
+  max-width: 100%;
+}
+
+.inputHeading {
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--color-text-muted);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+}
+
+.inputHeading::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: rgba(254, 243, 199, 0.15);
+}
+
+.starInputGroup {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 0;
+  touch-action: manipulation;
+}
+
+.starSlot {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  user-select: none;
+  width: 36px;
+  height: 36px;
+  transition: transform 0.15s ease;
+}
+
+.starSlot:hover {
+  transform: scale(1.18);
+}
+
+.starSlot:active {
+  transform: scale(0.95);
+}
+
+/* Invisible half-star hit areas */
+.halfHitLeft,
+.halfHitRight {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 50%;
+  z-index: 10;
+  cursor: pointer;
+}
+
+.halfHitLeft {
+  left: 0;
+}
+
+.halfHitRight {
+  right: 0;
+}
+
+/* Glassmorphism Tooltip */
+.tooltip {
+  position: absolute;
+  bottom: calc(100% + 12px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(6, 44, 38, 0.9);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(254, 243, 199, 0.25);
+  border-radius: 8px;
+  padding: 6px 12px;
+  color: #fef3c7;
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  white-space: nowrap;
+  pointer-events: none;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35);
+  animation: fadeInTooltip 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+  z-index: 50;
+}
+
+.tooltip::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border-width: 6px;
+  border-style: solid;
+  border-color: rgba(6, 44, 38, 0.9) transparent transparent transparent;
+}
+
+@keyframes fadeInTooltip {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 6px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+
+/* Burst Animation */
+.burstContainer {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  width: 120px;
+  height: 120px;
+  z-index: 20;
+}
+
+.burstParticle {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: var(--size, 10px);
+  height: var(--size, 10px);
+  background: radial-gradient(circle, #ffffff 20%, #fef3c7 45%, #f59e0b 100%);
+  border-radius: 50%;
+  box-shadow: 0 0 10px rgba(245, 158, 11, 0.9), 0 0 4px #ffffff;
+  transform: translate(-50%, -50%);
+  animation: particleFly 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes particleFly {
+  0% {
+    transform: translate(-50%, -50%) rotate(var(--angle)) translateY(0) scale(0.6);
+    opacity: 1;
+  }
+  30% {
+    transform: translate(-50%, -50%) rotate(var(--angle)) translateY(calc(var(--dist) * 0.5)) scale(1.3);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-50%, -50%) rotate(var(--angle)) translateY(var(--dist)) scale(0);
+    opacity: 0;
+  }
+}
+
+/* ==========================================================================
+   RatingDistribution (Tab View)
+   ========================================================================== */
+
+.distributionContainer {
+  margin: 0;
+  padding: 30px;
+  background: rgba(42, 8, 12, 0.55);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--bg-card-border);
+  border-radius: 0;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+.distHeader {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid rgba(254, 243, 199, 0.15);
+}
+
+.overallScoreBlock {
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+}
+
+.overallBigScore {
+  font-size: 3rem;
+  font-weight: 800;
+  line-height: 1;
+  color: var(--color-text);
+  letter-spacing: -1px;
+}
+
+.overallScoreDenominator {
+  font-size: 1.3rem;
+  color: var(--color-text-muted);
+  font-weight: 600;
+}
+
+.overallStarsBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.totalVotesLabel {
+  font-size: 0.95rem;
+  color: var(--color-text-muted);
+  font-weight: 500;
+}
+
+/* Tier Progress Bars Grid */
+.tiersGrid {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.tierRow {
+  display: grid;
+  grid-template-columns: 85px 1fr 90px;
+  align-items: center;
+  gap: 16px;
+}
+
+.tierLabel {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.tierTrack {
+  height: 12px;
+  background: rgba(254, 243, 199, 0.08);
+  border-radius: 6px;
+  overflow: hidden;
+  position: relative;
+}
+
+.tierFill {
+  height: 100%;
+  border-radius: 6px;
+  background: linear-gradient(90deg, #f59e0b, #fbbf24);
+  transition: width 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.tierStats {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+}
+
+.tierCount {
+  color: rgba(254, 243, 199, 0.5);
+  font-weight: 400;
+}
+
+/* ==========================================================================
+   Satisfaction Score Card (Progress Bar like react-feedback-page)
+   ========================================================================== */
+
+.satisfactionCard {
+  padding: 20px;
+  background: rgba(6, 44, 38, 0.5);
+  border: 1px solid rgba(15, 163, 127, 0.25);
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.satisfactionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.satisfactionTitle {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--color-text);
+  margin: 0;
+}
+
+.satisfactionBadge {
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.satisfactionProgressWrapper {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.satisfactionTrack {
+  flex: 1;
+  height: 16px;
+  background: rgba(254, 243, 199, 0.1);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.satisfactionFill {
+  height: 100%;
+  border-radius: 8px;
+  transition: width 0.7s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.4s ease;
+}
+
+.satisfactionPercent {
+  font-size: 1.2rem;
+  font-weight: 800;
+  min-width: 50px;
+  text-align: right;
+  color: var(--color-text);
+}
+
+/* ==========================================================================
+   Responsive Adaptations
+   ========================================================================== */
+
+@media (max-width: 768px) {
+  .summaryContainer {
+    padding: 10px 12px;
+    gap: 8px;
+  }
+
+  .starSlot {
+    width: 44px;
+    height: 44px;
+  }
+
+  .distributionContainer {
+    padding: 20px 16px;
+    margin: 20px 0;
+  }
+
+  .overallBigScore {
+    font-size: 2.3rem;
+  }
+
+  .tierRow {
+    grid-template-columns: 75px 1fr 70px;
+    gap: 10px;
+  }
+
+  .satisfactionCard {
+    padding: 16px 14px;
+  }
+}
+
+@media (max-width: 480px) {
+  .summaryContainer {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .resetBtn {
+    margin-left: 0;
+    width: 100%;
+    justify-content: center;
+  }
+
+  .tierRow {
+    grid-template-columns: 65px 1fr 65px;
+    gap: 8px;
+    font-size: 0.8rem;
+  }
+}

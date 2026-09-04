@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams, Link, useLocation } from 'react-router-dom';
 import { getMovies } from 'fetch';
+import MovieCardRatingBadge from '../components/CriticsScore/MovieCardRatingBadge';
+import Loader from '../components/Loader/Loader';
 import css from './Movies.module.css';
 
 export const Movies = () => {
@@ -61,7 +63,7 @@ export const Movies = () => {
         <input
           className={css.searchInput}
           type="search"
-          placeholder="Start typing movie name..."
+          placeholder="Search movies by title..."
           aria-label="Search movies"
           value={queryText}
           onChange={handleInputChange}
@@ -69,7 +71,9 @@ export const Movies = () => {
         />
       </form>
 
-      {movies.length > 0 ? (
+      {isLoading ? (
+        <Loader caption={`Searching for "${queryText}"...`} />
+      ) : movies.length > 0 ? (
         <ul className={css.movieGrid}>
           {movies.map(movie => {
             const title = movie.title || movie.name;
@@ -80,15 +84,18 @@ export const Movies = () => {
                   state={{ from: location }}
                   className={css.movieLink}
                 >
-                  <img
-                    className={css.poster}
-                    src={
-                      movie.poster_path
-                        ? `https://image.tmdb.org/t/p/w342${movie.poster_path}`
-                        : 'https://placehold.co/342x513/2a2a2a/ffffff?text=No+Poster'
-                    }
-                    alt={title || 'Movie poster'}
-                  />
+                  <div className={css.posterWrapper}>
+                    <img
+                      src={
+                        movie.poster_path
+                          ? `https://image.tmdb.org/t/p/w342${movie.poster_path}`
+                          : 'https://placehold.co/342x513/2a2a2a/ffffff?text=No+Poster'
+                      }
+                      alt={title || 'Movie poster'}
+                      className={css.poster}
+                    />
+                    <MovieCardRatingBadge movieId={movie.id} />
+                  </div>
                   <div className={css.titleWrapper}>
                     <span className={css.movieTitle}>{title}</span>
                   </div>
@@ -100,9 +107,7 @@ export const Movies = () => {
       ) : (
         queryText && (
           <p className={css.noResults}>
-            {isLoading
-              ? `Searching for "${queryText}"...`
-              : `No movies found for "${queryText}"`}
+            No movies found for "{queryText}"
           </p>
         )
       )}

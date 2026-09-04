@@ -12,7 +12,10 @@ const request = async endpoint => {
     },
   };
 
-  const response = await fetch(`${BASE_URL}${endpoint}`, options);
+  const [response] = await Promise.all([
+    fetch(`${BASE_URL}${endpoint}`, options),
+    new Promise(resolve => setTimeout(resolve, 500)),
+  ]);
   if (!response.ok) {
     throw new Error(`TMDB API error: ${response.status} ${response.statusText}`);
   }
