@@ -91,6 +91,10 @@ export const MovieDetails = () => {
                 <span className={css.navTileLabel}>Critics Rating</span>
               </div>
               <div className={css.navTile}>
+                <span className={css.navTileIcon}>▶</span>
+                <span className={css.navTileLabel}>Official Trailer</span>
+              </div>
+              <div className={css.navTile}>
                 <span className={css.navTileIcon}>👥</span>
                 <span className={css.navTileLabel}>Cast & Crew</span>
               </div>
@@ -185,7 +189,7 @@ export const MovieDetails = () => {
               </div>
             </article>
 
-            {/* 3 Buttons directly attached flush below the movie details card */}
+            {/* 4 Buttons directly attached flush below the movie details card */}
             <nav className={css.subnavGrid} aria-label="Movie sections">
               <NavLink
                 to="rating"
@@ -202,6 +206,23 @@ export const MovieDetails = () => {
                 <span className={css.navTileIcon}>★</span>
                 <span className={css.navTileLabel}>Critics Rating</span>
               </NavLink>
+
+              <NavLink
+                to="trailer"
+                preventScrollReset={true}
+                state={{ from: backLinkHref }}
+                onClick={() => {
+                  const currentY = window.scrollY;
+                  setTimeout(() => window.scrollTo({ top: currentY, behavior: 'instant' }), 0);
+                }}
+                className={({ isActive }) =>
+                  `${css.navTile} ${isActive ? css.navTileActive : ''}`
+                }
+              >
+                <span className={css.navTileIcon}>▶</span>
+                <span className={css.navTileLabel}>Official Trailer</span>
+              </NavLink>
+
               <NavLink
                 to="cast"
                 preventScrollReset={true}
@@ -217,6 +238,7 @@ export const MovieDetails = () => {
                 <span className={css.navTileIcon}>👥</span>
                 <span className={css.navTileLabel}>Cast & Crew</span>
               </NavLink>
+
               <NavLink
                 to="reviews"
                 preventScrollReset={true}

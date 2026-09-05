@@ -153,12 +153,12 @@
 }
 
 /* ==========================================================================
-   3 Full-Width Tiled Navigation Buttons directly attached under Movie Block
+   4 Full-Width Tiled Navigation Buttons directly attached under Movie Block
    ========================================================================== */
 
 .subnavGrid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   width: 100%;
   background: rgba(42, 8, 12, 0.75);
   backdrop-filter: blur(16px);
@@ -405,15 +405,24 @@
   }
 
   .subnavGrid {
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(2, 1fr);
   }
 
   .navTile {
-    padding: 12px 6px;
-    font-size: 0.82rem;
+    padding: 13px 8px;
+    font-size: 0.85rem;
     flex-direction: column;
     gap: 4px;
     text-align: center;
+    border-bottom: 1px solid var(--bg-card-border);
+  }
+
+  .navTile:nth-child(2n) {
+    border-right: none;
+  }
+
+  .navTile:nth-last-child(-n+2) {
+    border-bottom: none;
   }
 
   .navTileIcon {
@@ -423,6 +432,6 @@
 
 @media (max-width: 440px) {
   .navTileLabel {
-    font-size: 0.76rem;
+    font-size: 0.78rem;
   }
 }

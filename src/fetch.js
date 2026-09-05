@@ -77,3 +77,20 @@ export const getMovieReviews = async movieId => {
   }
 };
 
+export const getMovieVideos = async movieId => {
+  try {
+    const data = await request(`/movie/${movieId}/videos?language=en-US`);
+    if (data.results && data.results.length > 0) return data;
+    return await request(`/movie/${movieId}/videos`);
+  } catch (movieErr) {
+    try {
+      const tvData = await request(`/tv/${movieId}/videos?language=en-US`);
+      if (tvData.results && tvData.results.length > 0) return tvData;
+      return await request(`/tv/${movieId}/videos`);
+    } catch (tvErr) {
+      throw movieErr;
+    }
+  }
+};
+
+

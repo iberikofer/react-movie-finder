@@ -36,7 +36,11 @@ export const Cast = () => {
 
   return (
     <section className={css.castSection}>
-      <h2>Cast & Crew:</h2>
+      <div className={css.headerRow}>
+        <h2 className={css.sectionTitle}>
+          <span className={css.titleIcon}>👥</span> Cast & Crew
+        </h2>
+      </div>
       {isLoading ? (
         <Loader caption="Loading cast & crew..." />
       ) : (

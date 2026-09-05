@@ -20,6 +20,12 @@ export const RatingDistribution = () => {
 
   return (
     <div className={css.distributionContainer}>
+      <div className={css.headerRow}>
+        <h2 className={css.sectionTitle}>
+          <span className={css.titleIcon}>★</span> Critics Rating
+        </h2>
+      </div>
+
       <div className={css.distHeader}>
         <div className={css.overallScoreBlock}>
           <span className={css.overallBigScore}>{formattedAverage}</span>

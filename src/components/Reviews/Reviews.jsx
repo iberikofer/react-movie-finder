@@ -71,7 +71,11 @@ export const Reviews = () => {
 
   return (
     <section className={css.reviewsContainer}>
-      <h2>Community Reviews:</h2>
+      <div className={css.headerRow}>
+        <h2 className={css.sectionTitle}>
+          <span className={css.titleIcon}>💬</span> Community Reviews
+        </h2>
+      </div>
       {isLoading ? (
         <Loader caption="Loading reviews..." />
       ) : reviews.length > 0 ? (

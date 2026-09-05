@@ -36,8 +36,7 @@ export const Trending = () => {
   return (
     <div className={css.container}>
       <div className={css.headerSection}>
-        <span className={css.sectionBadge}>🔥 Hot Right Now</span>
-        <h1 className={css.mainTitle}>Trending Today</h1>
+        <h1 className={css.mainTitle}>Trending Today 🔥</h1>
         <p className={css.sectionDesc}>
           Explore what millions of film enthusiasts are watching right now, powered by real-time TMDB data and community reviews.
         </p>
