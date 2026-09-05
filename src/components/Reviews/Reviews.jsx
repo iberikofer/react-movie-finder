@@ -6,27 +6,38 @@ import css from './Reviews.module.css';
 
 const SOFT_ACCENT_COLORS = [
   '#38bdf8', // Soft Sky Blue
-  '#fb923c', // Soft Warm Orange
-  '#34d399', // Soft Mint
-  '#c084fc', // Soft Lavender
-  '#fb7185', // Soft Rose
+  '#fb923c', // Soft Tangerine
+  '#34d399', // Soft Mint Emerald
+  '#e879f9', // Soft Orchid Fuchsia
   '#facc15', // Soft Honey Gold
-  '#2dd4bf', // Soft Teal
-  '#a78bfa', // Soft Purple
-  '#f472b6', // Soft Pink
-  '#38d9a9', // Soft Turquoise
+  '#a78bfa', // Soft Iris Violet
+  '#fb7185', // Soft Coral Rose
+  '#2dd4bf', // Soft Turquoise Teal
+  '#fdba74', // Soft Peach Apricot
+  '#818cf8', // Soft Periwinkle Indigo
+  '#4ade80', // Soft Meadow Green
+  '#f472b6', // Soft Pink Flamingo
+  '#22d3ee', // Soft Aquamarine Cyan
+  '#f97316', // Soft Warm Amber
+  '#c084fc', // Soft Lavender
+  '#a3e635', // Soft Lime
+  '#f43f5e', // Soft Crimson
+  '#60a5fa', // Soft Cornflower Blue
+  '#d946ef', // Soft Magenta
+  '#38d9a9', // Soft Jade
 ];
 
-const getSoftAccentColor = (id, index) => {
-  if (!id) return SOFT_ACCENT_COLORS[index % SOFT_ACCENT_COLORS.length];
-  let hash = 0;
-  for (let i = 0; i < id.length; i++) {
-    hash = ((hash << 5) - hash) + id.charCodeAt(i);
-    hash |= 0;
+const getSoftAccentColor = (index, movieId = '') => {
+  // Deterministic seed based on movieId so different movies start with distinct accents
+  let seed = 0;
+  const str = String(movieId || '');
+  for (let i = 0; i < str.length; i++) {
+    seed = (seed * 31 + str.charCodeAt(i)) & 0xffffff;
   }
-  const mixedIndex = Math.abs(hash + index * 3);
-  return SOFT_ACCENT_COLORS[mixedIndex % SOFT_ACCENT_COLORS.length];
+  const colorIndex = (seed + index) % SOFT_ACCENT_COLORS.length;
+  return SOFT_ACCENT_COLORS[colorIndex];
 };
+
 
 export const Reviews = () => {
   const { movieId } = useParams();
@@ -69,7 +80,7 @@ export const Reviews = () => {
             const date = review.created_at
               ? new Date(review.created_at).toLocaleDateString()
               : null;
-            const accent = getSoftAccentColor(review.id, index);
+            const accent = getSoftAccentColor(index, movieId);
             return (
               <li
                 key={review.id}

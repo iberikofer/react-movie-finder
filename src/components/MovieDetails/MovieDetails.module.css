@@ -34,6 +34,7 @@
 
 .detailsContainer {
   display: flex;
+  min-height: 544px;
   gap: 36px;
   padding: 32px;
   background: rgba(42, 8, 12, 0.65);
@@ -208,6 +209,144 @@
   letter-spacing: 0.3px;
 }
 
+.movieCardBlock {
+  position: relative;
+  width: 100%;
+}
+
+/* ==========================================================================
+   Error State with Glassmorphic Blurred Block & Centered Message
+   ========================================================================== */
+
+.errorSectionContainer {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.4);
+}
+
+.blurredBlock {
+  filter: blur(12px) brightness(0.65);
+  -webkit-filter: blur(12px) brightness(0.65);
+  pointer-events: none;
+  user-select: none;
+  transform: scale(1.02); /* Prevents edge clipping from blur */
+}
+
+.errorOverlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(18, 4, 6, 0.55);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  z-index: 20;
+  padding: 24px;
+}
+
+.errorCard {
+  max-width: 520px;
+  width: 100%;
+  background: rgba(36, 7, 12, 0.9);
+  border: 1px solid rgba(254, 243, 199, 0.28);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.7), 0 0 32px rgba(163, 15, 43, 0.35);
+  padding: 36px 32px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  animation: errorCardPop 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes errorCardPop {
+  0% {
+    opacity: 0;
+    transform: scale(0.92) translateY(12px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.errorIconWrapper {
+  margin-bottom: 14px;
+}
+
+.errorIcon {
+  font-size: 2.8rem;
+  filter: drop-shadow(0 4px 12px rgba(251, 146, 60, 0.4));
+}
+
+.errorMessage {
+  font-size: 1.45rem;
+  font-weight: 800;
+  color: #fef3c7;
+  margin: 0 0 12px 0;
+  line-height: 1.3;
+  letter-spacing: -0.2px;
+}
+
+.errorDetails {
+  font-size: 0.96rem;
+  color: var(--color-text-muted);
+  line-height: 1.55;
+  margin: 0 0 24px 0;
+  max-width: 440px;
+}
+
+.errorButtonRow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.errorRetryBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: linear-gradient(135deg, #0fa37f 0%, #065b4c 100%);
+  color: #ffffff;
+  border: 1px solid rgba(52, 211, 153, 0.5);
+  font-weight: 700;
+  font-size: 0.95rem;
+  padding: 10px 22px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 14px rgba(15, 163, 127, 0.3);
+}
+
+.errorRetryBtn:hover {
+  background: linear-gradient(135deg, #10b981 0%, #087f6b 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(15, 163, 127, 0.45);
+}
+
+.errorGoBackBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(254, 243, 199, 0.08);
+  border: 1px solid rgba(254, 243, 199, 0.2);
+  color: #fef3c7;
+  font-weight: 600;
+  font-size: 0.95rem;
+  padding: 10px 20px;
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+.errorGoBackBtn:hover {
+  background: rgba(254, 243, 199, 0.16);
+  border-color: rgba(254, 243, 199, 0.35);
+  transform: translateY(-1px);
+}
+
+
 /* ==========================================================================
    Outlet Sub-Page Content Transition & Container
    ========================================================================== */
@@ -216,6 +355,7 @@
   margin-top: 28px;
   animation: tabContentIn 0.35s cubic-bezier(0.16, 1, 0.3, 1);
 }
+
 
 /* ==========================================================================
    Responsive Rules

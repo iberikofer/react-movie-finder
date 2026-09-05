@@ -137,30 +137,27 @@ export const useMovieRating = movieId => {
   // Calculations
   let totalVotes = 0;
   let weightedSum = 0;
-  let positiveVotes = 0; // votes >= 4.0
 
   Object.entries(votes).forEach(([starStr, count]) => {
     const numVotes = Number(count) || 0;
     const starNum = parseFloat(starStr);
     totalVotes += numVotes;
     weightedSum += starNum * numVotes;
-    if (starNum >= 4.0) {
-      positiveVotes += numVotes;
-    }
   });
 
   const averageRating = totalVotes > 0 ? weightedSum / totalVotes : 0;
   const formattedAverage = totalVotes > 0 ? averageRating.toFixed(1) : '0.0';
 
+  // Satisfaction score is directly proportional to the 5-star average (e.g. 3.1 / 5 = 62%)
   const satisfactionScore =
-    totalVotes > 0 ? Math.round((positiveVotes / totalVotes) * 100) : 0;
+    totalVotes > 0 ? Math.round((averageRating / 5) * 100) : 0;
 
   let satisfactionBadge = 'Low';
   let satisfactionColor = '#f43f5e';
   if (satisfactionScore >= 70) {
     satisfactionBadge = 'Excellent';
     satisfactionColor = '#10b981';
-  } else if (satisfactionScore >= 40) {
+  } else if (satisfactionScore >= 50) {
     satisfactionBadge = 'Average';
     satisfactionColor = '#f59e0b';
   }
