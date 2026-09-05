@@ -11,6 +11,8 @@ const MovieDetails = lazy(() => import('./MovieDetails/MovieDetails'));
 const Cast = lazy(() => import('./Cast/Cast'));
 const Reviews = lazy(() => import('./Reviews/Reviews'));
 const Trailer = lazy(() => import('./Trailer/Trailer'));
+const MovieInfo = lazy(() => import('./MovieInfo/MovieInfo'));
+const SimilarMovies = lazy(() => import('./SimilarMovies/SimilarMovies'));
 const RatingDistribution = lazy(() =>
   import('./CriticsScore/RatingDistribution')
 );
@@ -28,9 +30,11 @@ export const App = () => {
             <Route path="movies" element={<Movies />} />
             <Route path="movies/:movieId" element={<MovieDetails />}>
               <Route path="rating" element={<RatingDistribution />} />
+              <Route path="info" element={<MovieInfo />} />
               <Route path="trailer" element={<Trailer />} />
               <Route path="cast" element={<Cast />} />
               <Route path="reviews" element={<Reviews />} />
+              <Route path="similar" element={<SimilarMovies />} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Route>

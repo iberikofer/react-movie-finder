@@ -24,6 +24,63 @@
   margin-bottom: 40px;
 }
 
+.formInner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  max-width: 500px;
+}
+
+.debounceStatus {
+  margin-top: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  animation: pageFadeSlideIn 0.2s ease;
+  font-size: 0.88rem;
+  color: var(--color-text-muted);
+}
+
+.debounceIcon {
+  font-size: 1rem;
+}
+
+.debounceText {
+  color: #fef3c7;
+  font-weight: 500;
+}
+
+.enterKey {
+  background: rgba(254, 243, 199, 0.12);
+  border: 1px solid rgba(254, 243, 199, 0.28);
+  border-radius: 4px;
+  padding: 1px 6px;
+  font-family: inherit;
+  font-size: 0.8rem;
+  color: #51e5ff;
+}
+
+.instantSearchBtn {
+  background: rgba(15, 163, 127, 0.25);
+  border: 1px solid rgba(15, 163, 127, 0.55);
+  color: #34d399;
+  border-radius: 6px;
+  padding: 3px 10px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.instantSearchBtn:hover {
+  background: rgba(15, 163, 127, 0.5);
+  color: #ffffff;
+  transform: translateY(-1px);
+}
+
 .inputWrapper {
   position: relative;
   width: 100%;

@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback, Suspense } from 'react';
 import { useParams, useLocation, Link, NavLink, Outlet } from 'react-router-dom';
 import CriticsScore from '../CriticsScore/CriticsScore';
 import Loader from '../Loader/Loader';
+import MovieGallery from './MovieGallery';
 import css from './MovieDetails.module.css';
 
 export const MovieDetails = () => {
@@ -85,10 +86,22 @@ export const MovieDetails = () => {
               </div>
             </article>
 
+            {/* Error skeleton gallery row mirror */}
+            <div className={css.errorGallerySkeleton}>
+              <div className={css.errorGalleryCard} />
+              <div className={css.errorGalleryCard} />
+              <div className={css.errorGalleryCard} />
+              <div className={css.errorGalleryCard} />
+            </div>
+
             <nav className={css.subnavGrid}>
               <div className={css.navTile}>
                 <span className={css.navTileIcon}>★</span>
                 <span className={css.navTileLabel}>Critics Rating</span>
+              </div>
+              <div className={css.navTile}>
+                <span className={css.navTileIcon}>ℹ️</span>
+                <span className={css.navTileLabel}>Movie Info</span>
               </div>
               <div className={css.navTile}>
                 <span className={css.navTileIcon}>▶</span>
@@ -101,6 +114,10 @@ export const MovieDetails = () => {
               <div className={css.navTile}>
                 <span className={css.navTileIcon}>💬</span>
                 <span className={css.navTileLabel}>Community Reviews</span>
+              </div>
+              <div className={css.navTile}>
+                <span className={css.navTileIcon}>🎯</span>
+                <span className={css.navTileLabel}>Similar Movies</span>
               </div>
             </nav>
           </div>
@@ -186,10 +203,41 @@ export const MovieDetails = () => {
                     <span>No genres specified</span>
                   )}
                 </div>
+
+                {/* Warning banner for Russian-produced content */}
+                {Boolean(
+                  selectedMovie?.production_countries?.some(
+                    c =>
+                      c.iso_3166_1?.toUpperCase() === 'RU' ||
+                      c.name?.toLowerCase().includes('russia') ||
+                      c.name?.toLowerCase().includes('россия') ||
+                      c.name?.toLowerCase().includes('росія')
+                  ) ||
+                  selectedMovie?.origin_country?.some(c => c?.toUpperCase() === 'RU') ||
+                  (selectedMovie?.original_language === 'ru' &&
+                    !selectedMovie?.production_countries?.some(
+                      c => c.iso_3166_1?.toUpperCase() === 'UA'
+                    ))
+                ) && (
+                  <div className={css.russianWarningBanner} role="alert">
+                    <span className={css.russianWarningIcon}>⚠️🚫</span>
+                    <div className={css.russianWarningContent}>
+                      <strong className={css.russianWarningTitle}>
+                        Warning: russian-produced content!
+                      </strong>
+                      <p className={css.russianWarningText}>
+                        This title was produced in the terrorist state of russia. Do not support sponsors of war and terrorism — boycott russian media.
+                      </p>
+                    </div>
+                  </div>
+                )}
               </div>
             </article>
 
-            {/* 4 Buttons directly attached flush below the movie details card */}
+            {/* End-of-block infinite horizontal photo mini-gallery */}
+            <MovieGallery movieId={movieId} movieTitle={displayTitle} />
+
+            {/* 6 Subnav buttons flush below */}
             <nav className={css.subnavGrid} aria-label="Movie sections">
               <NavLink
                 to="rating"
@@ -205,6 +253,22 @@ export const MovieDetails = () => {
               >
                 <span className={css.navTileIcon}>★</span>
                 <span className={css.navTileLabel}>Critics Rating</span>
+              </NavLink>
+
+              <NavLink
+                to="info"
+                preventScrollReset={true}
+                state={{ from: backLinkHref }}
+                onClick={() => {
+                  const currentY = window.scrollY;
+                  setTimeout(() => window.scrollTo({ top: currentY, behavior: 'instant' }), 0);
+                }}
+                className={({ isActive }) =>
+                  `${css.navTile} ${isActive ? css.navTileActive : ''}`
+                }
+              >
+                <span className={css.navTileIcon}>ℹ️</span>
+                <span className={css.navTileLabel}>Movie Info</span>
               </NavLink>
 
               <NavLink
@@ -253,6 +317,22 @@ export const MovieDetails = () => {
               >
                 <span className={css.navTileIcon}>💬</span>
                 <span className={css.navTileLabel}>Community Reviews</span>
+              </NavLink>
+
+              <NavLink
+                to="similar"
+                preventScrollReset={true}
+                state={{ from: backLinkHref }}
+                onClick={() => {
+                  const currentY = window.scrollY;
+                  setTimeout(() => window.scrollTo({ top: currentY, behavior: 'instant' }), 0);
+                }}
+                className={({ isActive }) =>
+                  `${css.navTile} ${isActive ? css.navTileActive : ''}`
+                }
+              >
+                <span className={css.navTileIcon}>🎯</span>
+                <span className={css.navTileLabel}>Similar Movies</span>
               </NavLink>
             </nav>
           </div>

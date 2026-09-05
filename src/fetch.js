@@ -93,4 +93,59 @@ export const getMovieVideos = async movieId => {
   }
 };
 
+export const getSimilarMovies = async movieId => {
+  const normalizeResults = data => ({
+    ...data,
+    results: (data.results || []).map(item => ({
+      ...item,
+      title: item.title || item.name || item.original_title || item.original_name,
+      release_date: item.release_date || item.first_air_date,
+    })),
+  });
+
+  try {
+    const recData = await request(`/movie/${movieId}/recommendations?language=en-US&page=1`);
+    if (recData.results && recData.results.length > 0) {
+      return normalizeResults(recData);
+    }
+    const simData = await request(`/movie/${movieId}/similar?language=en-US&page=1`);
+    return normalizeResults(simData);
+  } catch (movieErr) {
+    try {
+      const tvRecData = await request(`/tv/${movieId}/recommendations?language=en-US&page=1`);
+      if (tvRecData.results && tvRecData.results.length > 0) {
+        return normalizeResults(tvRecData);
+      }
+      const tvSimData = await request(`/tv/${movieId}/similar?language=en-US&page=1`);
+      return normalizeResults(tvSimData);
+    } catch (tvErr) {
+      throw movieErr;
+    }
+  }
+};
+
+export const getMovieWatchProviders = async movieId => {
+  try {
+    return await request(`/movie/${movieId}/watch/providers`);
+  } catch (movieErr) {
+    try {
+      return await request(`/tv/${movieId}/watch/providers`);
+    } catch (tvErr) {
+      throw movieErr;
+    }
+  }
+};
+
+export const getMovieImages = async movieId => {
+  try {
+    return await request(`/movie/${movieId}/images`);
+  } catch (movieErr) {
+    try {
+      return await request(`/tv/${movieId}/images`);
+    } catch (tvErr) {
+      throw movieErr;
+    }
+  }
+};
+
 

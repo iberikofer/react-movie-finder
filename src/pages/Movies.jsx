@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useSearchParams, Link, useLocation } from 'react-router-dom';
 import { getMovies } from 'fetch';
 import MovieCardRatingBadge from '../components/CriticsScore/MovieCardRatingBadge';
@@ -8,46 +8,61 @@ import css from './Movies.module.css';
 export const Movies = () => {
   const [movies, setMovies] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isPendingDebounce, setIsPendingDebounce] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
   const location = useLocation();
   const inputRef = useRef(null);
+  const debounceTimerRef = useRef(null);
   const queryText = searchParams.get('query') || '';
+
+  const executeSearch = useCallback(async query => {
+    if (!query.trim()) {
+      setMovies([]);
+      setIsLoading(false);
+      setIsPendingDebounce(false);
+      return;
+    }
+    setIsPendingDebounce(false);
+    setIsLoading(true);
+    try {
+      const data = await getMovies(query.trim());
+      setMovies(data.results || []);
+    } catch (error) {
+      console.error('Failed to search movies:', error);
+      setMovies([]);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
     if (!queryText.trim()) {
       setMovies([]);
       setIsLoading(false);
+      setIsPendingDebounce(false);
+      clearTimeout(debounceTimerRef.current);
       return;
     }
 
-    let isMounted = true;
-    setIsLoading(true);
+    setIsPendingDebounce(true);
 
-    const debounceTimer = setTimeout(() => {
-      const fetchQueryMovies = async () => {
-        try {
-          const data = await getMovies(queryText.trim());
-          if (isMounted) {
-            setMovies(data.results || []);
-          }
-        } catch (error) {
-          console.error('Failed to search movies:', error);
-        } finally {
-          if (isMounted) {
-            setIsLoading(false);
-          }
-        }
-      };
-      fetchQueryMovies();
-    }, 500);
+    clearTimeout(debounceTimerRef.current);
+
+    // 1.5-second debounce before sending API request
+    debounceTimerRef.current = setTimeout(() => {
+      executeSearch(queryText);
+    }, 1500);
 
     return () => {
-      isMounted = false;
-      clearTimeout(debounceTimer);
+      clearTimeout(debounceTimerRef.current);
     };
-  }, [queryText]);
+  }, [queryText, executeSearch]);
 
-  const handleSubmit = e => e.preventDefault();
+  const handleSubmit = e => {
+    e.preventDefault();
+    clearTimeout(debounceTimerRef.current);
+    executeSearch(queryText);
+  };
 
   const handleInputChange = e => {
     const value = e.target.value;
@@ -59,6 +74,8 @@ export const Movies = () => {
   };
 
   const handleClear = () => {
+    clearTimeout(debounceTimerRef.current);
+    setIsPendingDebounce(false);
     setSearchParams({});
     if (inputRef.current) {
       inputRef.current.focus();
@@ -72,27 +89,42 @@ export const Movies = () => {
       </div>
 
       <form className={css.searchForm} onSubmit={handleSubmit} role="search">
-        <div className={css.inputWrapper}>
-          <input
-            ref={inputRef}
-            className={css.searchInput}
-            type="search"
-            placeholder="e.g. Batman Ninja"
-            aria-label="Search movies by title"
-            value={queryText}
-            onChange={handleInputChange}
-            autoFocus
-          />
-          {queryText && (
-            <button
-              type="button"
-              className={css.clearBtn}
-              onClick={handleClear}
-              aria-label="Clear search input"
-              title="Clear search"
-            >
-              ✕
-            </button>
+        <div className={css.formInner}>
+          <div className={css.inputWrapper}>
+            <input
+              ref={inputRef}
+              className={css.searchInput}
+              type="search"
+              placeholder="e.g. Batman Ninja"
+              aria-label="Search movies by title"
+              value={queryText}
+              onChange={handleInputChange}
+              autoFocus
+            />
+            {queryText && (
+              <button
+                type="button"
+                className={css.clearBtn}
+                onClick={handleClear}
+                aria-label="Clear search input"
+                title="Clear search"
+              >
+                ✕
+              </button>
+            )}
+          </div>
+
+          {isPendingDebounce && (
+            <div className={css.debounceStatus}>
+              <span className={css.debounceIcon}>⏳</span>
+              <span className={css.debounceText}>
+                Searching in 1.5s... or press{' '}
+                <kbd className={css.enterKey}>Enter ⏎</kbd> to search now
+              </span>
+              <button type="submit" className={css.instantSearchBtn}>
+                Search now
+              </button>
+            </div>
           )}
         </div>
       </form>
