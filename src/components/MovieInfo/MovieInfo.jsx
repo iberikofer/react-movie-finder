@@ -229,14 +229,12 @@ export const MovieInfo = () => {
         </h2>
       </div>
 
-      {/* 1. Quick Facts Ordered Grid */}
       <div className={css.blockSubheader}>
         <span className={css.subIcon}>⚡</span>
         <h3 className={css.subTitle}>Quick Facts</h3>
       </div>
 
       <div className={css.factsGrid}>
-        {/* 1. Tagline */}
         <div className={`${css.factCard} ${css.taglineCard}`}>
           <span className={css.factLabel}>💬 Tagline</span>
           <span className={css.taglineValue}>
@@ -244,13 +242,11 @@ export const MovieInfo = () => {
           </span>
         </div>
 
-        {/* 2. Runtime */}
         <div className={css.factCard}>
           <span className={css.factLabel}>⏱️ Runtime</span>
           <span className={css.factValue}>{runtimeDisplay}</span>
         </div>
 
-        {/* 3. Budget */}
         <div className={css.factCard}>
           <span className={css.factLabel}>💰 Budget</span>
           <span className={css.factValue}>
@@ -258,7 +254,6 @@ export const MovieInfo = () => {
           </span>
         </div>
 
-        {/* 4. Revenue */}
         <div className={css.factCard}>
           <span className={css.factLabel}>🎟️ Box Office Revenue</span>
           <span className={css.factValue}>
@@ -266,13 +261,11 @@ export const MovieInfo = () => {
           </span>
         </div>
 
-        {/* 5. Status */}
         <div className={css.factCard}>
           <span className={css.factLabel}>📌 Status</span>
           <span className={css.statusBadge}>{movie.status || 'Released'}</span>
         </div>
 
-        {/* 6. Release Date */}
         <div className={css.factCard}>
           <span className={css.factLabel}>📅 Release Date</span>
           <span className={css.factValue}>
@@ -280,7 +273,6 @@ export const MovieInfo = () => {
           </span>
         </div>
 
-        {/* Optional Financial ROI / Profit */}
         {hasFinancials && (
           <div className={css.factCard}>
             <span className={css.factLabel}>📈 Profitability & ROI</span>
@@ -299,7 +291,6 @@ export const MovieInfo = () => {
           </div>
         )}
 
-        {/* TV Series Specifics */}
         {isTvShow && (
           <>
             <div className={css.factCard}>
@@ -334,7 +325,6 @@ export const MovieInfo = () => {
           </>
         )}
 
-        {/* Production Companies (Logos + Names) */}
         {movie.production_companies && movie.production_companies.length > 0 && (
           <div className={`${css.factCard} ${css.wideCard}`}>
             <span className={css.factLabel}>🏢 Production Companies</span>
@@ -358,7 +348,6 @@ export const MovieInfo = () => {
           </div>
         )}
 
-        {/* Production Countries & Language */}
         {movie.production_countries && movie.production_countries.length > 0 && (
           <div className={css.factCard}>
             <span className={css.factLabel}>🌍 Production Countries</span>
@@ -381,7 +370,6 @@ export const MovieInfo = () => {
         )}
       </div>
 
-      {/* 2. Where to Watch Section */}
       <div className={css.whereToWatchSection}>
         <div className={css.watchHeaderRow}>
           <div className={css.blockSubheader}>
@@ -412,7 +400,6 @@ export const MovieInfo = () => {
 
         {hasAnyProviders ? (
           <div className={css.providersContainer}>
-            {/* Stream Category */}
             {streamProviders.length > 0 && (
               <div className={css.categoryBlock}>
                 <h4 className={css.categoryTitle}>
@@ -441,7 +428,6 @@ export const MovieInfo = () => {
               </div>
             )}
 
-            {/* Rent Category */}
             {rentProviders.length > 0 && (
               <div className={css.categoryBlock}>
                 <h4 className={css.categoryTitle}>
@@ -470,7 +456,6 @@ export const MovieInfo = () => {
               </div>
             )}
 
-            {/* Buy Category */}
             {buyProviders.length > 0 && (
               <div className={css.categoryBlock}>
                 <h4 className={css.categoryTitle}>

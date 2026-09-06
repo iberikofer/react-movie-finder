@@ -1,10 +1,54 @@
 import { Link } from 'react-router-dom';
 import css from './Home.module.css';
 
+const TECH_STACK = [
+  {
+    name: 'React 18',
+    icon: '⚛️',
+    url: 'https://react.dev/',
+    title: 'React Official Documentation',
+  },
+  {
+    name: 'React Router v6',
+    icon: '🗺️',
+    url: 'https://reactrouter.com/',
+    title: 'React Router Documentation',
+  },
+  {
+    name: 'TMDB REST API',
+    icon: '🎬',
+    url: 'https://developer.themoviedb.org/docs',
+    title: 'The Movie Database (TMDB) API Documentation',
+  },
+  {
+    name: 'Vanilla CSS Modules',
+    icon: '🎨',
+    url: 'https://github.com/css-modules/css-modules',
+    title: 'CSS Modules Specification & Repository',
+  },
+  {
+    name: 'LocalStorage Event Bus',
+    icon: '💾',
+    url: 'https://developer.mozilla.org/en-US/docs/Web/API/Window/storage_event',
+    title: 'MDN Web Docs: Window storage event',
+  },
+  {
+    name: 'Epoch Wall-Clock Sync',
+    icon: '⏱️',
+    url: 'https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Date/now',
+    title: 'MDN Web Docs: Date.now() / Unix Epoch Time',
+  },
+  {
+    name: 'Suspense Code Splitting',
+    icon: '⚡',
+    url: 'https://react.dev/reference/react/Suspense',
+    title: 'React Documentation: Suspense & Code Splitting',
+  },
+];
+
 export const Home = () => {
   return (
     <div className={css.homeContainer}>
-      {/* Hero Section */}
       <section className={css.heroSection}>
         <h1 className={css.heroTitle}>
           Discover Movies with <span className={css.titleHighlight}>Precision Critics Scoring</span> & Cinematic Elegance
@@ -14,7 +58,6 @@ export const Home = () => {
           MovieFinder combines real-time TMDB film intelligence with a bespoke 5-star community analytics engine, smooth animations, and an uninterrupted emerald-and-cherry ambient experience.
         </p>
 
-        {/* Quick Facts Counter Grid */}
         <div className={css.statsGrid}>
           <div className={css.statCard}>
             <span className={css.statNumber}>500k+</span>
@@ -25,73 +68,68 @@ export const Home = () => {
             <span className={css.statLabel}>Half-Star Scoring Engine</span>
           </div>
           <div className={css.statCard}>
-            <span className={css.statNumber}>100%</span>
-            <span className={css.statLabel}>Real-time Local Persistence</span>
+            <span className={css.statNumber}>60 FPS</span>
+            <span className={css.statLabel}>Ambient Canvas Wave</span>
           </div>
           <div className={css.statCard}>
-            <span className={css.statNumber}>60 FPS</span>
-            <span className={css.statLabel}>Fluid Ambient Shimmer</span>
+            <span className={css.statNumber}>100%</span>
+            <span className={css.statLabel}>Responsive Layout</span>
           </div>
         </div>
       </section>
 
-      {/* Feature Showcase Pillars */}
       <section className={css.featuresSection}>
         <div className={css.sectionHeader}>
-          <span className={css.sectionCategory}>Core Capabilities</span>
-          <h2 className={css.sectionTitle}>Engineered for True Cinephiles</h2>
+          <span className={css.sectionCategory}>Next-Gen Architecture</span>
+          <h2 className={css.sectionTitle}>Engineered for Cinephiles</h2>
           <p className={css.sectionSubtitle}>
-            Every interaction is tuned with micro-animations, glassmorphism aesthetics, and real-time state synchronization.
+            Every interaction is tuned for rapid exploration, deep filmography analysis, and seamless cross-tab synchronization.
           </p>
         </div>
 
         <div className={css.featuresGrid}>
-          {/* Feature 1 */}
           <div className={css.featureCard}>
             <div className={css.featureIcon}>⭐</div>
-            <h3 className={css.featureTitle}>5-Star Critics Rating System</h3>
+            <h3 className={css.featureTitle}>Dual Scoring Analytics</h3>
             <p className={css.featureText}>
-              A standalone rating system with 0.5-star granularity, satisfaction progress meter, rating distribution analytics tiers (from 0.5★ to 5.0★), and instant cross-tab storage synchronization.
+              Toggle between TMDB's global 10-point scale and our 5-star precision critic engine with granular 0.5-star half-step resolution.
             </p>
             <ul className={css.featureList}>
-              <li>Half-star hover hitboxes with contextual tooltips</li>
-              <li>Calculated satisfaction score percentage bar</li>
-              <li>Double-click confirmation with protected 2s delete state</li>
+              <li>Instant mathematical mapping between systems</li>
+              <li>Interactive star-rating input for personal ratings</li>
+              <li>Dynamic color feedback (emerald, amber, rose)</li>
             </ul>
           </div>
 
-          {/* Feature 2 */}
           <div className={css.featureCard}>
-            <div className={css.featureIcon}>🎬</div>
-            <h3 className={css.featureTitle}>Cinematic Clapperboard Loader</h3>
+            <div className={css.featureIcon}>🔄</div>
+            <h3 className={css.featureTitle}>Zero-Latency Sync Bus</h3>
             <p className={css.featureText}>
-              Replaced standard circular spinners with a crafted vector clapperboard. Features diagonal emerald stripes, a crisp 0.3s snap shut, 1s steady hold, and smooth upward lift.
+              Rate a film or add it to favorites in one window and watch your dashboard update instantaneously across all other browser tabs.
             </p>
             <ul className={css.featureList}>
-              <li>Guaranteed 500ms minimum pacing on all fetches</li>
-              <li>Pulsing film metadata typography ("SCENE 01 / TAKE 01")</li>
-              <li>Zero glitching, bouncing, or twitching</li>
+              <li>Cross-window DOM event dispatching</li>
+              <li>Resilient LocalStorage fallback with automatic re-indexing</li>
+              <li>Zero network overhead for local state changes</li>
             </ul>
           </div>
 
-          {/* Feature 3 */}
           <div className={css.featureCard}>
-            <div className={css.featureIcon}>💬</div>
-            <h3 className={css.featureTitle}>Dynamic Soft Review Palettes</h3>
+            <div className={css.featureIcon}>⚡</div>
+            <h3 className={css.featureTitle}>Suspense-Driven Code Splitting</h3>
             <p className={css.featureText}>
-              Community reviews are displayed with uniquely generated soft accent colors (soft sky blue, warm orange, mint, lavender, rose), ensuring each review stands out elegantly.
+              Sub-second initial payload delivery powered by asynchronous route chunking and lazy-loaded movie sub-views.
             </p>
             <ul className={css.featureList}>
-              <li>Custom border and author color styling per review</li>
-              <li>Dedicated flush-docked sub-route tab bar</li>
-              <li>Zero page jump or scroll reset when toggling tabs</li>
+              <li>Asynchronous Cast, Reviews, and Trailers</li>
+              <li>Non-blocking background image prefetching</li>
+              <li>Smooth fallback loaders with shimmer effects</li>
             </ul>
           </div>
 
-          {/* Feature 4 */}
           <div className={css.featureCard}>
-            <div className={css.featureIcon}>🌌</div>
-            <h3 className={css.featureTitle}>Uninterrupted Ambient Shimmer</h3>
+            <div className={css.featureIcon}>🌊</div>
+            <h3 className={css.featureTitle}>Persistent Ambient Canvas</h3>
             <p className={css.featureText}>
               A pure linear iridescent background in deep emerald green with warm cherry wine accents that flows perpetually across 28s and 36s orbital wave cycles.
             </p>
@@ -104,21 +142,25 @@ export const Home = () => {
         </div>
       </section>
 
-      {/* Tech Stack Pills */}
       <section className={css.techSection}>
         <h3 className={css.techTitle}>Built with Modern Web Technologies</h3>
         <div className={css.techPillGrid}>
-          <span className={css.techPill}>⚛️ React 18</span>
-          <span className={css.techPill}>🗺️ React Router v6</span>
-          <span className={css.techPill}>🎬 TMDB REST API</span>
-          <span className={css.techPill}>🎨 Vanilla CSS Modules</span>
-          <span className={css.techPill}>💾 LocalStorage Event Bus</span>
-          <span className={css.techPill}>⏱️ Epoch Wall-Clock Sync</span>
-          <span className={css.techPill}>⚡ Suspense Code Splitting</span>
+          {TECH_STACK.map(tech => (
+            <a
+              key={tech.name}
+              href={tech.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={css.techPill}
+              title={tech.title}
+            >
+              <span className={css.pillIcon}>{tech.icon}</span>
+              <span className={css.pillText}>{tech.name}</span>
+            </a>
+          ))}
         </div>
       </section>
 
-      {/* Bottom CTA Banner */}
       <section className={css.bottomCtaSection}>
         <div className={css.bottomCtaInner}>
           <h2 className={css.bottomCtaTitle}>Ready to Find Your Next Movie?</h2>

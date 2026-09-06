@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { getMovieImages } from 'fetch';
+import Loader from '../Loader/Loader';
 import css from './MovieGallery.module.css';
 
 // Speed of continuous drift in pixels per second
@@ -10,6 +11,7 @@ export const MovieGallery = ({ movieId, movieTitle = 'Movie' }) => {
   const [images, setImages] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [lightboxIndex, setLightboxIndex] = useState(null);
+  const [isImageLoading, setIsImageLoading] = useState(true);
 
   const trackRef = useRef(null);
   const set1Ref = useRef(null);
@@ -23,6 +25,9 @@ export const MovieGallery = ({ movieId, movieTitle = 'Movie' }) => {
   // Keep refs in sync with state
   useEffect(() => {
     lightboxOpenRef.current = lightboxIndex !== null;
+    if (lightboxIndex !== null) {
+      setIsImageLoading(true);
+    }
   }, [lightboxIndex]);
 
   // Fetch backdrop images for the movie/show
@@ -324,8 +329,10 @@ export const MovieGallery = ({ movieId, movieTitle = 'Movie' }) => {
       if (e.key === 'Escape') {
         setLightboxIndex(null);
       } else if (e.key === 'ArrowRight') {
+        setIsImageLoading(true);
         setLightboxIndex(prev => (prev + 1) % images.length);
       } else if (e.key === 'ArrowLeft') {
+        setIsImageLoading(true);
         setLightboxIndex(prev => (prev - 1 + images.length) % images.length);
       }
     };
@@ -365,11 +372,15 @@ export const MovieGallery = ({ movieId, movieTitle = 'Movie' }) => {
       <div
         key={`${item.file_path}-${setKey}-${idx}`}
         className={css.photoCard}
-        onClick={() => setLightboxIndex(originalIdx)}
+        onClick={() => {
+          setIsImageLoading(true);
+          setLightboxIndex(originalIdx);
+        }}
         role="button"
         tabIndex={0}
         onKeyDown={e => {
           if (e.key === 'Enter' || e.key === ' ') {
+            setIsImageLoading(true);
             setLightboxIndex(originalIdx);
           }
         }}
@@ -449,73 +460,99 @@ export const MovieGallery = ({ movieId, movieTitle = 'Movie' }) => {
         </div>
       </div>
 
-      {/* Fullscreen Lightbox Modal rendered via Portal onto document.body */}
-      {lightboxIndex !== null && images[lightboxIndex] && createPortal(
-        <div
-          className={css.lightboxOverlay}
-          onClick={() => setLightboxIndex(null)}
-          role="dialog"
-          aria-modal="true"
-        >
-          <button
-            type="button"
-            className={css.lightboxCloseBtn}
-            onClick={() => setLightboxIndex(null)}
-            aria-label="Close fullscreen gallery"
-            title="Close (Esc)"
-          >
-            ✕
-          </button>
+      {lightboxIndex !== null && images[lightboxIndex] && (() => {
+        const currentImg = images[lightboxIndex];
+        const aspectRatio =
+          currentImg.aspect_ratio ||
+          (currentImg.width && currentImg.height
+            ? currentImg.width / currentImg.height
+            : 16 / 9);
 
-          <button
-            type="button"
-            className={`${css.lightboxArrow} ${css.lightboxPrev}`}
-            onClick={e => {
-              e.stopPropagation();
-              setLightboxIndex(prev => (prev - 1 + images.length) % images.length);
-            }}
-            aria-label="Previous image"
-            title="Previous (←)"
-          >
-            ‹
-          </button>
-
+        return createPortal(
           <div
-            className={css.lightboxContent}
-            onClick={e => e.stopPropagation()}
+            className={css.lightboxOverlay}
+            onClick={() => setLightboxIndex(null)}
+            role="dialog"
+            aria-modal="true"
           >
-            <div className={css.lightboxImageWrapper}>
-              <img
-                src={`https://image.tmdb.org/t/p/original${images[lightboxIndex].file_path}`}
-                alt={`${movieTitle} full resolution still ${lightboxIndex + 1}`}
-                className={css.lightboxImage}
-              />
+            <button
+              type="button"
+              className={css.lightboxCloseBtn}
+              onClick={() => setLightboxIndex(null)}
+              aria-label="Close fullscreen gallery"
+              title="Close (Esc)"
+            >
+              ✕
+            </button>
+
+            <button
+              type="button"
+              className={`${css.lightboxArrow} ${css.lightboxPrev}`}
+              onClick={e => {
+                e.stopPropagation();
+                setIsImageLoading(true);
+                setLightboxIndex(prev => (prev - 1 + images.length) % images.length);
+              }}
+              aria-label="Previous image"
+              title="Previous (←)"
+            >
+              ‹
+            </button>
+
+            <div
+              className={css.lightboxContent}
+              onClick={e => e.stopPropagation()}
+            >
+              <div
+                className={`${css.lightboxImageWrapper} ${isImageLoading ? css.skeleton : ''}`}
+                style={{
+                  '--img-aspect-ratio': aspectRatio,
+                }}
+              >
+                {isImageLoading && (
+                  <div className={css.lightboxLoaderContainer}>
+                    <Loader caption="Loading image..." />
+                  </div>
+                )}
+
+                <img
+                  key={currentImg.file_path}
+                  src={`https://image.tmdb.org/t/p/original${currentImg.file_path}`}
+                  alt={`${movieTitle} full resolution still ${lightboxIndex + 1}`}
+                  className={`${css.lightboxImage} ${
+                    isImageLoading ? css.imageHidden : css.imageVisible
+                  }`}
+                  onLoad={() => setIsImageLoading(false)}
+                  onError={() => setIsImageLoading(false)}
+                />
+              </div>
+
+              <div className={css.lightboxFooter}>
+                <span className={css.lightboxTitle}>{movieTitle}</span>
+                <span className={css.lightboxCounter}>
+                  {lightboxIndex + 1} / {images.length}
+                </span>
+                <span className={css.lightboxTip}>Use ← / → arrows or Esc to close</span>
+              </div>
             </div>
 
-            <div className={css.lightboxFooter}>
-              <span className={css.lightboxTitle}>{movieTitle}</span>
-              <span className={css.lightboxCounter}>
-                {lightboxIndex + 1} / {images.length}
-              </span>
-              <span className={css.lightboxTip}>Use ← / → arrows or Esc to close</span>
-            </div>
-          </div>
-
-          <button
-            type="button"
-            className={`${css.lightboxArrow} ${css.lightboxNext}`}
-            onClick={e => {
-              e.stopPropagation();
-              setLightboxIndex(prev => (prev + 1) % images.length);
-            }}
-            aria-label="Next image"
-            title="Next (→)"
-          >
-            ›
-          </button>
-        </div>,
-        document.body
-      )}
+            <button
+              type="button"
+              className={`${css.lightboxArrow} ${css.lightboxNext}`}
+              onClick={e => {
+                e.stopPropagation();
+                setIsImageLoading(true);
+                setLightboxIndex(prev => (prev + 1) % images.length);
+              }}
+              aria-label="Next image"
+              title="Next (→)"
+            >
+              ›
+            </button>
+          </div>,
+          document.body
+        );
+      })()}
     </div>
   );
 };

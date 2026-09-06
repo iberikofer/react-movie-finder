@@ -1,6 +1,3 @@
-/* ==========================================================================
-   Home Landing Page Styles
-   ========================================================================== */
 
 .homeContainer {
   max-width: 1200px;
@@ -12,9 +9,6 @@
   animation: pageFadeSlideIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-/* ==========================================================================
-   Hero Section
-   ========================================================================== */
 
 .heroSection {
   display: flex;
@@ -97,7 +91,6 @@
   color: #fff;
 }
 
-/* Stats Counter Grid */
 .statsGrid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -137,9 +130,6 @@
 
 
 
-/* ==========================================================================
-   Features Grid
-   ========================================================================== */
 
 .featuresSection {
   display: flex;
@@ -246,9 +236,6 @@
   font-size: 0.8rem;
 }
 
-/* ==========================================================================
-   Tech Stack Section
-   ========================================================================== */
 
 .techSection {
   display: flex;
@@ -279,18 +266,55 @@
 }
 
 .techPill {
-  padding: 8px 16px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 18px;
   background: rgba(254, 243, 199, 0.08);
   border: 1px solid rgba(254, 243, 199, 0.18);
-  border-radius: 24px;
+  border-radius: 9999px;
   font-size: 0.88rem;
   font-weight: 600;
   color: var(--color-text);
+  text-decoration: none;
+  cursor: pointer;
+  user-select: none;
+  transition: transform 0.25s ease,
+              border-color 0.25s ease,
+              box-shadow 0.25s ease,
+              color 0.25s ease;
 }
 
-/* ==========================================================================
-   Bottom CTA Section
-   ========================================================================== */
+.techPill:visited {
+  color: var(--color-text);
+}
+
+.techPill:hover {
+  transform: translateY(-4px);
+  border-color: #10b981;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
+  color: #ffffff;
+}
+
+.techPill:active {
+  transform: translateY(-1px);
+}
+
+.pillIcon {
+  font-size: 1rem;
+  line-height: 1;
+  display: inline-block;
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.techPill:hover .pillIcon {
+  transform: scale(1.22) rotate(-8deg);
+}
+
+.pillText {
+  letter-spacing: 0.2px;
+}
+
 
 .bottomCtaSection {
   width: 100%;
@@ -332,9 +356,6 @@
   justify-content: center;
 }
 
-/* ==========================================================================
-   Responsive Adaptations
-   ========================================================================== */
 
 @media (max-width: 900px) {
   .heroTitle {
