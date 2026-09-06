@@ -18,6 +18,16 @@
   letter-spacing: -0.6px;
   color: var(--color-text);
   margin: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.titleIcon {
+  font-size: 2.3rem;
+  filter: drop-shadow(0 0 12px rgba(16, 185, 129, 0.45));
 }
 
 .searchForm {

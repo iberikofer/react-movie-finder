@@ -406,14 +406,19 @@ export const Movies = () => {
         list = [...list].sort((a, b) => {
           const dateA = a.release_date || a.first_air_date || '';
           const dateB = b.release_date || b.first_air_date || '';
+          if (!dateA && !dateB) return 0;
+          if (!dateA) return 1;
+          if (!dateB) return -1;
           return dateB.localeCompare(dateA);
         });
       } else if (sortBy === 'original_title.asc') {
         list = [...list].sort((a, b) => {
-          const nameA = a.title || a.name || '';
-          const nameB = b.title || b.name || '';
-          return nameA.localeCompare(nameB);
+          const nameA = (a.title || a.name || '').trim();
+          const nameB = (b.title || b.name || '').trim();
+          return nameA.localeCompare(nameB, undefined, { sensitivity: 'base' });
         });
+      } else {
+        list = [...list].sort((a, b) => (b.popularity || 0) - (a.popularity || 0));
       }
     }
 
@@ -439,7 +444,12 @@ export const Movies = () => {
   return (
     <div className={css.searchSection}>
       <div className={css.headerSection}>
-        <h1 className={css.mainTitle}>Search movies & shows by title</h1>
+        <h1 className={css.mainTitle}>
+          <span className={css.titleIcon} aria-hidden="true">
+            🔎
+          </span>
+          Search movies & shows by title
+        </h1>
       </div>
 
       <form className={css.searchForm} onSubmit={handleSubmit} role="search">

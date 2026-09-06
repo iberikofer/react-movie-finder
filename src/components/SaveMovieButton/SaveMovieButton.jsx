@@ -22,6 +22,7 @@ export const SaveMovieButton = ({
   movie,
   isDetails = false,
   className = '',
+  onBeforeRemove,
 }) => {
   const { isSaved, toggleSave } = useSavedMovies();
   if (!movie || !movie.id) return null;
@@ -31,6 +32,10 @@ export const SaveMovieButton = ({
   const handleClick = event => {
     event.preventDefault();
     event.stopPropagation();
+    if (saved && onBeforeRemove) {
+      onBeforeRemove(movie);
+      return;
+    }
     toggleSave(movie);
   };
 

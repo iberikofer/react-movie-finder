@@ -1,7 +1,8 @@
-import { useState, useEffect, useMemo, useRef } from 'react';
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { setMediaType } from 'fetch';
-import { useSavedMovies } from '../hooks/useSavedMovies';
+import { setMediaType, getMovieDetails } from 'fetch';
+import { useSavedMovies, getSavedMovies } from '../hooks/useSavedMovies';
+import FilterBar, { SAVED_SORT_OPTIONS } from '../components/FilterBar/FilterBar';
 import MediaTypeBadge from '../components/MediaTypeBadge/MediaTypeBadge';
 import MovieCardRatingBadge from '../components/CriticsScore/MovieCardRatingBadge';
 import SaveMovieButton from '../components/SaveMovieButton/SaveMovieButton';
@@ -9,15 +10,84 @@ import Loader from '../components/Loader/Loader';
 import css from './Saved.module.css';
 
 let hasLoadedSavedOnce = false;
+const DEFAULT_SAVED_SORT = 'popularity.desc';
+
+const getMovieGenreIds = movie => {
+  if (Array.isArray(movie.genre_ids) && movie.genre_ids.length > 0) {
+    return movie.genre_ids.map(Number);
+  }
+  if (Array.isArray(movie.genres) && movie.genres.length > 0) {
+    return movie.genres.map(g => Number(typeof g === 'object' ? g.id : g));
+  }
+  return [];
+};
+
+const matchesAgeRating = (ratingStr, filterAge) => {
+  if (!ratingStr) return false;
+  if (filterAge === 'all') return true;
+  const str = String(ratingStr).toUpperCase();
+
+  switch (filterAge) {
+    case '18+':
+      return (
+        str.includes('18+') ||
+        str.includes('US: R') ||
+        str.includes('US: NC-17') ||
+        str.includes('TV-MA') ||
+        str.includes('ADULT')
+      );
+    case '16+':
+      return (
+        str.includes('16+') ||
+        str.includes('15+') ||
+        str.includes('14+') ||
+        str.includes('TV-14')
+      );
+    case '12+':
+      return str.includes('12+') || str.includes('PG-13') || str.includes('13+');
+    case '6+':
+      return (
+        str.includes('6+') ||
+        str.includes('7+') ||
+        (str.includes('PG') && !str.includes('PG-13'))
+      );
+    case '0+':
+      return (
+        str.includes('0+') ||
+        str.includes('US: G') ||
+        str.includes('TV-G') ||
+        str.includes('TV-Y')
+      );
+    default:
+      return str.includes(filterAge.toUpperCase());
+  }
+};
 
 export const Saved = () => {
-  const { savedMovies, clearAll } = useSavedMovies();
+  const { savedMovies, clearAll, removeMovie } = useSavedMovies();
   const [isInitialLoading, setIsInitialLoading] = useState(!hasLoadedSavedOnce);
+  const [queryText, setQueryText] = useState('');
   const [filterType, setFilterType] = useState('all'); // 'all', 'movie', 'tv'
+  const [filterAge, setFilterAge] = useState('all');
+  const [selectedGenres, setSelectedGenres] = useState([]);
+  const [sortBy, setSortBy] = useState(DEFAULT_SAVED_SORT);
+  const [isInputFocused, setIsInputFocused] = useState(false);
   const [clearStatus, setClearStatus] = useState('idle'); // 'idle', 'confirming'
+  const [removingIds, setRemovingIds] = useState(() => new Set());
+  const removeTimersRef = useRef(new Map());
   const timerRef = useRef(null);
   const buttonRef = useRef(null);
+  const inputRef = useRef(null);
   const location = useLocation();
+
+  // Cleanup removal timers on unmount
+  useEffect(() => {
+    const timers = removeTimersRef.current;
+    return () => {
+      timers.forEach(timerId => clearTimeout(timerId));
+      timers.clear();
+    };
+  }, []);
 
   // Guarantee 0.5s initial centered loader ONLY on first load / reload of Saved page
   useEffect(() => {
@@ -59,19 +129,234 @@ export const Saved = () => {
     };
   }, []);
 
-  const moviesCount = useMemo(
-    () => savedMovies.filter(m => m.media_type === 'movie').length,
-    [savedMovies]
-  );
-  const tvCount = useMemo(
-    () => savedMovies.filter(m => m.media_type === 'tv').length,
-    [savedMovies]
-  );
+  // Auto-enrich existing saved movies in background if they lack genre_ids, age_rating, or popularity
+  useEffect(() => {
+    if (!savedMovies || savedMovies.length === 0) return;
+
+    const unpopulated = savedMovies.filter(
+      m =>
+        !Array.isArray(m.genre_ids) ||
+        m.genre_ids.length === 0 ||
+        !m.age_rating ||
+        !m.popularity
+    );
+    if (unpopulated.length === 0) return;
+
+    let isCancelled = false;
+
+    const enrichItems = async () => {
+      try {
+        const enrichedResults = await Promise.allSettled(
+          unpopulated.map(async item => {
+            try {
+              const mediaType = item.media_type || (item.first_air_date ? 'tv' : 'movie');
+              const details = await getMovieDetails(item.id, mediaType);
+              if (!details) return null;
+              const genreIds = Array.isArray(details.genres)
+                ? details.genres.map(g => (typeof g === 'object' ? g.id : g))
+                : Array.isArray(details.genre_ids)
+                ? details.genre_ids
+                : [];
+              return {
+                id: item.id,
+                genre_ids: genreIds,
+                age_rating: details.age_rating || null,
+                popularity: details.popularity || item.popularity || 0,
+              };
+            } catch {
+              return null;
+            }
+          })
+        );
+
+        if (isCancelled) return;
+
+        const updatesMap = new Map();
+        enrichedResults.forEach(res => {
+          if (res.status === 'fulfilled' && res.value && res.value.id) {
+            updatesMap.set(String(res.value.id), res.value);
+          }
+        });
+
+        if (updatesMap.size > 0) {
+          const current = getSavedMovies();
+          let hasChange = false;
+          const updatedList = current.map(m => {
+            const update = updatesMap.get(String(m.id));
+            if (update) {
+              const newGenres =
+                Array.isArray(m.genre_ids) && m.genre_ids.length > 0
+                  ? m.genre_ids
+                  : update.genre_ids;
+              const newAge = m.age_rating || update.age_rating;
+              const newPop = m.popularity || update.popularity;
+
+              if (
+                newGenres !== m.genre_ids ||
+                newAge !== m.age_rating ||
+                newPop !== m.popularity
+              ) {
+                hasChange = true;
+                return {
+                  ...m,
+                  genre_ids: newGenres,
+                  age_rating: newAge,
+                  popularity: newPop,
+                };
+              }
+            }
+            return m;
+          });
+
+          if (hasChange) {
+            localStorage.setItem('movie_finder_saved_movies', JSON.stringify(updatedList));
+            window.dispatchEvent(
+              new CustomEvent('saved_movies_updated', {
+                detail: { enriched: true },
+              })
+            );
+          }
+        }
+      } catch (err) {
+        console.error('Failed to enrich saved movies:', err);
+      }
+    };
+
+    enrichItems();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [savedMovies]);
+
+  const hasActiveFilters =
+    Boolean(queryText.trim()) ||
+    filterType !== 'all' ||
+    filterAge !== 'all' ||
+    selectedGenres.length > 0 ||
+    sortBy !== DEFAULT_SAVED_SORT;
+
+  const handleToggleGenre = genreId => {
+    setSelectedGenres(prev =>
+      prev.includes(genreId) ? prev.filter(id => id !== genreId) : [...prev, genreId]
+    );
+  };
+
+  const handleResetAllFilters = () => {
+    setQueryText('');
+    setFilterType('all');
+    setFilterAge('all');
+    setSelectedGenres([]);
+    setSortBy(DEFAULT_SAVED_SORT);
+    if (inputRef.current) {
+      inputRef.current.focus();
+    }
+  };
 
   const filteredMovies = useMemo(() => {
-    if (filterType === 'all') return savedMovies;
-    return savedMovies.filter(m => m.media_type === filterType);
-  }, [savedMovies, filterType]);
+    let list = savedMovies;
+
+    // Filter by Type (movie / tv)
+    if (filterType !== 'all') {
+      list = list.filter(m => m.media_type === filterType);
+    }
+
+    // Filter by Query (text search in title or name)
+    if (queryText.trim()) {
+      const q = queryText.trim().toLowerCase();
+      list = list.filter(m => {
+        const title = (m.title || m.name || '').toLowerCase();
+        return title.includes(q);
+      });
+    }
+
+    // Filter by Genres
+    if (selectedGenres.length > 0) {
+      list = list.filter(m => {
+        const itemGenres = getMovieGenreIds(m);
+        if (itemGenres.length === 0) return false;
+        return selectedGenres.every(id => itemGenres.includes(Number(id)));
+      });
+    }
+
+    // Filter by Age rating
+    if (filterAge !== 'all') {
+      list = list.filter(m => {
+        if (!m.age_rating) return false;
+        return matchesAgeRating(m.age_rating, filterAge);
+      });
+    }
+
+    // Sorting
+    const sorted = [...list];
+    if (sortBy === 'saved_at.desc') {
+      sorted.sort((a, b) => {
+        const timeA = a.savedAt || 0;
+        const timeB = b.savedAt || 0;
+        if (timeA && timeB) return timeB - timeA;
+        if (timeA) return -1;
+        if (timeB) return 1;
+        return savedMovies.indexOf(a) - savedMovies.indexOf(b);
+      });
+    } else if (sortBy === 'saved_at.asc') {
+      sorted.sort((a, b) => {
+        const timeA = a.savedAt || 0;
+        const timeB = b.savedAt || 0;
+        if (timeA && timeB) return timeA - timeB;
+        if (timeA) return 1;
+        if (timeB) return -1;
+        return savedMovies.indexOf(b) - savedMovies.indexOf(a);
+      });
+    } else if (sortBy === 'vote_average.desc') {
+      sorted.sort((a, b) => (b.vote_average || 0) - (a.vote_average || 0));
+    } else if (sortBy === 'primary_release_date.desc') {
+      sorted.sort((a, b) => {
+        const dateA = a.release_date || a.first_air_date || '';
+        const dateB = b.release_date || b.first_air_date || '';
+        if (!dateA && !dateB) return 0;
+        if (!dateA) return 1;
+        if (!dateB) return -1;
+        return dateB.localeCompare(dateA);
+      });
+    } else if (sortBy === 'original_title.asc') {
+      sorted.sort((a, b) => {
+        const nameA = (a.title || a.name || '').trim();
+        const nameB = (b.title || b.name || '').trim();
+        return nameA.localeCompare(nameB, undefined, { sensitivity: 'base' });
+      });
+    } else {
+      // Default: popularity.desc
+      sorted.sort((a, b) => (b.popularity || 0) - (a.popularity || 0));
+    }
+
+    return sorted;
+  }, [savedMovies, filterType, queryText, selectedGenres, filterAge, sortBy]);
+
+  const handleRemoveMovie = useCallback(
+    movie => {
+      if (!movie || !movie.id) return;
+      const movieId = movie.id;
+      setRemovingIds(prev => {
+        if (prev.has(movieId)) return prev;
+        const next = new Set(prev);
+        next.add(movieId);
+        return next;
+      });
+
+      const timerId = setTimeout(() => {
+        removeMovie(movieId);
+        removeTimersRef.current.delete(movieId);
+        setRemovingIds(prev => {
+          const next = new Set(prev);
+          next.delete(movieId);
+          return next;
+        });
+      }, 320);
+
+      removeTimersRef.current.set(movieId, timerId);
+    },
+    [removeMovie]
+  );
 
   const handleClear = event => {
     event.stopPropagation();
@@ -84,8 +369,14 @@ export const Saved = () => {
       return;
     }
     if (timerRef.current) clearTimeout(timerRef.current);
-    clearAll();
-    setClearStatus('idle');
+    const allIds = filteredMovies.map(m => m.id);
+    setRemovingIds(new Set(allIds));
+    const timerId = setTimeout(() => {
+      clearAll();
+      setClearStatus('idle');
+      setRemovingIds(new Set());
+    }, 320);
+    removeTimersRef.current.set('clear_all', timerId);
   };
 
   if (isInitialLoading) {
@@ -97,7 +388,7 @@ export const Saved = () => {
       <section className={css.savedSection}>
         {savedMovies.length > 0 && (
           <div className={css.headerContainer}>
-            <div className={css.titleRow}>
+            <div className={css.headerLeft}>
               <h1 className={css.mainTitle}>
                 <span className={css.titleIcon} aria-hidden="true">
                   🔖
@@ -107,43 +398,9 @@ export const Saved = () => {
                   {savedMovies.length} {savedMovies.length === 1 ? 'title' : 'titles'}
                 </span>
               </h1>
-            </div>
-            <p className={css.subtitle}>
-              Your personal collection of saved movies and series stored directly in your browser.
-            </p>
-          </div>
-        )}
-
-        {savedMovies.length > 0 && (
-          <div className={css.controlsRow}>
-            <div className={css.filterTabs}>
-              <button
-                type="button"
-                className={`${css.filterPill} ${
-                  filterType === 'all' ? css.filterPillActive : ''
-                }`}
-                onClick={() => setFilterType('all')}
-              >
-                All ({savedMovies.length})
-              </button>
-              <button
-                type="button"
-                className={`${css.filterPill} ${
-                  filterType === 'movie' ? css.filterPillActive : ''
-                }`}
-                onClick={() => setFilterType('movie')}
-              >
-                🎬 Movies ({moviesCount})
-              </button>
-              <button
-                type="button"
-                className={`${css.filterPill} ${
-                  filterType === 'tv' ? css.filterPillActive : ''
-                }`}
-                onClick={() => setFilterType('tv')}
-              >
-                📺 Series ({tvCount})
-              </button>
+              <p className={css.subtitle}>
+                Your personal collection of saved movies and series stored directly in your browser.
+              </p>
             </div>
 
             <button
@@ -166,12 +423,72 @@ export const Saved = () => {
           </div>
         )}
 
+        {savedMovies.length > 0 && (
+          <form className={css.searchForm} onSubmit={e => e.preventDefault()} role="search">
+            <div className={css.formInner}>
+              <div className={css.searchCard}>
+                <div className={css.inputWrapper}>
+                  <input
+                    ref={inputRef}
+                    className={css.searchInput}
+                    type="search"
+                    placeholder="Search saved movies & series..."
+                    aria-label="Search saved movies & series"
+                    value={queryText}
+                    onChange={e => setQueryText(e.target.value)}
+                    onFocus={() => setIsInputFocused(true)}
+                    onBlur={() => setIsInputFocused(false)}
+                  />
+                  {queryText && (
+                    <button
+                      type="button"
+                      className={css.clearBtn}
+                      onClick={() => {
+                        setQueryText('');
+                        if (inputRef.current) inputRef.current.focus();
+                      }}
+                      aria-label="Clear search input"
+                      title="Clear search"
+                    >
+                      ✕
+                    </button>
+                  )}
+                </div>
+
+                <FilterBar
+                  type={filterType}
+                  onTypeChange={setFilterType}
+                  age={filterAge}
+                  onAgeChange={setFilterAge}
+                  selectedGenres={selectedGenres}
+                  onToggleGenre={handleToggleGenre}
+                  onClearGenres={() => setSelectedGenres([])}
+                  sortBy={sortBy}
+                  onSortChange={setSortBy}
+                  onResetFilters={handleResetAllFilters}
+                  hasActiveFilters={hasActiveFilters}
+                  variant="attached"
+                  isFocused={isInputFocused}
+                  sortOptions={SAVED_SORT_OPTIONS}
+                  defaultSort={DEFAULT_SAVED_SORT}
+                />
+              </div>
+            </div>
+          </form>
+        )}
+
         {filteredMovies.length > 0 ? (
           <ul className={css.movieGrid}>
             {filteredMovies.map(movie => {
               const title = movie.title || movie.name;
+              const isRemoving = removingIds.has(movie.id);
               return (
-                <li key={movie.id} className={css.movieCard}>
+                <li
+                  key={movie.id}
+                  className={`${css.movieCard} ${
+                    isRemoving ? css.movieCardRemoving : ''
+                  }`}
+                >
                   <Link
                     to={`/movies/${movie.id}${
                       movie.media_type === 'tv' ? '?type=tv' : ''
@@ -180,6 +497,10 @@ export const Saved = () => {
                     className={css.movieLink}
                     draggable="false"
                     onClick={e => {
+                      if (isRemoving) {
+                        e.preventDefault();
+                        return;
+                      }
                       const selection = window.getSelection();
                       if (
                         selection &&
@@ -210,7 +531,10 @@ export const Saved = () => {
                         mediaType={movie.media_type}
                         item={movie}
                       />
-                      <SaveMovieButton movie={movie} />
+                      <SaveMovieButton
+                        movie={movie}
+                        onBeforeRemove={handleRemoveMovie}
+                      />
                     </div>
                     <div className={css.titleWrapper}>
                       <span className={css.movieTitle}>{title}</span>
@@ -229,14 +553,14 @@ export const Saved = () => {
             <h2 className={css.emptyTitle}>
               {savedMovies.length === 0
                 ? 'Your watchlist is empty'
-                : 'No titles found for this category'}
+                : 'No saved titles match your filters'}
             </h2>
             <p className={css.emptyText}>
               {savedMovies.length === 0
                 ? 'Explore trending movies and series or use the search bar to find titles you want to watch later.'
-                : 'You have no saved titles in this specific category yet.'}
+                : 'Try adjusting your search query, format, genres, or age filters.'}
             </p>
-            {savedMovies.length === 0 && (
+            {savedMovies.length === 0 ? (
               <div className={css.emptyActions}>
                 <Link to="/trending" className={css.primaryCta}>
                   <span>🔥 Explore Trending Now</span>
@@ -245,6 +569,14 @@ export const Saved = () => {
                   <span>🔍 Search Film Titles</span>
                 </Link>
               </div>
+            ) : (
+              <button
+                type="button"
+                className={css.resetFiltersBtn}
+                onClick={handleResetAllFilters}
+              >
+                🔄 Reset Filters
+              </button>
             )}
           </div>
         )}

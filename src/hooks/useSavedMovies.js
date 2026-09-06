@@ -31,6 +31,12 @@ export const saveMovieToStorage = movie => {
       release_date: movie.release_date || movie.first_air_date || '',
       first_air_date: movie.first_air_date || movie.release_date || '',
       age_rating: movie.age_rating || null,
+      genre_ids: Array.isArray(movie.genre_ids)
+        ? movie.genre_ids
+        : Array.isArray(movie.genres)
+        ? movie.genres.map(g => g.id)
+        : [],
+      popularity: movie.popularity || 0,
       savedAt: Date.now(),
     };
 
@@ -42,6 +48,42 @@ export const saveMovieToStorage = movie => {
         detail: { movieId: movie.id, isSaved: true },
       })
     );
+
+    // If movie was saved from a list view lacking age_rating or genre_ids, enrich in background
+    if (!compactMovie.age_rating || compactMovie.genre_ids.length === 0) {
+      import('../fetch')
+        .then(({ getMovieDetails }) => {
+          getMovieDetails(movie.id, compactMovie.media_type)
+            .then(details => {
+              if (!details) return;
+              const currentList = getSavedMovies();
+              const idx = currentList.findIndex(m => String(m.id) === String(movie.id));
+              if (idx === -1) return;
+              const item = currentList[idx];
+              const genreIds =
+                item.genre_ids && item.genre_ids.length > 0
+                  ? item.genre_ids
+                  : Array.isArray(details.genres)
+                  ? details.genres.map(g => (typeof g === 'object' ? g.id : g))
+                  : [];
+              currentList[idx] = {
+                ...item,
+                age_rating: item.age_rating || details.age_rating || null,
+                genre_ids: genreIds,
+                popularity: item.popularity || details.popularity || 0,
+              };
+              localStorage.setItem(STORAGE_KEY, JSON.stringify(currentList));
+              window.dispatchEvent(
+                new CustomEvent('saved_movies_updated', {
+                  detail: { movieId: movie.id, isSaved: true, enriched: true },
+                })
+              );
+            })
+            .catch(() => {});
+        })
+        .catch(() => {});
+    }
+
     return true;
   } catch (error) {
     console.error('Failed to save movie to localStorage:', error);

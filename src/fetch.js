@@ -129,7 +129,7 @@ export const discoverMedia = async ({
   const fetchMovieDiscover = (p = page) => {
     let url = `/discover/movie?sort_by=${sortBy}&page=${p}&language=en-US`;
     if (sortBy === 'vote_average.desc') {
-      url += '&vote_count.gte=250';
+      url += '&vote_count.gte=100';
     }
     if (genreParam) url += `&with_genres=${genreParam}`;
     if (movieCerts.length > 0) {
@@ -143,7 +143,7 @@ export const discoverMedia = async ({
     if (sortBy === 'primary_release_date.desc') tvSort = 'first_air_date.desc';
     let url = `/discover/tv?sort_by=${tvSort}&page=${p}&language=en-US`;
     if (sortBy === 'vote_average.desc') {
-      url += '&vote_count.gte=100';
+      url += '&vote_count.gte=50';
     }
     if (genreParam) url += `&with_genres=${genreParam}`;
     if (tvCerts.length > 0) {
@@ -173,12 +173,30 @@ export const discoverMedia = async ({
     const taggedMovies = (movieData?.results || []).map(m => ({ ...m, media_type: 'movie' }));
     const taggedTv = (tvData?.results || []).map(t => ({ ...t, media_type: 'tv' }));
 
-    const combined = [];
-    const maxLen = Math.max(taggedMovies.length, taggedTv.length);
-    for (let i = 0; i < maxLen; i++) {
-      if (i < taggedMovies.length) combined.push(taggedMovies[i]);
-      if (i < taggedTv.length) combined.push(taggedTv[i]);
+    const combined = [...taggedMovies, ...taggedTv];
+
+    if (sortBy === 'vote_average.desc') {
+      combined.sort((a, b) => (b.vote_average || 0) - (a.vote_average || 0));
+    } else if (sortBy === 'primary_release_date.desc') {
+      combined.sort((a, b) => {
+        const dateA = a.release_date || a.first_air_date || '';
+        const dateB = b.release_date || b.first_air_date || '';
+        if (!dateA && !dateB) return 0;
+        if (!dateA) return 1;
+        if (!dateB) return -1;
+        return dateB.localeCompare(dateA);
+      });
+    } else if (sortBy === 'original_title.asc') {
+      combined.sort((a, b) => {
+        const nameA = (a.title || a.name || '').trim();
+        const nameB = (b.title || b.name || '').trim();
+        return nameA.localeCompare(nameB, undefined, { sensitivity: 'base' });
+      });
+    } else {
+      // Default: popularity.desc
+      combined.sort((a, b) => (b.popularity || 0) - (a.popularity || 0));
     }
+
     const totalPages = Math.max(movieData?.total_pages || 1, tvData?.total_pages || 1);
     return {
       page,
@@ -458,6 +476,8 @@ export const getMovieDetails = async (movieId, explicitType) => {
 
   throw new Error(`Item ${movieId} not found in TMDB`);
 };
+
+export const fetchMovieDetails = getMovieDetails;
 
 export const getMovieCredits = async (movieId, explicitType) => {
   const type = explicitType || mediaTypeCache.get(String(movieId));

@@ -19,12 +19,23 @@ const AGE_OPTIONS = [
   { id: '18+', label: '18+', icon: '⛔', fullLabel: '⛔ 18+ (Adults / R)' },
 ];
 
-const SORT_OPTIONS = [
+export const DEFAULT_SORT_OPTIONS = [
   { id: 'popularity.desc', label: 'Popular', icon: '🔥', fullLabel: '🔥 Most Popular' },
   { id: 'vote_average.desc', label: 'Top Rated', icon: '⭐', fullLabel: '⭐ Highest Rated' },
   { id: 'primary_release_date.desc', label: 'Newest', icon: '📅', fullLabel: '📅 Newest First' },
   { id: 'original_title.asc', label: 'A-Z', icon: '🔤', fullLabel: '🔤 Title (A-Z)' },
 ];
+
+export const SAVED_SORT_OPTIONS = [
+  { id: 'popularity.desc', label: 'Popular', icon: '🔥', fullLabel: '🔥 Most Popular' },
+  { id: 'saved_at.desc', label: 'Newest Added', icon: '🕒', fullLabel: '🕒 Date Added (Newest)' },
+  { id: 'saved_at.asc', label: 'Oldest Added', icon: '⏳', fullLabel: '⏳ Date Added (Oldest)' },
+  { id: 'vote_average.desc', label: 'Top Rated', icon: '⭐', fullLabel: '⭐ Highest Rated' },
+  { id: 'primary_release_date.desc', label: 'Release Date', icon: '📅', fullLabel: '📅 Release Date' },
+  { id: 'original_title.asc', label: 'A-Z', icon: '🔤', fullLabel: '🔤 Title (A-Z)' },
+];
+
+export const SORT_OPTIONS = DEFAULT_SORT_OPTIONS;
 
 export const FilterBar = ({
   type = 'all',
@@ -40,6 +51,8 @@ export const FilterBar = ({
   hasActiveFilters = false,
   variant = 'attached', // 'attached' or 'standalone'
   isFocused = false,
+  sortOptions = DEFAULT_SORT_OPTIONS,
+  defaultSort = 'popularity.desc',
 }) => {
   const [activeDropdown, setActiveDropdown] = useState(null); // 'type' | 'age' | 'genres' | 'sort' | null
   const [isClosing, setIsClosing] = useState(false);
@@ -172,7 +185,7 @@ export const FilterBar = ({
   };
 
   const currentTypeObj = TYPE_OPTIONS.find(o => o.id === type) || TYPE_OPTIONS[0];
-  const currentSortObj = SORT_OPTIONS.find(o => o.id === sortBy) || SORT_OPTIONS[0];
+  const currentSortObj = sortOptions.find(o => o.id === sortBy) || sortOptions[0] || DEFAULT_SORT_OPTIONS[0];
 
   // Resolve genre button label
   const getGenresButtonLabel = () => {
@@ -312,7 +325,7 @@ export const FilterBar = ({
           <button
             type="button"
             className={`${css.filterButton} ${
-              sortBy !== 'popularity.desc' ? css.filterButtonActive : ''
+              sortBy !== defaultSort ? css.filterButtonActive : ''
             } ${isSortOpen ? css.filterButtonOpen : ''}`}
             onClick={() => toggleDropdown('sort')}
             aria-expanded={isSortOpen}
@@ -330,7 +343,7 @@ export const FilterBar = ({
                 isClosing ? css.dropdownExit : ''
               }`}
             >
-              {SORT_OPTIONS.map(opt => (
+              {sortOptions.map(opt => (
                 <button
                   key={opt.id}
                   type="button"
@@ -472,6 +485,15 @@ FilterBar.propTypes = {
   hasActiveFilters: PropTypes.bool,
   variant: PropTypes.oneOf(['attached', 'standalone']),
   isFocused: PropTypes.bool,
+  sortOptions: PropTypes.arrayOf(
+    PropTypes.shape({
+      id: PropTypes.string.isRequired,
+      label: PropTypes.string.isRequired,
+      icon: PropTypes.string.isRequired,
+      fullLabel: PropTypes.string.isRequired,
+    })
+  ),
+  defaultSort: PropTypes.string,
 };
 
 export default FilterBar;

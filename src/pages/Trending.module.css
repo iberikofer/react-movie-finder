@@ -23,6 +23,16 @@
   margin: 0;
   letter-spacing: -0.6px;
   text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.titleIcon {
+  font-size: 2.3rem;
+  filter: drop-shadow(0 0 12px rgba(249, 115, 22, 0.45));
 }
 
 .sectionDesc {
