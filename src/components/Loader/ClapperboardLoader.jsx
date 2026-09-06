@@ -1,8 +1,15 @@
 import css from './ClapperboardLoader.module.css';
 
-export const ClapperboardLoader = ({ caption = 'Loading scene...' }) => {
+export const ClapperboardLoader = ({
+  caption = 'Loading scene...',
+  isCentered = false,
+}) => {
   return (
-    <div className={css.loaderWrapper} role="status" aria-label="Loading">
+    <div
+      className={`${css.loaderWrapper} ${isCentered ? css.loaderWrapperCentered : ''}`}
+      role="status"
+      aria-label="Loading"
+    >
       <div className={css.clapperboard}>
         <div className={css.clapperHinge} />
         <div className={css.clapperArm} />

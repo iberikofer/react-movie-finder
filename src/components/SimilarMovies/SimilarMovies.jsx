@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link, useLocation } from 'react-router-dom';
-import { getSimilarMovies } from 'fetch';
+import { getSimilarMovies, setMediaType, getMediaType } from 'fetch';
 import MovieCardRatingBadge from '../CriticsScore/MovieCardRatingBadge';
 import Loader from '../Loader/Loader';
+import MediaTypeBadge from '../MediaTypeBadge/MediaTypeBadge';
+import SaveMovieButton from '../SaveMovieButton/SaveMovieButton';
 import css from './SimilarMovies.module.css';
 
 export const SimilarMovies = () => {
@@ -10,6 +12,7 @@ export const SimilarMovies = () => {
   const [movies, setMovies] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const location = useLocation();
+  const isTv = getMediaType(movieId) === 'tv';
 
   useEffect(() => {
     let isMounted = true;
@@ -38,10 +41,10 @@ export const SimilarMovies = () => {
   }, [movieId]);
 
   return (
-    <section className={css.similarSection} aria-label="Similar movies">
+    <section className={css.similarSection} aria-label={isTv ? 'Similar shows' : 'Similar movies'}>
       <div className={css.headerRow}>
         <h2 className={css.sectionTitle}>
-          <span className={css.titleIcon}>🎯</span> Similar Movies
+          <span className={css.titleIcon}>🎯</span> {isTv ? 'Similar Shows' : 'Similar Movies'}
         </h2>
         {movies.length > 0 && (
           <span className={css.countBadge}>
@@ -59,10 +62,23 @@ export const SimilarMovies = () => {
             return (
               <li key={movie.id} className={css.movieCard}>
                 <Link
-                  to={`/movies/${movie.id}`}
-                  state={{ from: location }}
+                  to={`/movies/${movie.id}${movie.media_type === 'tv' ? '?type=tv' : ''}`}
+                  state={{ from: location, mediaType: movie.media_type }}
                   className={css.movieLink}
-                  onClick={() => {
+                  draggable="false"
+                  onClick={e => {
+                    const selection = window.getSelection();
+                    if (
+                      selection &&
+                      selection.toString().trim().length > 0 &&
+                      e.currentTarget.contains(selection.anchorNode)
+                    ) {
+                      e.preventDefault();
+                      return;
+                    }
+                    if (movie.media_type) {
+                      setMediaType(movie.id, movie.media_type);
+                    }
                     window.scrollTo({ top: 0, behavior: 'instant' });
                   }}
                 >
@@ -78,6 +94,8 @@ export const SimilarMovies = () => {
                       loading="lazy"
                     />
                     <MovieCardRatingBadge movieId={movie.id} />
+                    <MediaTypeBadge mediaType={movie.media_type || (isTv ? 'tv' : 'movie')} item={movie} />
+                    <SaveMovieButton movie={movie} />
                   </div>
                   <div className={css.titleWrapper}>
                     <span className={css.movieTitle}>{title}</span>

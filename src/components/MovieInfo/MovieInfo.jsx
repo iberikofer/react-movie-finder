@@ -225,7 +225,8 @@ export const MovieInfo = () => {
     <section className={css.infoSection} aria-label="Movie facts and watch providers">
       <div className={css.headerRow}>
         <h2 className={css.sectionTitle}>
-          <span className={css.titleIcon}>ℹ️</span> Movie Info & Where to Watch
+          <span className={css.titleIcon}>ℹ️</span>{' '}
+          {isTvShow ? 'Show Info & Where to Watch' : 'Movie Info & Where to Watch'}
         </h2>
       </div>
 

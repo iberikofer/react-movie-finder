@@ -1,14 +1,25 @@
-import { getTrendingMovies, getMoviesByGenre } from 'fetch';
-import { useState, useEffect } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { getTrendingMovies, getMoviesByGenre, setMediaType } from 'fetch';
+import { useState, useEffect, useMemo } from 'react';
+import { Link, useLocation, useSearchParams } from 'react-router-dom';
 import MovieCardRatingBadge from '../components/CriticsScore/MovieCardRatingBadge';
 import GenreFilter from '../components/GenreFilter/GenreFilter';
 import Loader from '../components/Loader/Loader';
+import MediaTypeBadge from '../components/MediaTypeBadge/MediaTypeBadge';
+import SaveMovieButton from '../components/SaveMovieButton/SaveMovieButton';
 import css from './Trending.module.css';
 
 export const Trending = () => {
   const [moviesArr, setMoviesArr] = useState([]);
-  const [selectedGenres, setSelectedGenres] = useState([]);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const rawGenres = searchParams.get('genres') || '';
+  const selectedGenres = useMemo(() => {
+    if (!rawGenres.trim()) return [];
+    return rawGenres
+      .split(',')
+      .map(id => Number(id.trim()))
+      .filter(id => !isNaN(id) && id > 0);
+  }, [rawGenres]);
+
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
@@ -20,6 +31,7 @@ export const Trending = () => {
     setIsLoading(true);
 
     const loadMovies = async () => {
+      const startTime = Date.now();
       try {
         const data =
           selectedGenres.length === 0
@@ -29,6 +41,16 @@ export const Trending = () => {
         if (!isCurrent) return;
 
         const newResults = (data?.results || []).filter(movie => movie.title || movie.name);
+        newResults.forEach(item => {
+          if (item.media_type) {
+            setMediaType(item.id, item.media_type);
+          }
+        });
+        const elapsed = Date.now() - startTime;
+        if (elapsed < 500) {
+          await new Promise(resolve => setTimeout(resolve, 500 - elapsed));
+        }
+        if (!isCurrent) return;
         setMoviesArr(newResults);
         setPage(1);
         setTotalPages(data?.total_pages || 1);
@@ -51,8 +73,12 @@ export const Trending = () => {
   }, [selectedGenres]);
 
   const handleToggleGenre = updatedGenres => {
-    setSelectedGenres(updatedGenres);
     setIsLoading(true);
+    if (updatedGenres.length > 0) {
+      setSearchParams({ genres: updatedGenres.join(',') });
+    } else {
+      setSearchParams({});
+    }
   };
 
   const handleLoadMore = async () => {
@@ -67,6 +93,11 @@ export const Trending = () => {
           : await getMoviesByGenre(selectedGenres, nextPage);
 
       const newResults = (data?.results || []).filter(movie => movie.title || movie.name);
+      newResults.forEach(item => {
+        if (item.media_type) {
+          setMediaType(item.id, item.media_type);
+        }
+      });
       setMoviesArr(prev => {
         const existingIds = new Set(prev.map(m => m.id));
         const uniqueNew = newResults.filter(m => !existingIds.has(m.id));
@@ -81,12 +112,16 @@ export const Trending = () => {
     }
   };
 
+  if (isLoading && moviesArr.length === 0) {
+    return <Loader isCentered caption="Loading trending titles..." />;
+  }
+
   return (
     <div className={css.container}>
       <div className={css.headerSection}>
         <h1 className={css.mainTitle}>Trending Today 🔥</h1>
         <p className={css.sectionDesc}>
-          Explore what millions of film enthusiasts are watching right now, powered by real-time TMDB data and community reviews.
+          Explore what millions of film/series enthusiasts are watching right now, powered by real-time TMDB data and community reviews.
         </p>
       </div>
 
@@ -97,13 +132,13 @@ export const Trending = () => {
       />
 
       {isLoading ? (
-        <Loader caption="Loading trending movies..." />
+        <Loader caption="Loading trending titles..." />
       ) : (
         <>
           {moviesArr.length === 0 ? (
             <div className={css.emptyState}>
               <span className={css.emptyIcon}>🎬</span>
-              <p className={css.emptyText}>No movies found for this genre</p>
+              <p className={css.emptyText}>No titles found for this genre</p>
             </div>
           ) : (
             <ul className={css.movieGrid}>
@@ -112,9 +147,24 @@ export const Trending = () => {
                 return (
                   <li key={movie.id} className={css.movieCard}>
                     <Link
-                      to={`/movies/${movie.id}`}
-                      state={{ from: location }}
+                      to={`/movies/${movie.id}${movie.media_type === 'tv' ? '?type=tv' : ''}`}
+                      state={{ from: location, mediaType: movie.media_type }}
                       className={css.movieLink}
+                      draggable="false"
+                      onClick={e => {
+                        const selection = window.getSelection();
+                        if (
+                          selection &&
+                          selection.toString().trim().length > 0 &&
+                          e.currentTarget.contains(selection.anchorNode)
+                        ) {
+                          e.preventDefault();
+                          return;
+                        }
+                        if (movie.media_type) {
+                          setMediaType(movie.id, movie.media_type);
+                        }
+                      }}
                     >
                       <div className={css.posterWrapper}>
                         <img
@@ -127,6 +177,8 @@ export const Trending = () => {
                           className={css.poster}
                         />
                         <MovieCardRatingBadge movieId={movie.id} />
+                        <MediaTypeBadge mediaType={movie.media_type} item={movie} />
+                        <SaveMovieButton movie={movie} />
                       </div>
                       <div className={css.titleWrapper}>
                         <span className={css.movieTitle}>{title}</span>
@@ -149,11 +201,11 @@ export const Trending = () => {
                 {isLoadingMore ? (
                   <>
                     <span className={css.spinnerIcon}>⏳</span>
-                    <span>Loading more movies...</span>
+                    <span>Loading more titles...</span>
                   </>
                 ) : (
                   <>
-                    <span>Load More Movies</span>
+                    <span>Load More Titles</span>
                     <span className={css.loadMoreArrow}>↓</span>
                   </>
                 )}

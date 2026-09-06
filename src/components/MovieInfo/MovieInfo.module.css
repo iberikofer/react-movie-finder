@@ -288,6 +288,7 @@
 }
 
 .providerCard {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 10px;
@@ -298,6 +299,15 @@
   text-decoration: none;
   cursor: pointer;
   transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+}
+
+/* Anti-hover-jitter buffer: extends hit-box beyond translateY(-2px) */
+.providerCard::before {
+  content: '';
+  position: absolute;
+  inset: -4px -2px -6px -2px;
+  border-radius: inherit;
+  pointer-events: auto;
 }
 
 .providerCard:hover {

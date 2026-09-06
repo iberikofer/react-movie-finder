@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { getMovieGenres } from 'fetch';
 import css from './GenreFilter.module.css';
 
-const GENRE_ICONS = {
+export const GENRE_ICONS = {
   all: '🔥',
   28: '💥',
   12: '🧭',
@@ -23,6 +23,52 @@ const GENRE_ICONS = {
   53: '⚡',
   10752: '⚔️',
   37: '🤠',
+  10759: '💥', // Action & Adventure (TV)
+  10762: '👶', // Kids (TV)
+  10763: '📰', // News (TV)
+  10764: '🎪', // Reality (TV)
+  10765: '🛸', // Sci-Fi & Fantasy (TV)
+  10766: '🧼', // Soap (TV)
+  10767: '🎙️', // Talk (TV)
+  10768: '⚔️', // War & Politics (TV)
+};
+
+export const getGenreIcon = (genreId, genreName = '') => {
+  if (genreId && GENRE_ICONS[genreId]) {
+    return GENRE_ICONS[genreId];
+  }
+  const clean = String(genreName).toLowerCase().trim();
+  const nameMap = {
+    action: '💥',
+    adventure: '🧭',
+    animation: '🎨',
+    comedy: '😂',
+    crime: '🕵️',
+    documentary: '📽️',
+    drama: '🎭',
+    family: '👨‍👩‍👧',
+    fantasy: '🧙',
+    history: '📜',
+    horror: '👻',
+    music: '🎵',
+    mystery: '🔍',
+    romance: '❤️',
+    'sci-fi': '🚀',
+    'science fiction': '🚀',
+    'tv movie': '📺',
+    thriller: '⚡',
+    war: '⚔️',
+    western: '🤠',
+    'action & adventure': '💥',
+    kids: '👶',
+    news: '📰',
+    reality: '🎪',
+    'sci-fi & fantasy': '🛸',
+    soap: '🧼',
+    talk: '🎙️',
+    'war & politics': '⚔️',
+  };
+  return nameMap[clean] || '🎬';
 };
 
 const POPULAR_GENRES = [
@@ -43,12 +89,27 @@ const POPULAR_GENRES = [
   { id: 99, name: 'Documentary' },
 ];
 
+const getInitialGenres = allLabel => {
+  try {
+    const cached = localStorage.getItem('tmdb_movie_genres');
+    if (cached) {
+      const parsed = JSON.parse(cached);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        return [{ id: 'all', name: allLabel }, ...parsed];
+      }
+    }
+  } catch (err) {
+    // LocalStorage fallback
+  }
+  return POPULAR_GENRES.map(g => (g.id === 'all' ? { ...g, name: allLabel } : g));
+};
+
 export const GenreFilter = ({
   selectedGenres = [],
   onToggleGenre,
   allLabel = 'All',
 }) => {
-  const [genres, setGenres] = useState(POPULAR_GENRES);
+  const [genres, setGenres] = useState(() => getInitialGenres(allLabel));
 
   useEffect(() => {
     let isMounted = true;

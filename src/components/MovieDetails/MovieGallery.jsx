@@ -330,10 +330,10 @@ export const MovieGallery = ({ movieId, movieTitle = 'Movie' }) => {
     const handleKeyDown = e => {
       if (e.key === 'Escape') {
         setLightboxIndex(null);
-      } else if (e.key === 'ArrowRight') {
+      } else if (images.length > 1 && e.key === 'ArrowRight') {
         setIsImageLoading(true);
         setLightboxIndex(prev => (prev + 1) % images.length);
-      } else if (e.key === 'ArrowLeft') {
+      } else if (images.length > 1 && e.key === 'ArrowLeft') {
         setIsImageLoading(true);
         setLightboxIndex(prev => (prev - 1 + images.length) % images.length);
       }
@@ -417,21 +417,45 @@ export const MovieGallery = ({ movieId, movieTitle = 'Movie' }) => {
           <div className={css.controlsGroup}>
             <button
               type="button"
-              className={css.navArrowBtn}
+              className={`${css.navArrowBtn} ${css.prevBtn}`}
               onClick={scrollPrev}
               aria-label="Previous photos"
               title="Previous photos"
             >
-              ‹
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className={css.arrowIcon}
+              >
+                <polyline points="15 18 9 12 15 6" />
+              </svg>
             </button>
             <button
               type="button"
-              className={css.navArrowBtn}
+              className={`${css.navArrowBtn} ${css.nextBtn}`}
               onClick={scrollNext}
               aria-label="Next photos"
               title="Next photos"
             >
-              ›
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className={css.arrowIcon}
+              >
+                <polyline points="9 18 15 12 9 6" />
+              </svg>
             </button>
           </div>
         )}
@@ -497,19 +521,21 @@ export const MovieGallery = ({ movieId, movieTitle = 'Movie' }) => {
               ✕
             </button>
 
-            <button
-              type="button"
-              className={`${css.lightboxArrow} ${css.lightboxPrev}`}
-              onClick={e => {
-                e.stopPropagation();
-                setIsImageLoading(true);
-                setLightboxIndex(prev => (prev - 1 + images.length) % images.length);
-              }}
-              aria-label="Previous image"
-              title="Previous (←)"
-            >
-              ‹
-            </button>
+            {images.length > 1 && (
+              <button
+                type="button"
+                className={`${css.lightboxArrow} ${css.lightboxPrev}`}
+                onClick={e => {
+                  e.stopPropagation();
+                  setIsImageLoading(true);
+                  setLightboxIndex(prev => (prev - 1 + images.length) % images.length);
+                }}
+                aria-label="Previous image"
+                title="Previous (←)"
+              >
+                ‹
+              </button>
+            )}
 
             <div
               className={css.lightboxContent}
@@ -541,26 +567,34 @@ export const MovieGallery = ({ movieId, movieTitle = 'Movie' }) => {
 
               <div className={css.lightboxFooter}>
                 <span className={css.lightboxTitle}>{movieTitle}</span>
-                <span className={css.lightboxCounter}>
-                  {lightboxIndex + 1} / {images.length}
+                {images.length > 1 && (
+                  <span className={css.lightboxCounter}>
+                    {lightboxIndex + 1} / {images.length}
+                  </span>
+                )}
+                <span className={css.lightboxTip}>
+                  {images.length > 1
+                    ? 'Use ← / → arrows or Esc to close'
+                    : 'Press Esc or click outside to close'}
                 </span>
-                <span className={css.lightboxTip}>Use ← / → arrows or Esc to close</span>
               </div>
             </div>
 
-            <button
-              type="button"
-              className={`${css.lightboxArrow} ${css.lightboxNext}`}
-              onClick={e => {
-                e.stopPropagation();
-                setIsImageLoading(true);
-                setLightboxIndex(prev => (prev + 1) % images.length);
-              }}
-              aria-label="Next image"
-              title="Next (→)"
-            >
-              ›
-            </button>
+            {images.length > 1 && (
+              <button
+                type="button"
+                className={`${css.lightboxArrow} ${css.lightboxNext}`}
+                onClick={e => {
+                  e.stopPropagation();
+                  setIsImageLoading(true);
+                  setLightboxIndex(prev => (prev + 1) % images.length);
+                }}
+                aria-label="Next image"
+                title="Next (→)"
+              >
+                ›
+              </button>
+            )}
           </div>,
           document.body
         );

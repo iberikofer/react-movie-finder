@@ -1,21 +1,71 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, Suspense } from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
+import { useSavedMovies } from '../../hooks/useSavedMovies';
+import Loader from '../Loader/Loader';
 import css from './Header.module.css';
 
 export const Header = () => {
+  const { savedCount } = useSavedMovies();
   // status: 'idle' | 'confirming' | 'deleted'
   const [status, setStatus] = useState('idle');
   const timerRef = useRef(null);
   const buttonRef = useRef(null);
   const location = useLocation();
 
-  // Reset confirmation state only when navigating to a different route
+  const navRef = useRef(null);
+  const [indicatorStyle, setIndicatorStyle] = useState({
+    left: 0,
+    width: 0,
+    opacity: 0,
+  });
+  const [hasTransition, setHasTransition] = useState(false);
+
+  // Enable sliding transition after initial mount positioning
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setHasTransition(true);
+    }, 80);
+    return () => clearTimeout(timer);
+  }, []);
+
+  // Update sliding underline position when route or saved count changes
+  useEffect(() => {
+    const updateIndicator = () => {
+      if (!navRef.current) return;
+      const activeEl = navRef.current.querySelector(`.${css.activeLink}`);
+      if (activeEl) {
+        const navRect = navRef.current.getBoundingClientRect();
+        const activeRect = activeEl.getBoundingClientRect();
+        setIndicatorStyle({
+          left: activeRect.left - navRect.left,
+          width: activeRect.width,
+          opacity: 1,
+        });
+      } else {
+        setIndicatorStyle(prev => ({ ...prev, opacity: 0 }));
+      }
+    };
+
+    updateIndicator();
+
+    if (document.fonts && document.fonts.ready) {
+      document.fonts.ready.then(updateIndicator);
+    }
+
+    window.addEventListener('resize', updateIndicator);
+    return () => {
+      window.removeEventListener('resize', updateIndicator);
+    };
+  }, [location.pathname, savedCount]);
+
+  // Reset confirmation state & scroll to top when navigating to a different route
   const prevPathnameRef = useRef(location.pathname);
   useEffect(() => {
     if (prevPathnameRef.current !== location.pathname) {
       prevPathnameRef.current = location.pathname;
       if (timerRef.current) clearTimeout(timerRef.current);
       setStatus('idle');
+      window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
     }
   }, [location.pathname]);
 
@@ -99,7 +149,11 @@ export const Header = () => {
             </NavLink>
           </div>
 
-          <nav className={css.navigation} aria-label="Main navigation">
+          <nav
+            className={css.navigation}
+            ref={navRef}
+            aria-label="Main navigation"
+          >
             <NavLink
               to="/"
               end
@@ -108,6 +162,17 @@ export const Header = () => {
               }
             >
               Home
+            </NavLink>
+            <NavLink
+              to="/saved"
+              className={({ isActive }) =>
+                `${css.navLink} ${isActive ? css.activeLink : ''}`
+              }
+            >
+              <span>Saved</span>
+              {savedCount > 0 && (
+                <span className={css.savedBadge}>{savedCount}</span>
+              )}
             </NavLink>
             <NavLink
               to="/trending"
@@ -125,6 +190,17 @@ export const Header = () => {
             >
               Search
             </NavLink>
+            <span
+              className={`${css.navIndicator} ${
+                hasTransition ? css.navIndicatorTransition : ''
+              }`}
+              style={{
+                left: `${indicatorStyle.left}px`,
+                width: `${indicatorStyle.width}px`,
+                opacity: indicatorStyle.opacity,
+              }}
+              aria-hidden="true"
+            />
           </nav>
 
           <div className={css.headerActions}>
@@ -164,7 +240,11 @@ export const Header = () => {
       </header>
 
       <main className={css.mainContent}>
-        <Outlet />
+        <Suspense fallback={<Loader isCentered caption="Loading scene..." />}>
+          <div key={location.pathname} className={css.contentFadeIn}>
+            <Outlet />
+          </div>
+        </Suspense>
       </main>
     </>
   );

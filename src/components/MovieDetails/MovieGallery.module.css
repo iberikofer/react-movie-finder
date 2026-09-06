@@ -55,32 +55,58 @@
 }
 
 .navArrowBtn {
-  width: 34px;
-  height: 34px;
+  position: relative;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
-  border: 1px solid rgba(254, 243, 199, 0.2);
-  background: rgba(254, 243, 199, 0.08);
-  color: var(--color-text);
-  font-size: 1.35rem;
-  line-height: 1;
-  display: flex;
+  border: 1px solid rgba(16, 185, 129, 0.35);
+  background: rgba(6, 44, 38, 0.7);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  color: #34d399;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: all 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
   user-select: none;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.35);
+  outline: none;
+}
+
+.arrowIcon {
+  display: block;
+  transition: transform 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+/* Anti-hover-jitter buffer: extends circular hit-box beyond translateY(-2px) scale(1.12) */
+.navArrowBtn::before {
+  content: '';
+  position: absolute;
+  inset: -8px;
+  border-radius: 50%;
+  pointer-events: auto;
 }
 
 .navArrowBtn:hover {
-  background: rgba(15, 163, 127, 0.35);
-  border-color: rgba(15, 163, 127, 0.6);
+  background: linear-gradient(135deg, rgba(15, 163, 127, 0.5) 0%, rgba(16, 185, 129, 0.7) 100%);
+  border-color: #34d399;
   color: #ffffff;
-  transform: scale(1.08);
-  box-shadow: 0 0 14px rgba(15, 163, 127, 0.35);
+  transform: translateY(-2px) scale(1.12);
+  box-shadow: 0 6px 20px rgba(16, 185, 129, 0.5), 0 0 14px rgba(52, 211, 153, 0.4);
+}
+
+.prevBtn:hover .arrowIcon {
+  transform: translateX(-2.5px);
+}
+
+.nextBtn:hover .arrowIcon {
+  transform: translateX(2.5px);
 }
 
 .navArrowBtn:active {
-  transform: scale(0.96);
+  transform: scale(0.9);
+  transition-duration: 0.08s;
 }
 
 /* Single-row horizontal carousel */
@@ -125,13 +151,21 @@
   aspect-ratio: 16 / 9;
   position: relative;
   border-radius: 8px;
-  overflow: hidden;
   border: 1px solid rgba(254, 243, 199, 0.12);
   background: rgba(0, 0, 0, 0.3);
   cursor: pointer;
   transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1),
     border-color 0.25s ease,
     box-shadow 0.25s ease;
+}
+
+/* Anti-hover-jitter buffer: extends hit-box beyond translateY(-4px) */
+.photoCard::before {
+  content: '';
+  position: absolute;
+  inset: -4px -2px -10px -2px;
+  border-radius: inherit;
+  pointer-events: auto;
 }
 
 .photoCard:hover {
@@ -145,6 +179,7 @@
   height: 100%;
   object-fit: cover;
   display: block;
+  border-radius: 7px;
   transition: transform 0.35s ease;
 }
 
@@ -156,6 +191,7 @@
   position: absolute;
   inset: 0;
   background: rgba(6, 44, 38, 0.4);
+  border-radius: 7px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -336,6 +372,10 @@
   border-color: #34d399;
   transform: translateY(-50%) scale(1.1);
   box-shadow: 0 0 22px rgba(15, 163, 127, 0.55);
+}
+
+.lightboxArrow:active {
+  transform: translateY(-50%) scale(0.92);
 }
 
 .lightboxImageWrapper {

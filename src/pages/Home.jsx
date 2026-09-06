@@ -1,4 +1,6 @@
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import Loader from '../components/Loader/Loader';
 import css from './Home.module.css';
 
 const TECH_STACK = [
@@ -39,19 +41,44 @@ const TECH_STACK = [
     title: 'MDN Web Docs: Date.now() / Unix Epoch Time',
   },
   {
-    name: 'Suspense Code Splitting',
-    icon: '⚡',
-    url: 'https://react.dev/reference/react/Suspense',
-    title: 'React Documentation: Suspense & Code Splitting',
+    name: 'Fullscreen Photo Lightbox',
+    icon: '📸',
+    url: 'https://developer.mozilla.org/en-US/docs/Web/HTML/Element/dialog',
+    title: 'Interactive keyboard-navigable image gallery modal',
+  },
+  {
+    name: 'SVG Vector Icons',
+    icon: '✨',
+    url: 'https://feathericons.com/',
+    title: 'Crisp resolution-independent vector icons',
   },
 ];
 
+let hasLoadedHomeOnce = false;
+
 export const Home = () => {
+  const [isInitialLoading, setIsInitialLoading] = useState(!hasLoadedHomeOnce);
+
+  // Guarantee 0.5s initial centered loader ONLY on first load / reload of Home page
+  useEffect(() => {
+    if (!hasLoadedHomeOnce) {
+      const timer = setTimeout(() => {
+        hasLoadedHomeOnce = true;
+        setIsInitialLoading(false);
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, []);
+
+  if (isInitialLoading) {
+    return <Loader isCentered caption="Loading home..." />;
+  }
+
   return (
     <div className={css.homeContainer}>
       <section className={css.heroSection}>
         <h1 className={css.heroTitle}>
-          Discover Movies with <span className={css.titleHighlight}>Precision Critics Scoring</span> & Cinematic Elegance
+          Discover Movies with Precision Critics Scoring & Cinematic Elegance
         </h1>
 
         <p className={css.heroSubtitle}>
@@ -68,12 +95,12 @@ export const Home = () => {
             <span className={css.statLabel}>Half-Star Scoring Engine</span>
           </div>
           <div className={css.statCard}>
-            <span className={css.statNumber}>60 FPS</span>
-            <span className={css.statLabel}>Ambient Canvas Wave</span>
+            <span className={css.statNumber}>19+</span>
+            <span className={css.statLabel}>Curated Genre Filters</span>
           </div>
           <div className={css.statCard}>
             <span className={css.statNumber}>100%</span>
-            <span className={css.statLabel}>Responsive Layout</span>
+            <span className={css.statLabel}>Cross-Tab Synced</span>
           </div>
         </div>
       </section>
@@ -97,7 +124,46 @@ export const Home = () => {
             <ul className={css.featureList}>
               <li>Instant mathematical mapping between systems</li>
               <li>Interactive star-rating input for personal ratings</li>
-              <li>Dynamic color feedback (emerald, amber, rose)</li>
+              <li>Dynamic rating distribution breakdown tab</li>
+            </ul>
+          </div>
+
+          <div className={css.featureCard}>
+            <div className={css.featureIcon}>🔖</div>
+            <h3 className={css.featureTitle}>Personal Saved Watchlist</h3>
+            <p className={css.featureText}>
+              Bookmark movies & TV series with a single click directly from poster cards or right beside the title in details view.
+            </p>
+            <ul className={css.featureList}>
+              <li>Live header counter badge updated instantly</li>
+              <li>Category filtering (All, Movies, TV Series)</li>
+              <li>2-step safe clear confirmation protection</li>
+            </ul>
+          </div>
+
+          <div className={css.featureCard}>
+            <div className={css.featureIcon}>🏷️</div>
+            <h3 className={css.featureTitle}>Film / Series & Genre Discovery</h3>
+            <p className={css.featureText}>
+              Explore what millions are watching with instant genre filtering and clear media format identification.
+            </p>
+            <ul className={css.featureList}>
+              <li>Dedicated visual badges for 🎬 MOVIE vs 📺 SERIES</li>
+              <li>Real-time genre filters with multi-selection support</li>
+              <li>1500ms debounced text search with URL synchronization</li>
+            </ul>
+          </div>
+
+          <div className={css.featureCard}>
+            <div className={css.featureIcon}>📸</div>
+            <h3 className={css.featureTitle}>Cinematic Lightbox & Media Hub</h3>
+            <p className={css.featureText}>
+              Deep-dive into each title with high-definition backdrop galleries, embedded trailers, and comprehensive crew information.
+            </p>
+            <ul className={css.featureList}>
+              <li>Keyboard-navigable (Esc / Arrows) modal photo lightbox</li>
+              <li>Embedded official YouTube trailer player</li>
+              <li>Cast with character roles, community reviews & similar titles</li>
             </ul>
           </div>
 
@@ -105,7 +171,7 @@ export const Home = () => {
             <div className={css.featureIcon}>🔄</div>
             <h3 className={css.featureTitle}>Zero-Latency Sync Bus</h3>
             <p className={css.featureText}>
-              Rate a film or add it to favorites in one window and watch your dashboard update instantaneously across all other browser tabs.
+              Rate a film or bookmark a title in one window and watch your dashboard update instantaneously across all other browser tabs.
             </p>
             <ul className={css.featureList}>
               <li>Cross-window DOM event dispatching</li>
@@ -115,28 +181,15 @@ export const Home = () => {
           </div>
 
           <div className={css.featureCard}>
-            <div className={css.featureIcon}>⚡</div>
-            <h3 className={css.featureTitle}>Suspense-Driven Code Splitting</h3>
-            <p className={css.featureText}>
-              Sub-second initial payload delivery powered by asynchronous route chunking and lazy-loaded movie sub-views.
-            </p>
-            <ul className={css.featureList}>
-              <li>Asynchronous Cast, Reviews, and Trailers</li>
-              <li>Non-blocking background image prefetching</li>
-              <li>Smooth fallback loaders with shimmer effects</li>
-            </ul>
-          </div>
-
-          <div className={css.featureCard}>
             <div className={css.featureIcon}>🌊</div>
-            <h3 className={css.featureTitle}>Persistent Ambient Canvas</h3>
+            <h3 className={css.featureTitle}>Persistent Ambient Atmosphere</h3>
             <p className={css.featureText}>
-              A pure linear iridescent background in deep emerald green with warm cherry wine accents that flows perpetually across 28s and 36s orbital wave cycles.
+              A pure linear iridescent background in deep emerald green with warm cherry wine accents that flows perpetually across orbital wave cycles.
             </p>
             <ul className={css.featureList}>
-              <li>Lives outside React root for 100% route immunity</li>
               <li>Synchronized to real-world epoch time (never resets on F5)</li>
-              <li>GPU-composited transforms for silky 60 FPS performance</li>
+              <li>Custom animated clapperboard loader with 0.5s stabilization</li>
+              <li>Anti-hover-jitter buffers for silky-smooth cursor interactions</li>
             </ul>
           </div>
         </div>
@@ -165,7 +218,7 @@ export const Home = () => {
         <div className={css.bottomCtaInner}>
           <h2 className={css.bottomCtaTitle}>Ready to Find Your Next Movie?</h2>
           <p className={css.bottomCtaDesc}>
-            Explore the latest trending films or search across TMDB's massive library.
+            Explore the latest trending films, search across TMDB's massive library, or organize your personal watchlist.
           </p>
           <div className={css.bottomCtaButtons}>
             <Link to="/trending" className={css.primaryCta}>
@@ -173,6 +226,9 @@ export const Home = () => {
             </Link>
             <Link to="/movies" className={css.secondaryCta}>
               <span>🔍 Search Film Titles</span>
+            </Link>
+            <Link to="/saved" className={css.secondaryCta}>
+              <span>🔖 My Saved Watchlist</span>
             </Link>
           </div>
         </div>

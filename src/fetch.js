@@ -22,9 +22,9 @@ const request = async endpoint => {
   return response.json();
 };
 
-export const getMovies = queryText => {
+export const getMovies = (queryText, page = 1) => {
   return request(
-    `/search/movie?query=${encodeURIComponent(queryText)}&include_adult=false&language=en-US&page=1`
+    `/search/movie?query=${encodeURIComponent(queryText)}&include_adult=false&language=en-US&page=${page}`
   );
 };
 
@@ -33,9 +33,30 @@ export const getTrendingMovies = (page = 1) => {
 };
 
 export const getMovieGenres = async () => {
+  const STORAGE_KEY = 'tmdb_movie_genres';
+  try {
+    const cached = localStorage.getItem(STORAGE_KEY);
+    if (cached) {
+      const parsed = JSON.parse(cached);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        return parsed;
+      }
+    }
+  } catch (err) {
+    // LocalStorage read error fallback
+  }
+
   try {
     const data = await request('/genre/movie/list?language=en-US');
-    return data.genres || [];
+    const genres = data.genres || [];
+    if (genres.length > 0) {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(genres));
+      } catch (err) {
+        // LocalStorage write error fallback
+      }
+    }
+    return genres;
   } catch (error) {
     console.error('Failed to load genres:', error);
     return [];
@@ -49,116 +70,236 @@ export const getMoviesByGenre = (genreIds, page = 1) => {
   );
 };
 
-export const getMovieDetails = async movieId => {
-  try {
+// Cache to remember whether an ID is a movie or TV show so that sub-requests (credits, reviews, images, etc.) use the correct endpoint
+const mediaTypeCache = new Map();
+
+export const setMediaType = (id, type) => {
+  if (id && type) {
+    mediaTypeCache.set(String(id), type);
+  }
+};
+
+export const getMediaType = id => {
+  return mediaTypeCache.get(String(id));
+};
+
+export const getMovieDetails = async (movieId, explicitType) => {
+  const resolvedType = explicitType || mediaTypeCache.get(String(movieId));
+
+  if (resolvedType === 'tv') {
+    const tvData = await request(`/tv/${movieId}?language=en-US`);
+    mediaTypeCache.set(String(movieId), 'tv');
+    return {
+      ...tvData,
+      media_type: 'tv',
+      title: tvData.name || tvData.original_name,
+      release_date: tvData.first_air_date,
+    };
+  }
+
+  if (resolvedType === 'movie') {
     const movieData = await request(`/movie/${movieId}?language=en-US`);
+    mediaTypeCache.set(String(movieId), 'movie');
     return {
       ...movieData,
+      media_type: 'movie',
       title: movieData.title || movieData.original_title,
     };
-  } catch (movieErr) {
-    try {
-      const tvData = await request(`/tv/${movieId}?language=en-US`);
+  }
+
+  // If type is unknown, query both movie and tv in parallel to resolve TMDB ID collisions
+  const [movieRes, tvRes] = await Promise.allSettled([
+    request(`/movie/${movieId}?language=en-US`),
+    request(`/tv/${movieId}?language=en-US`),
+  ]);
+
+  const movieData = movieRes.status === 'fulfilled' ? movieRes.value : null;
+  const tvData = tvRes.status === 'fulfilled' ? tvRes.value : null;
+
+  if (movieData && !tvData) {
+    mediaTypeCache.set(String(movieId), 'movie');
+    return {
+      ...movieData,
+      media_type: 'movie',
+      title: movieData.title || movieData.original_title,
+    };
+  }
+
+  if (tvData && !movieData) {
+    mediaTypeCache.set(String(movieId), 'tv');
+    return {
+      ...tvData,
+      media_type: 'tv',
+      title: tvData.name || tvData.original_name,
+      release_date: tvData.first_air_date,
+    };
+  }
+
+  if (movieData && tvData) {
+    // Both exist (ID collision in TMDB namespaces)
+    // Compare popularity and poster existence to pick the item the user intended to see
+    const movieHasPoster = !!movieData.poster_path;
+    const tvHasPoster = !!tvData.poster_path;
+    const moviePop = movieData.popularity || 0;
+    const tvPop = tvData.popularity || 0;
+
+    const pickTv =
+      (!movieHasPoster && tvHasPoster) ||
+      (tvPop > moviePop * 2 && tvHasPoster);
+
+    if (pickTv) {
+      mediaTypeCache.set(String(movieId), 'tv');
       return {
         ...tvData,
+        media_type: 'tv',
         title: tvData.name || tvData.original_name,
         release_date: tvData.first_air_date,
       };
-    } catch (tvErr) {
-      throw movieErr;
     }
+
+    mediaTypeCache.set(String(movieId), 'movie');
+    return {
+      ...movieData,
+      media_type: 'movie',
+      title: movieData.title || movieData.original_title,
+    };
   }
+
+  throw new Error(`Item ${movieId} not found in TMDB`);
 };
 
-export const getMovieCredits = async movieId => {
+export const getMovieCredits = async (movieId, explicitType) => {
+  const type = explicitType || mediaTypeCache.get(String(movieId));
+  const primary =
+    type === 'tv'
+      ? `/tv/${movieId}/credits?language=en-US`
+      : `/movie/${movieId}/credits?language=en-US`;
+  const fallback =
+    type === 'tv'
+      ? `/movie/${movieId}/credits?language=en-US`
+      : `/tv/${movieId}/credits?language=en-US`;
+
   try {
-    return await request(`/movie/${movieId}/credits?language=en-US`);
+    return await request(primary);
   } catch (movieErr) {
     try {
-      return await request(`/tv/${movieId}/credits?language=en-US`);
+      return await request(fallback);
     } catch (tvErr) {
       throw movieErr;
     }
   }
 };
 
-export const getMovieReviews = async movieId => {
+export const getMovieReviews = async (movieId, explicitType) => {
+  const type = explicitType || mediaTypeCache.get(String(movieId));
+  const primary =
+    type === 'tv'
+      ? `/tv/${movieId}/reviews?language=en-US&page=1`
+      : `/movie/${movieId}/reviews?language=en-US&page=1`;
+  const fallback =
+    type === 'tv'
+      ? `/movie/${movieId}/reviews?language=en-US&page=1`
+      : `/tv/${movieId}/reviews?language=en-US&page=1`;
+
   try {
-    return await request(`/movie/${movieId}/reviews?language=en-US&page=1`);
+    return await request(primary);
   } catch (movieErr) {
     try {
-      return await request(`/tv/${movieId}/reviews?language=en-US&page=1`);
+      return await request(fallback);
     } catch (tvErr) {
       throw movieErr;
     }
   }
 };
 
-export const getMovieVideos = async movieId => {
+export const getMovieVideos = async (movieId, explicitType) => {
+  const type = explicitType || mediaTypeCache.get(String(movieId));
+  const primary =
+    type === 'tv'
+      ? `/tv/${movieId}/videos?language=en-US`
+      : `/movie/${movieId}/videos?language=en-US`;
+  const fallback =
+    type === 'tv'
+      ? `/movie/${movieId}/videos?language=en-US`
+      : `/tv/${movieId}/videos?language=en-US`;
+
   try {
-    const data = await request(`/movie/${movieId}/videos?language=en-US`);
+    const data = await request(primary);
     if (data.results && data.results.length > 0) return data;
-    return await request(`/movie/${movieId}/videos`);
+    return await request(type === 'tv' ? `/tv/${movieId}/videos` : `/movie/${movieId}/videos`);
   } catch (movieErr) {
     try {
-      const tvData = await request(`/tv/${movieId}/videos?language=en-US`);
-      if (tvData.results && tvData.results.length > 0) return tvData;
-      return await request(`/tv/${movieId}/videos`);
+      const data = await request(fallback);
+      if (data.results && data.results.length > 0) return data;
+      return await request(type === 'tv' ? `/movie/${movieId}/videos` : `/tv/${movieId}/videos`);
     } catch (tvErr) {
       throw movieErr;
     }
   }
 };
 
-export const getSimilarMovies = async movieId => {
+export const getSimilarMovies = async (movieId, explicitType) => {
+  const type = explicitType || mediaTypeCache.get(String(movieId));
   const normalizeResults = data => ({
     ...data,
     results: (data.results || []).map(item => ({
       ...item,
+      media_type: item.media_type || type || (item.title ? 'movie' : 'tv'),
       title: item.title || item.name || item.original_title || item.original_name,
       release_date: item.release_date || item.first_air_date,
     })),
   });
 
+  const base = type === 'tv' ? `/tv/${movieId}` : `/movie/${movieId}`;
+  const fallbackBase = type === 'tv' ? `/movie/${movieId}` : `/tv/${movieId}`;
+
   try {
-    const recData = await request(`/movie/${movieId}/recommendations?language=en-US&page=1`);
+    const recData = await request(`${base}/recommendations?language=en-US&page=1`);
     if (recData.results && recData.results.length > 0) {
       return normalizeResults(recData);
     }
-    const simData = await request(`/movie/${movieId}/similar?language=en-US&page=1`);
+    const simData = await request(`${base}/similar?language=en-US&page=1`);
     return normalizeResults(simData);
-  } catch (movieErr) {
+  } catch (primaryErr) {
     try {
-      const tvRecData = await request(`/tv/${movieId}/recommendations?language=en-US&page=1`);
-      if (tvRecData.results && tvRecData.results.length > 0) {
-        return normalizeResults(tvRecData);
+      const recData = await request(`${fallbackBase}/recommendations?language=en-US&page=1`);
+      if (recData.results && recData.results.length > 0) {
+        return normalizeResults(recData);
       }
-      const tvSimData = await request(`/tv/${movieId}/similar?language=en-US&page=1`);
-      return normalizeResults(tvSimData);
+      const simData = await request(`${fallbackBase}/similar?language=en-US&page=1`);
+      return normalizeResults(simData);
+    } catch (fallbackErr) {
+      throw primaryErr;
+    }
+  }
+};
+
+export const getMovieWatchProviders = async (movieId, explicitType) => {
+  const type = explicitType || mediaTypeCache.get(String(movieId));
+  const primary = type === 'tv' ? `/tv/${movieId}/watch/providers` : `/movie/${movieId}/watch/providers`;
+  const fallback = type === 'tv' ? `/movie/${movieId}/watch/providers` : `/tv/${movieId}/watch/providers`;
+
+  try {
+    return await request(primary);
+  } catch (movieErr) {
+    try {
+      return await request(fallback);
     } catch (tvErr) {
       throw movieErr;
     }
   }
 };
 
-export const getMovieWatchProviders = async movieId => {
-  try {
-    return await request(`/movie/${movieId}/watch/providers`);
-  } catch (movieErr) {
-    try {
-      return await request(`/tv/${movieId}/watch/providers`);
-    } catch (tvErr) {
-      throw movieErr;
-    }
-  }
-};
+export const getMovieImages = async (movieId, explicitType) => {
+  const type = explicitType || mediaTypeCache.get(String(movieId));
+  const primary = type === 'tv' ? `/tv/${movieId}/images` : `/movie/${movieId}/images`;
+  const fallback = type === 'tv' ? `/movie/${movieId}/images` : `/tv/${movieId}/images`;
 
-export const getMovieImages = async movieId => {
   try {
-    return await request(`/movie/${movieId}/images`);
+    return await request(primary);
   } catch (movieErr) {
     try {
-      return await request(`/tv/${movieId}/images`);
+      return await request(fallback);
     } catch (tvErr) {
       throw movieErr;
     }

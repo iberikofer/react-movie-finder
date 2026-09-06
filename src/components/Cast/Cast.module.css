@@ -42,12 +42,22 @@
 }
 
 .castItem {
+  position: relative;
   text-align: center;
   background: rgba(6, 44, 38, 0.45);
   border: 1px solid rgba(254, 243, 199, 0.12);
   padding: 10px;
   border-radius: 12px;
   transition: transform 0.2s ease, border-color 0.2s ease;
+}
+
+/* Anti-hover-jitter buffer: extends hit-box beyond translateY(-4px) */
+.castItem::before {
+  content: '';
+  position: absolute;
+  inset: -4px -2px -10px -2px;
+  border-radius: inherit;
+  pointer-events: auto;
 }
 
 .castItem:hover {

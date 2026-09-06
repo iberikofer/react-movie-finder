@@ -3,10 +3,19 @@
    ========================================================================== */
 
 .criticsScoreWrapper {
-  margin: 16px 0 24px 0;
+  margin: 18px 0 20px 0;
   display: flex;
   flex-direction: column;
   gap: 16px;
+  width: 100%;
+  user-select: none;
+  -webkit-user-select: none;
+  cursor: default;
+}
+
+.criticsScoreWrapper * {
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 /* ==========================================================================
@@ -18,7 +27,10 @@
   flex-wrap: wrap;
   align-items: center;
   gap: 10px 14px;
-  padding: 12px 16px;
+  padding: 10px 16px;
+  min-height: 56px;
+  box-sizing: border-box;
+  width: 100%;
   background: rgba(42, 8, 12, 0.45);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
@@ -32,6 +44,7 @@
   font-size: 1.05rem;
   color: var(--color-text);
   letter-spacing: 0.3px;
+  line-height: 1;
 }
 
 .starsRow {
@@ -45,12 +58,14 @@
   font-size: 1.15rem;
   color: var(--color-text);
   margin-left: 2px;
+  line-height: 1;
 }
 
 .voteCount {
   color: var(--color-text-muted);
   font-size: 0.9rem;
   font-weight: 500;
+  line-height: 1;
 }
 
 .emptyInvite {
@@ -58,14 +73,20 @@
   font-style: italic;
   font-size: 0.95rem;
   letter-spacing: 0.2px;
+  display: inline-flex;
+  align-items: center;
+  line-height: 1;
 }
 
 .resetBtn {
+  position: relative;
   margin-left: auto;
   background: rgba(254, 243, 199, 0.08);
   border: 1px solid rgba(254, 243, 199, 0.2);
   color: var(--color-text-muted);
-  padding: 5px 12px;
+  padding: 0 14px;
+  height: 32px;
+  box-sizing: border-box;
   border-radius: 8px;
   font-size: 0.8rem;
   font-weight: 600;
@@ -74,6 +95,16 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
+  line-height: 1;
+}
+
+/* Anti-hover-jitter buffer: extends hit-box beyond translateY(-1px) */
+.resetBtn::before {
+  content: '';
+  position: absolute;
+  inset: -4px -2px -6px -2px;
+  border-radius: inherit;
+  pointer-events: auto;
 }
 
 .resetBtn:hover {
@@ -92,7 +123,7 @@
   display: inline-flex;
   flex-direction: row;
   align-items: center;
-  gap: 14px;
+  gap: 12px;
   padding: 8px 16px;
   background: rgba(6, 44, 38, 0.45);
   backdrop-filter: blur(12px);
@@ -105,17 +136,14 @@
 }
 
 .inputHeading {
-  font-size: 0.82rem;
+  font-size: 0.92rem;
   font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.8px;
-  color: var(--color-text-muted);
+  letter-spacing: 0.3px;
+  color: var(--color-text);
   display: inline-flex;
   align-items: center;
   white-space: nowrap;
   user-select: none;
-  padding-right: 14px;
-  border-right: 1px solid rgba(254, 243, 199, 0.18);
 }
 
 .starInputGroup {
@@ -140,11 +168,19 @@
 }
 
 .starSlot:hover {
-  transform: scale(1.18);
+  transform: scale(1.15);
 }
 
 .starSlot:active {
   transform: scale(0.95);
+}
+
+.starIconWrapper {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
 }
 
 /* Invisible half-star hit areas */
@@ -172,7 +208,7 @@
   bottom: calc(100% + 12px);
   left: 50%;
   transform: translateX(-50%);
-  background: rgba(6, 44, 38, 0.9);
+  background: rgba(6, 44, 38, 0.95);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   border: 1px solid rgba(254, 243, 199, 0.25);
@@ -197,7 +233,7 @@
   transform: translateX(-50%);
   border-width: 6px;
   border-style: solid;
-  border-color: rgba(6, 44, 38, 0.9) transparent transparent transparent;
+  border-color: rgba(6, 44, 38, 0.95) transparent transparent transparent;
 }
 
 @keyframes fadeInTooltip {
@@ -211,8 +247,42 @@
   }
 }
 
-/* Burst Animation */
-.burstContainer {
+/* ==========================================================================
+   Variant 3: Neon Flash & Double Heartbeat with Yellow Shockwave Ring
+   ========================================================================== */
+
+.starActive {
+  animation: starNeonHeartbeat 0.6s ease-in-out;
+}
+
+@keyframes starNeonHeartbeat {
+  0% {
+    transform: scale(1);
+    filter: brightness(1);
+  }
+  15% {
+    transform: scale(1.32);
+    filter: brightness(2.6) drop-shadow(0 0 14px #fbbf24) drop-shadow(0 0 24px #f59e0b);
+  }
+  35% {
+    transform: scale(0.92);
+    filter: brightness(1.4) drop-shadow(0 0 8px #fbbf24);
+  }
+  55% {
+    transform: scale(1.18);
+    filter: brightness(2) drop-shadow(0 0 12px #fbbf24);
+  }
+  80% {
+    transform: scale(0.98);
+    filter: brightness(1.1);
+  }
+  100% {
+    transform: scale(1);
+    filter: brightness(1);
+  }
+}
+
+.burstOverlay {
   position: absolute;
   top: 50%;
   left: 50%;
@@ -220,34 +290,34 @@
   pointer-events: none;
   width: 120px;
   height: 120px;
-  z-index: 20;
+  z-index: 25;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.burstParticle {
+/* Yellow Shockwave Ring */
+.neonRingYellow {
   position: absolute;
   top: 50%;
   left: 50%;
-  width: var(--size, 10px);
-  height: var(--size, 10px);
-  background: radial-gradient(circle, #ffffff 20%, #fef3c7 45%, #f59e0b 100%);
+  width: 28px;
+  height: 28px;
   border-radius: 50%;
-  box-shadow: 0 0 10px rgba(245, 158, 11, 0.9), 0 0 4px #ffffff;
-  transform: translate(-50%, -50%);
+  border: 2px solid #fbbf24;
+  box-shadow: 0 0 14px #fbbf24, 0 0 24px rgba(245, 158, 11, 0.75), inset 0 0 8px #fde047;
+  transform: translate(-50%, -50%) scale(0.4);
   pointer-events: none;
-  animation: particleFly 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: yellowNeonWave 0.55s cubic-bezier(0.1, 0.8, 0.25, 1) forwards;
 }
 
-@keyframes particleFly {
+@keyframes yellowNeonWave {
   0% {
-    transform: translate(-50%, -50%) rotate(var(--angle)) translateY(0) scale(0.4);
+    transform: translate(-50%, -50%) scale(0.4);
     opacity: 1;
   }
-  35% {
-    transform: translate(-50%, -50%) rotate(var(--angle)) translateY(var(--dist-mid, 22px)) scale(1.25);
-    opacity: 0.95;
-  }
   100% {
-    transform: translate(-50%, -50%) rotate(var(--angle)) translateY(var(--dist, 48px)) scale(0);
+    transform: translate(-50%, -50%) scale(2.6);
     opacity: 0;
   }
 }
@@ -268,6 +338,14 @@
   display: flex;
   flex-direction: column;
   gap: 28px;
+  user-select: none;
+  -webkit-user-select: none;
+  cursor: default;
+}
+
+.distributionContainer * {
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 .distributionContainer .headerRow {

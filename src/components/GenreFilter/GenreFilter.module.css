@@ -16,6 +16,7 @@
 }
 
 .genrePill {
+  position: relative;
   display: inline-flex;
   align-items: center;
   gap: 7px;
@@ -30,11 +31,20 @@
   -webkit-backdrop-filter: blur(10px);
   cursor: pointer;
   user-select: none;
-  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+  transition: transform 0.15s cubic-bezier(0.2, 0.8, 0.2, 1),
               background 0.2s ease,
               border-color 0.2s ease,
               box-shadow 0.2s ease,
               color 0.2s ease;
+}
+
+/* Anti-hover-jitter buffer: extends hit-box beyond translateY offset */
+.genrePill::before {
+  content: '';
+  position: absolute;
+  inset: -4px -2px -6px -2px;
+  border-radius: inherit;
+  pointer-events: auto;
 }
 
 .genrePill:hover {
@@ -44,16 +54,31 @@
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
 }
 
+.genrePill:active {
+  transform: scale(0.91) translateY(1px);
+  transition-duration: 0.08s;
+}
+
 .genrePillActive {
-  background: linear-gradient(135deg, rgba(16, 185, 129, 0.32) 0%, rgba(6, 44, 38, 0.7) 100%);
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.35) 0%, rgba(6, 44, 38, 0.75) 100%);
   border-color: #10b981;
   color: #ffffff;
   font-weight: 700;
   box-shadow: 0 4px 16px rgba(16, 185, 129, 0.35), 0 0 10px rgba(16, 185, 129, 0.2);
+  animation: pillPop 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-.genrePill:active {
-  transform: translateY(0);
+@keyframes pillPop {
+  0% {
+    transform: scale(0.9);
+  }
+  50% {
+    transform: scale(1.08);
+    box-shadow: 0 0 20px rgba(16, 185, 129, 0.6), 0 0 35px rgba(16, 185, 129, 0.3);
+  }
+  100% {
+    transform: scale(1);
+  }
 }
 
 .pillIcon {
@@ -64,7 +89,26 @@
 }
 
 .genrePill:hover .pillIcon {
-  transform: scale(1.15);
+  transform: scale(1.18);
+}
+
+.genrePillActive .pillIcon {
+  animation: iconBounce 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes iconBounce {
+  0% {
+    transform: scale(1) rotate(0deg);
+  }
+  35% {
+    transform: scale(1.35) rotate(-14deg);
+  }
+  70% {
+    transform: scale(1.1) rotate(8deg);
+  }
+  100% {
+    transform: scale(1) rotate(0deg);
+  }
 }
 
 .pillText {
@@ -84,6 +128,21 @@
   margin-left: 2px;
   font-weight: 800;
   line-height: 1;
+  animation: checkPop 0.32s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes checkPop {
+  0% {
+    transform: scale(0) rotate(-45deg);
+    opacity: 0;
+  }
+  60% {
+    transform: scale(1.35) rotate(10deg);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1) rotate(0deg);
+  }
 }
 
 @media (max-width: 768px) {

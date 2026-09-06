@@ -15,21 +15,6 @@ const TOOLTIP_LABELS = {
   5: 'Masterpiece',
 };
 
-const BURST_PARTICLES = [
-  { id: 1, angle: '0deg', dist: '48px', distMid: '24px', size: '11px' },
-  { id: 2, angle: '30deg', dist: '42px', distMid: '20px', size: '9px' },
-  { id: 3, angle: '60deg', dist: '46px', distMid: '22px', size: '12px' },
-  { id: 4, angle: '90deg', dist: '50px', distMid: '24px', size: '10px' },
-  { id: 5, angle: '120deg', dist: '44px', distMid: '22px', size: '11px' },
-  { id: 6, angle: '150deg', dist: '48px', distMid: '24px', size: '9px' },
-  { id: 7, angle: '180deg', dist: '50px', distMid: '25px', size: '12px' },
-  { id: 8, angle: '210deg', dist: '42px', distMid: '20px', size: '9px' },
-  { id: 9, angle: '240deg', dist: '46px', distMid: '22px', size: '11px' },
-  { id: 10, angle: '270deg', dist: '50px', distMid: '24px', size: '10px' },
-  { id: 11, angle: '300deg', dist: '44px', distMid: '22px', size: '12px' },
-  { id: 12, angle: '330deg', dist: '48px', distMid: '24px', size: '9px' },
-];
-
 export const StarRatingInput = ({ onRate }) => {
   const [hoverValue, setHoverValue] = useState(null);
   const [burstInfo, setBurstInfo] = useState(null);
@@ -52,15 +37,15 @@ export const StarRatingInput = ({ onRate }) => {
       clearTimeout(burstTimerRef.current);
     }
 
-    setBurstInfo({ starIndex, id: Date.now() });
+    setBurstInfo({ starIndex, value, id: Date.now() });
     burstTimerRef.current = setTimeout(() => {
       setBurstInfo(null);
-    }, 550);
+    }, 650);
   };
 
   return (
     <div className={css.inputSection}>
-      <span className={css.inputHeading}>Rate this movie</span>
+      <span className={css.inputHeading}>Your Score:</span>
 
       <div
         className={css.starInputGroup}
@@ -104,39 +89,31 @@ export const StarRatingInput = ({ onRate }) => {
                 aria-label={`Rate ${starIndex} stars`}
               />
 
-              {/* Star SVG */}
-              <StarIcon
-                size={30}
-                fillPercent={fill}
-                color="var(--color-star-input)"
-                emptyColor="rgba(254, 243, 199, 0.2)"
-              />
+              {/* Star Icon with animated wrapper */}
+              <div
+                className={`${css.starIconWrapper} ${
+                  isBursting ? css.starActive : ''
+                }`}
+              >
+                <StarIcon
+                  size={30}
+                  fillPercent={fill}
+                  color="var(--color-star-input)"
+                  emptyColor="rgba(254, 243, 199, 0.2)"
+                />
+              </div>
 
-              {/* Tooltip bubble positioned over active star */}
+              {/* Tooltip bubble positioned over active hovered star */}
               {isHoveredStar && (
                 <div className={css.tooltip}>
                   {TOOLTIP_LABELS[hoverValue]} ({hoverValue} ★)
                 </div>
               )}
 
-              {/* Burst particles */}
+              {/* Variant 3 Yellow Shockwave Ring */}
               {isBursting && (
-                <div
-                  key={burstInfo.id}
-                  className={css.burstContainer}
-                >
-                  {BURST_PARTICLES.map(p => (
-                    <span
-                      key={`${burstInfo.id}-${p.id}`}
-                      className={css.burstParticle}
-                      style={{
-                        '--angle': p.angle,
-                        '--dist': p.dist,
-                        '--dist-mid': p.distMid,
-                        '--size': p.size,
-                      }}
-                    />
-                  ))}
+                <div key={burstInfo.id} className={css.burstOverlay}>
+                  <span className={css.neonRingYellow} />
                 </div>
               )}
             </div>

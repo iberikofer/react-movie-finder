@@ -1,0 +1,98 @@
+/* ==========================================================================
+   SaveMovieButton Styles (Card Poster Floating Button & Details Header Button)
+   ========================================================================== */
+
+/* Shared base properties for circular save buttons */
+.cardSaveBtn,
+.detailsSaveBtn {
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(6, 44, 38, 0.75);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(254, 243, 199, 0.25);
+  color: var(--color-text);
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+  transition: transform 0.2s ease, background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, color 0.2s ease;
+  user-select: none;
+  -webkit-user-select: none;
+  padding: 0;
+  outline: none;
+}
+
+/* Floating circular button on movie card poster */
+.cardSaveBtn {
+  position: absolute;
+  bottom: 10px;
+  right: 10px;
+  z-index: 6;
+  width: 34px;
+  height: 34px;
+}
+
+/* Circular button on Details page header (inline right after movie title) */
+.detailsSaveBtn {
+  position: relative;
+  width: 38px;
+  height: 38px;
+  flex-shrink: 0;
+  border-color: rgba(254, 243, 199, 0.35);
+}
+
+/* Anti-hover-jitter buffer */
+.cardSaveBtn::before,
+.detailsSaveBtn::before {
+  content: '';
+  position: absolute;
+  inset: -6px;
+  border-radius: 50%;
+  pointer-events: auto;
+}
+
+/* Hover & Active states (Unsaved) */
+.cardSaveBtn:hover,
+.detailsSaveBtn:hover {
+  transform: scale(1.12);
+  background: rgba(16, 185, 129, 0.4);
+  border-color: rgba(16, 185, 129, 0.7);
+  color: #34d399;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4), 0 0 12px rgba(16, 185, 129, 0.35);
+}
+
+.cardSaveBtn:active,
+.detailsSaveBtn:active {
+  transform: scale(0.95);
+}
+
+/* Saved state */
+.cardSaveBtnSaved,
+.detailsSaveBtnSaved {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.9) 0%, rgba(6, 44, 38, 0.95) 100%);
+  border-color: #34d399;
+  color: #ffffff;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4), 0 0 12px rgba(16, 185, 129, 0.5);
+}
+
+/* Saved hover (destyle/remove preview) */
+.cardSaveBtnSaved:hover,
+.detailsSaveBtnSaved:hover {
+  background: linear-gradient(135deg, rgba(244, 63, 94, 0.85) 0%, rgba(66, 13, 24, 0.95) 100%);
+  border-color: #fb7185;
+  color: #ffffff;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4), 0 0 12px rgba(244, 63, 94, 0.4);
+}
+
+/* Bookmark SVG Icon styling */
+.bookmarkSvg {
+  display: block;
+  transition: transform 0.2s ease;
+  pointer-events: none;
+}
+
+.cardSaveBtn:hover .bookmarkSvg,
+.detailsSaveBtn:hover .bookmarkSvg {
+  transform: scale(1.06);
+}

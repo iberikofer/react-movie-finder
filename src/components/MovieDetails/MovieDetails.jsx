@@ -1,8 +1,11 @@
-import { getMovieDetails } from 'fetch';
+import { getMovieDetails, setMediaType } from 'fetch';
 import { useState, useEffect, useCallback, Suspense } from 'react';
-import { useParams, useLocation, Link, NavLink, Outlet } from 'react-router-dom';
+import { useParams, useLocation, useSearchParams, Link, NavLink, Outlet } from 'react-router-dom';
 import CriticsScore from '../CriticsScore/CriticsScore';
+import { getGenreIcon } from '../GenreFilter/GenreFilter';
 import Loader from '../Loader/Loader';
+import MediaTypeBadge from '../MediaTypeBadge/MediaTypeBadge';
+import SaveMovieButton from '../SaveMovieButton/SaveMovieButton';
 import MovieGallery from './MovieGallery';
 import css from './MovieDetails.module.css';
 
@@ -12,6 +15,8 @@ export const MovieDetails = () => {
   const [hasError, setHasError] = useState(false);
   const { movieId } = useParams();
   const location = useLocation();
+  const [searchParams] = useSearchParams();
+  const explicitType = searchParams.get('type') || location.state?.mediaType;
   const backLinkHref = location.state?.from ?? '/';
 
   const fetchDetails = useCallback(async () => {
@@ -19,21 +24,28 @@ export const MovieDetails = () => {
     setHasError(false);
 
     try {
-      const data = await getMovieDetails(movieId);
+      const data = await getMovieDetails(movieId, explicitType);
       setSelectedMovie(data);
+      if (data?.media_type) {
+        setMediaType(movieId, data.media_type);
+      }
     } catch (error) {
       console.error('Failed to load movie details:', error);
       setHasError(true);
     } finally {
       setIsLoading(false);
     }
-  }, [movieId]);
+  }, [movieId, explicitType]);
 
   useEffect(() => {
     fetchDetails();
   }, [fetchDetails]);
 
   const displayTitle = selectedMovie?.title || selectedMovie?.name || '';
+  const isTv =
+    explicitType === 'tv' ||
+    selectedMovie?.media_type === 'tv' ||
+    Boolean(selectedMovie?.first_air_date);
 
   return (
     <div className={css.pageWrapper}>
@@ -42,7 +54,7 @@ export const MovieDetails = () => {
       </Link>
 
       {isLoading ? (
-        <Loader caption="Loading movie details..." />
+        <Loader caption={isTv ? 'Loading show details...' : 'Loading movie details...'} />
       ) : hasError ? (
         <div className={css.errorSectionContainer}>
           {/* Blurred background block mirroring the exact layout and dimensions of the normal movie block */}
@@ -66,12 +78,6 @@ export const MovieDetails = () => {
                     <strong className={css.tmdbBadge}>TMDB Score:</strong>{' '}
                     <span className={css.tmdbValue}>N/A</span>
                   </p>
-                  <p className={css.score}>
-                    <strong className={css.tmdbBadge}>Critics Score:</strong>{' '}
-                    <span style={{ color: 'var(--color-text-muted)' }}>
-                      ★★★★★ Be the first to rate!
-                    </span>
-                  </p>
                 </div>
 
                 <h2>Overview</h2>
@@ -82,6 +88,15 @@ export const MovieDetails = () => {
                 <h2>Genres</h2>
                 <div className={css.genres}>
                   <span className={css.genreTag}>Unavailable</span>
+                </div>
+
+                <div className={css.scoreSection} style={{ marginTop: '16px' }}>
+                  <p className={css.score}>
+                    <strong className={css.tmdbBadge}>Critics Score:</strong>{' '}
+                    <span style={{ color: 'var(--color-text-muted)' }}>
+                      ★★★★★ Be the first to rate!
+                    </span>
+                  </p>
                 </div>
               </div>
             </article>
@@ -101,7 +116,7 @@ export const MovieDetails = () => {
               </div>
               <div className={css.navTile}>
                 <span className={css.navTileIcon}>ℹ️</span>
-                <span className={css.navTileLabel}>Movie Info</span>
+                <span className={css.navTileLabel}>{isTv ? 'Show Info' : 'Movie Info'}</span>
               </div>
               <div className={css.navTile}>
                 <span className={css.navTileIcon}>▶</span>
@@ -117,7 +132,7 @@ export const MovieDetails = () => {
               </div>
               <div className={css.navTile}>
                 <span className={css.navTileIcon}>🎯</span>
-                <span className={css.navTileLabel}>Similar Movies</span>
+                <span className={css.navTileLabel}>{isTv ? 'Similar Shows' : 'Similar Movies'}</span>
               </div>
             </nav>
           </div>
@@ -170,7 +185,18 @@ export const MovieDetails = () => {
               </div>
 
               <div className={css.infoContent}>
-                <h1 className={css.movieTitle}>{displayTitle}</h1>
+                <div className={css.titleHeaderRow}>
+                  <div className={css.titleWrapper}>
+                    <h1 className={css.movieTitle}>{displayTitle}</h1>
+                    <SaveMovieButton movie={selectedMovie} isDetails />
+                  </div>
+                  <div className={css.headerActionsGroup}>
+                    <MediaTypeBadge
+                      mediaType={isTv ? 'tv' : 'movie'}
+                      isDetails
+                    />
+                  </div>
+                </div>
 
                 <div className={css.scoreSection}>
                   <p className={css.score}>
@@ -181,9 +207,6 @@ export const MovieDetails = () => {
                         : 'N/A'}
                     </span>
                   </p>
-
-                  {/* Custom 5-star Critics Score Component */}
-                  <CriticsScore movieId={movieId} />
                 </div>
 
                 <h2>Overview</h2>
@@ -196,13 +219,19 @@ export const MovieDetails = () => {
                   {selectedMovie.genres && selectedMovie.genres.length > 0 ? (
                     selectedMovie.genres.map(genre => (
                       <span key={genre.id} className={css.genreTag}>
-                        {genre.name}
+                        <span className={css.genreIcon} aria-hidden="true">
+                          {getGenreIcon(genre.id, genre.name)}
+                        </span>
+                        <span>{genre.name}</span>
                       </span>
                     ))
                   ) : (
                     <span>No genres specified</span>
                   )}
                 </div>
+
+                {/* Custom 5-star Critics Score Component */}
+                <CriticsScore movieId={movieId} />
 
                 {/* Warning banner for Russian-produced content */}
                 {Boolean(
@@ -268,7 +297,7 @@ export const MovieDetails = () => {
                 }
               >
                 <span className={css.navTileIcon}>ℹ️</span>
-                <span className={css.navTileLabel}>Movie Info</span>
+                <span className={css.navTileLabel}>{isTv ? 'Show Info' : 'Movie Info'}</span>
               </NavLink>
 
               <NavLink
@@ -332,7 +361,7 @@ export const MovieDetails = () => {
                 }
               >
                 <span className={css.navTileIcon}>🎯</span>
-                <span className={css.navTileLabel}>Similar Movies</span>
+                <span className={css.navTileLabel}>{isTv ? 'Similar Shows' : 'Similar Movies'}</span>
               </NavLink>
             </nav>
           </div>

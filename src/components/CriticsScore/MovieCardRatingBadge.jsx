@@ -38,7 +38,7 @@ export const MovieCardRatingBadge = ({ movieId }) => {
       style={{
         position: 'absolute',
         top: '10px',
-        right: '10px',
+        left: '10px',
         background: 'rgba(6, 44, 38, 0.88)',
         backdropFilter: 'blur(10px)',
         WebkitBackdropFilter: 'blur(10px)',

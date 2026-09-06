@@ -8,6 +8,12 @@
   width: 100%;
 }
 
+.loaderWrapperCentered {
+  min-height: calc(100vh - 75px);
+  width: 100%;
+  box-sizing: border-box;
+}
+
 .clapperboard {
   position: relative;
   width: 90px;

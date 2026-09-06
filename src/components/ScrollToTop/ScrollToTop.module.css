@@ -22,6 +22,15 @@
 	animation: fadeIn 0.4s ease;
 }
 
+/* Anti-hover-jitter buffer: extends circular hit-box beyond translateY(-3px) scale(1.08) */
+.scrollBtn::before {
+	content: '';
+	position: absolute;
+	inset: -8px;
+	border-radius: 50%;
+	pointer-events: auto;
+}
+
 .scrollBtn:hover {
 	background: rgba(42, 8, 12, 0.78);
 	border-color: rgba(15, 163, 127, 0.55);

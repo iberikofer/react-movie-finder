@@ -1,12 +1,13 @@
 import { Route, Routes } from 'react-router-dom';
-import { lazy, Suspense } from 'react';
-import Loader from './Loader/Loader';
+import { lazy, useEffect } from 'react';
+import { getMovieGenres } from 'fetch';
 import ScrollToTop from './ScrollToTop/ScrollToTop';
+import Header from './Header/Header';
 
-const Header = lazy(() => import('./Header/Header'));
-const Home = lazy(() => import('../pages/Home'));
-const Trending = lazy(() => import('../pages/Trending'));
-const Movies = lazy(() => import('../pages/Movies'));
+import Home from '../pages/Home';
+import Saved from '../pages/Saved';
+import Trending from '../pages/Trending';
+import Movies from '../pages/Movies';
 const MovieDetails = lazy(() => import('./MovieDetails/MovieDetails'));
 const Cast = lazy(() => import('./Cast/Cast'));
 const Reviews = lazy(() => import('./Reviews/Reviews'));
@@ -19,13 +20,17 @@ const RatingDistribution = lazy(() =>
 const NotFound = lazy(() => import('../pages/NotFound'));
 
 export const App = () => {
+  useEffect(() => {
+    getMovieGenres();
+  }, []);
+
   return (
     <div>
       <ScrollToTop />
-      <Suspense fallback={<Loader />}>
-        <Routes>
-          <Route path="/" element={<Header />}>
+      <Routes>
+        <Route path="/" element={<Header />}>
             <Route index element={<Home />} />
+            <Route path="saved" element={<Saved />} />
             <Route path="trending" element={<Trending />} />
             <Route path="movies" element={<Movies />} />
             <Route path="movies/:movieId" element={<MovieDetails />}>
@@ -39,7 +44,6 @@ export const App = () => {
             <Route path="*" element={<NotFound />} />
           </Route>
         </Routes>
-      </Suspense>
     </div>
   );
 };

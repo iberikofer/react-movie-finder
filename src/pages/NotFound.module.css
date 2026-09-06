@@ -43,6 +43,7 @@
 }
 
 .homeBtn {
+  position: relative;
   display: inline-block;
   text-decoration: none;
   background: linear-gradient(135deg, #0fa37f, #065b4c);
@@ -55,6 +56,15 @@
   cursor: pointer;
   transition: all 0.25s ease;
   box-shadow: 0 4px 14px rgba(15, 163, 127, 0.3);
+}
+
+/* Anti-hover-jitter buffer: extends hit-box beyond translateY(-2px) */
+.homeBtn::before {
+  content: '';
+  position: absolute;
+  inset: -4px -4px -8px -4px;
+  border-radius: inherit;
+  pointer-events: auto;
 }
 
 .homeBtn:hover {

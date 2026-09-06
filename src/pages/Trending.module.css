@@ -9,7 +9,8 @@
   margin-bottom: 32px;
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
+  align-items: center;
+  text-align: center;
   gap: 10px;
 }
 
@@ -19,14 +20,16 @@
   color: var(--color-text);
   margin: 0;
   letter-spacing: -0.5px;
+  text-align: center;
 }
 
 .sectionDesc {
   color: var(--color-text-muted);
   font-size: 1rem;
-  max-width: 600px;
+  max-width: 650px;
   line-height: 1.5;
   margin: 0;
+  text-align: center;
 }
 
 .movieGrid {
@@ -38,15 +41,25 @@
 }
 
 .movieCard {
+  position: relative;
   background: rgba(42, 8, 12, 0.55);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border: 1px solid var(--bg-card-border);
   border-radius: 14px;
-  overflow: hidden;
   box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
   transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
   height: 100%;
+}
+
+/* Anti-hover-jitter buffer: extends hit-box beyond translateY(-6px) */
+.movieCard::before {
+  content: '';
+  position: absolute;
+  inset: -6px -4px -14px -4px;
+  border-radius: inherit;
+  pointer-events: auto;
+  z-index: 0;
 }
 
 .movieCard:hover {
@@ -56,11 +69,15 @@
 }
 
 .movieLink {
+  position: relative;
+  z-index: 1;
   text-decoration: none;
   color: inherit;
   display: flex;
   flex-direction: column;
   height: 100%;
+  -webkit-user-drag: none;
+  user-drag: none;
 }
 
 .posterWrapper {
@@ -68,7 +85,11 @@
   width: 100%;
   aspect-ratio: 2 / 3;
   overflow: hidden;
+  border-radius: 13px 13px 0 0;
   background: rgba(0, 0, 0, 0.3);
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 .poster {
@@ -77,6 +98,10 @@
   object-fit: cover;
   display: block;
   transition: transform 0.35s ease;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-user-drag: none;
+  pointer-events: none;
 }
 
 .movieCard:hover .poster {
@@ -84,6 +109,8 @@
 }
 
 .titleWrapper {
+  position: relative;
+  z-index: 2;
   padding: 14px 12px;
   display: flex;
   align-items: center;
@@ -91,6 +118,9 @@
   min-height: 56px;
   flex: 1;
   background: transparent;
+  cursor: text;
+  user-select: text;
+  -webkit-user-select: text;
 }
 
 .movieTitle {
@@ -100,6 +130,11 @@
   font-size: 0.95rem;
   line-height: 1.35;
   letter-spacing: 0.2px;
+  cursor: text;
+  user-select: text;
+  -webkit-user-select: text;
+  -webkit-user-drag: none;
+  user-drag: none;
 }
 
 .emptyState {
@@ -131,6 +166,7 @@
 }
 
 .loadMoreBtn {
+  position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -145,6 +181,15 @@
   cursor: pointer;
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3), 0 0 16px rgba(16, 185, 129, 0.2);
   transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Anti-hover-jitter buffer: extends hit-box beyond translateY(-3px) */
+.loadMoreBtn::before {
+  content: '';
+  position: absolute;
+  inset: -4px -4px -8px -4px;
+  border-radius: inherit;
+  pointer-events: auto;
 }
 
 .loadMoreBtn:hover:not(:disabled) {

@@ -30,13 +30,6 @@
   letter-spacing: -1px;
 }
 
-.titleHighlight {
-  background: linear-gradient(135deg, #10b981 0%, #51e5ff 60%, #fef3c7 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  text-shadow: 0 0 30px rgba(15, 163, 127, 0.3);
-}
-
 .heroSubtitle {
   font-size: 1.15rem;
   line-height: 1.65;
@@ -46,6 +39,7 @@
 }
 
 .primaryCta {
+  position: relative;
   display: inline-flex;
   align-items: center;
   gap: 10px;
@@ -61,6 +55,15 @@
   transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
+/* Anti-hover-jitter buffer: extends hit-box beyond translateY(-2px) */
+.primaryCta::before {
+  content: '';
+  position: absolute;
+  inset: -4px -4px -8px -4px;
+  border-radius: inherit;
+  pointer-events: auto;
+}
+
 .primaryCta:hover {
   transform: translateY(-2px);
   box-shadow: 0 10px 28px rgba(15, 163, 127, 0.5), 0 0 16px rgba(15, 163, 127, 0.4);
@@ -68,6 +71,7 @@
 }
 
 .secondaryCta {
+  position: relative;
   display: inline-flex;
   align-items: center;
   gap: 10px;
@@ -82,6 +86,15 @@
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   transition: all 0.25s ease;
+}
+
+/* Anti-hover-jitter buffer: extends hit-box beyond translateY(-2px) */
+.secondaryCta::before {
+  content: '';
+  position: absolute;
+  inset: -4px -4px -8px -4px;
+  border-radius: inherit;
+  pointer-events: auto;
 }
 
 .secondaryCta:hover {
@@ -176,6 +189,7 @@
 }
 
 .featureCard {
+  position: relative;
   background: rgba(42, 8, 12, 0.5);
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
@@ -186,6 +200,15 @@
   flex-direction: column;
   gap: 14px;
   transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+}
+
+/* Anti-hover-jitter buffer: extends hit-box beyond translateY(-4px) */
+.featureCard::before {
+  content: '';
+  position: absolute;
+  inset: -4px -4px -10px -4px;
+  border-radius: inherit;
+  pointer-events: auto;
 }
 
 .featureCard:hover {
@@ -266,12 +289,15 @@
 }
 
 .techPill {
+  position: relative;
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  padding: 8px 18px;
-  background: rgba(254, 243, 199, 0.08);
-  border: 1px solid rgba(254, 243, 199, 0.18);
+  gap: 7px;
+  padding: 8px 16px;
+  background: rgba(42, 8, 12, 0.45);
+  border: 1px solid var(--bg-card-border);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
   border-radius: 9999px;
   font-size: 0.88rem;
   font-weight: 600;
@@ -287,6 +313,15 @@
 
 .techPill:visited {
   color: var(--color-text);
+}
+
+/* Anti-hover-jitter buffer: extends hit-box beyond translateY(-4px) */
+.techPill::before {
+  content: '';
+  position: absolute;
+  inset: -4px -2px -10px -2px;
+  border-radius: inherit;
+  pointer-events: auto;
 }
 
 .techPill:hover {

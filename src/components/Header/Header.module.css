@@ -45,6 +45,7 @@
 }
 
 .navigation {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 24px;
@@ -52,11 +53,15 @@
 
 .navLink {
   position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   text-decoration: none;
   color: var(--color-text-muted);
   font-size: 1.05rem;
   font-weight: 600;
   padding: 6px 4px;
+  line-height: 1;
   transition: color 0.2s ease;
 }
 
@@ -68,16 +73,39 @@
   color: var(--color-text);
 }
 
-.activeLink::after {
-  content: '';
+/* Shared sliding underline indicator that smoothly glides between tabs */
+.navIndicator {
   position: absolute;
-  bottom: -2px;
-  left: 0;
-  right: 0;
-  height: 2px;
+  bottom: 0px;
+  height: 2.5px;
   background: #0fa37f;
-  box-shadow: 0 0 8px #0fa37f;
+  box-shadow: 0 0 8px #0fa37f, 0 0 14px rgba(16, 185, 129, 0.4);
   border-radius: 2px;
+  pointer-events: none;
+  z-index: 2;
+  will-change: left, width;
+}
+
+.navIndicatorTransition {
+  transition: left 0.32s cubic-bezier(0.25, 1, 0.5, 1),
+              width 0.32s cubic-bezier(0.25, 1, 0.5, 1),
+              opacity 0.2s ease;
+}
+
+.savedBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(16, 185, 129, 0.25);
+  border: 1px solid rgba(16, 185, 129, 0.5);
+  color: #34d399;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 0 5px;
+  height: 18px;
+  min-width: 18px;
+  border-radius: 9px;
+  line-height: 1;
 }
 
 .headerActions {
@@ -86,6 +114,7 @@
 }
 
 .clearAllBtn {
+  position: relative;
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -98,6 +127,15 @@
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s ease;
+}
+
+/* Anti-hover-jitter buffer: extends hit-box beyond translateY(-1px) */
+.clearAllBtn::before {
+  content: '';
+  position: absolute;
+  inset: -4px -2px -6px -2px;
+  border-radius: inherit;
+  pointer-events: auto;
 }
 
 .clearAllBtn:hover {
@@ -133,6 +171,17 @@
 
 .mainContent {
   min-height: calc(100vh - 75px);
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+.contentFadeIn {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  width: 100%;
+  animation: pageFadeSlideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 @media (max-width: 640px) {
@@ -149,7 +198,12 @@
   }
 
   .navigation {
-    gap: 16px;
+    gap: 12px;
+  }
+
+  .navLink {
+    padding: 6px 4px;
+    font-size: 0.95rem;
   }
 
   .clearBtnText {
