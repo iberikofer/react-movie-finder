@@ -236,10 +236,19 @@ export const MovieInfo = () => {
       </div>
 
       <div className={css.factsGrid}>
-        <div className={`${css.factCard} ${css.taglineCard}`}>
-          <span className={css.factLabel}>💬 Tagline</span>
-          <span className={css.taglineValue}>
-            {movie.tagline ? `"${movie.tagline}"` : 'No official tagline'}
+        {Boolean(movie.tagline && movie.tagline.trim()) && (
+          <div className={`${css.factCard} ${css.taglineCard}`}>
+            <span className={css.factLabel}>💬 Tagline</span>
+            <span className={css.taglineValue}>"{movie.tagline.trim()}"</span>
+          </div>
+        )}
+
+        <div className={css.factCard}>
+          <span className={css.factLabel}>🔞 Age Restriction</span>
+          <span className={css.factValue}>
+            {movie.age_rating
+              ? movie.age_rating
+              : 'Age rating currently unavailable'}
           </span>
         </div>
 

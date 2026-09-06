@@ -30,6 +30,7 @@ export const saveMovieToStorage = movie => {
       vote_average: movie.vote_average || 0,
       release_date: movie.release_date || movie.first_air_date || '',
       first_air_date: movie.first_air_date || movie.release_date || '',
+      age_rating: movie.age_rating || null,
       savedAt: Date.now(),
     };
 

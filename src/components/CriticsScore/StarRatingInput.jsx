@@ -44,8 +44,8 @@ export const StarRatingInput = ({ onRate }) => {
   };
 
   return (
-    <div className={css.inputSection}>
-      <span className={css.inputHeading}>Your Score:</span>
+    <div className={`${css.ratingRow} ${css.yourRatingRow}`}>
+      <span className={css.sourceLabelYourRating}>Your Rating</span>
 
       <div
         className={css.starInputGroup}
@@ -96,7 +96,7 @@ export const StarRatingInput = ({ onRate }) => {
                 }`}
               >
                 <StarIcon
-                  size={30}
+                  size={26}
                   fillPercent={fill}
                   color="var(--color-star-input)"
                   emptyColor="rgba(254, 243, 199, 0.2)"

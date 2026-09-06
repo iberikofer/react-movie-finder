@@ -23,6 +23,12 @@ const TECH_STACK = [
     title: 'The Movie Database (TMDB) API Documentation',
   },
   {
+    name: 'Session Navigation Sync',
+    icon: '🧭',
+    url: 'https://developer.mozilla.org/en-US/docs/Web/API/Window/sessionStorage',
+    title: 'SessionStorage state & scroll position restoration across routes',
+  },
+  {
     name: 'Vanilla CSS Modules',
     icon: '🎨',
     url: 'https://github.com/css-modules/css-modules',
@@ -45,12 +51,6 @@ const TECH_STACK = [
     icon: '📸',
     url: 'https://developer.mozilla.org/en-US/docs/Web/HTML/Element/dialog',
     title: 'Interactive keyboard-navigable image gallery modal',
-  },
-  {
-    name: 'SVG Vector Icons',
-    icon: '✨',
-    url: 'https://feathericons.com/',
-    title: 'Crisp resolution-independent vector icons',
   },
 ];
 
@@ -143,14 +143,14 @@ export const Home = () => {
 
           <div className={css.featureCard}>
             <div className={css.featureIcon}>🏷️</div>
-            <h3 className={css.featureTitle}>Film / Series & Genre Discovery</h3>
+            <h3 className={css.featureTitle}>Unified Multi-Filter Suite</h3>
             <p className={css.featureText}>
-              Explore what millions are watching with instant genre filtering and clear media format identification.
+              Discover movies and series with interactive filter dropdowns, multi-genre picking, and age certifications.
             </p>
             <ul className={css.featureList}>
-              <li>Dedicated visual badges for 🎬 MOVIE vs 📺 SERIES</li>
-              <li>Real-time genre filters with multi-selection support</li>
-              <li>1500ms debounced text search with URL synchronization</li>
+              <li>Format selector (Movies / Series / All) with badge badges</li>
+              <li>Multi-genre modal with quick Done confirmation and search</li>
+              <li>Age certifications (0+, 6+, 12+, 16+, 18+) & multi-order sorting</li>
             </ul>
           </div>
 
@@ -181,15 +181,15 @@ export const Home = () => {
           </div>
 
           <div className={css.featureCard}>
-            <div className={css.featureIcon}>🌊</div>
-            <h3 className={css.featureTitle}>Persistent Ambient Atmosphere</h3>
+            <div className={css.featureIcon}>🧭</div>
+            <h3 className={css.featureTitle}>Session Restoration & Atmosphere</h3>
             <p className={css.featureText}>
-              A pure linear iridescent background in deep emerald green with warm cherry wine accents that flows perpetually across orbital wave cycles.
+              Seamless session persistence remembers accumulated pagination, movie lists, and exact scroll position when returning from details.
             </p>
             <ul className={css.featureList}>
+              <li>Automatic scroll restoration for Trending & Search</li>
               <li>Synchronized to real-world epoch time (never resets on F5)</li>
-              <li>Custom animated clapperboard loader with 0.5s stabilization</li>
-              <li>Anti-hover-jitter buffers for silky-smooth cursor interactions</li>
+              <li>Anti-jitter clapperboard loader with 0.5s stabilization</li>
             </ul>
           </div>
         </div>

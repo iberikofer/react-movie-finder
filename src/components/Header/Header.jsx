@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, Suspense } from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import { useSavedMovies } from '../../hooks/useSavedMovies';
+import { hasSavedPageScroll } from '../../utils/sessionStorage';
 import Loader from '../Loader/Loader';
 import css from './Header.module.css';
 
@@ -62,10 +63,30 @@ export const Header = () => {
   const prevPathnameRef = useRef(location.pathname);
   useEffect(() => {
     if (prevPathnameRef.current !== location.pathname) {
+      const prevPath = prevPathnameRef.current;
+      const nextPath = location.pathname;
       prevPathnameRef.current = location.pathname;
       if (timerRef.current) clearTimeout(timerRef.current);
       setStatus('idle');
-      window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+
+      // Do NOT scroll to top if navigating between subtabs of the same movie
+      const movieRegex = /(?:^|\/react-movie-finder)\/movies\/([^/]+)/;
+      const prevMovieMatch = prevPath.match(movieRegex);
+      const nextMovieMatch = nextPath.match(movieRegex);
+      const isSameMovieSubtab =
+        prevMovieMatch &&
+        nextMovieMatch &&
+        prevMovieMatch[1] === nextMovieMatch[1];
+
+      // Do NOT scroll to top if navigating to Trending or Movies with a saved scroll position
+      const isTrending = /(?:^|\/react-movie-finder)\/trending\/?$/.test(nextPath);
+      const isMovies = /(?:^|\/react-movie-finder)\/movies\/?$/.test(nextPath);
+      const hasSavedTrendingScroll = isTrending && hasSavedPageScroll('trending_session');
+      const hasSavedMoviesScroll = isMovies && hasSavedPageScroll('movies_session');
+
+      if (!isSameMovieSubtab && !hasSavedTrendingScroll && !hasSavedMoviesScroll) {
+        window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+      }
     }
   }, [location.pathname]);
 
@@ -164,15 +185,12 @@ export const Header = () => {
               Home
             </NavLink>
             <NavLink
-              to="/saved"
+              to="/movies"
               className={({ isActive }) =>
                 `${css.navLink} ${isActive ? css.activeLink : ''}`
               }
             >
-              <span>Saved</span>
-              {savedCount > 0 && (
-                <span className={css.savedBadge}>{savedCount}</span>
-              )}
+              Search
             </NavLink>
             <NavLink
               to="/trending"
@@ -183,12 +201,15 @@ export const Header = () => {
               Trending
             </NavLink>
             <NavLink
-              to="/movies"
+              to="/saved"
               className={({ isActive }) =>
                 `${css.navLink} ${isActive ? css.activeLink : ''}`
               }
             >
-              Search
+              <span>Saved</span>
+              {savedCount > 0 && (
+                <span className={css.savedBadge}>{savedCount}</span>
+              )}
             </NavLink>
             <span
               className={`${css.navIndicator} ${
@@ -241,7 +262,7 @@ export const Header = () => {
 
       <main className={css.mainContent}>
         <Suspense fallback={<Loader isCentered caption="Loading scene..." />}>
-          <div key={location.pathname} className={css.contentFadeIn}>
+          <div className={css.contentFadeIn}>
             <Outlet />
           </div>
         </Suspense>

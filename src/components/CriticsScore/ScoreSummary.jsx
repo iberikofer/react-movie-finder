@@ -7,12 +7,15 @@ export const ScoreSummary = ({
   totalVotes = 0,
   starColor = 'var(--color-star-empty)',
   onReset,
+  isRow = false,
 }) => {
   const hasVotes = totalVotes > 0;
 
   return (
-    <div className={css.summaryContainer}>
-      <span className={css.summaryLabel}>Critics Score:</span>
+    <div className={isRow ? css.summaryRow : css.summaryContainer}>
+      <span className={isRow ? css.sourceLabelCritics : css.summaryLabel}>
+        Critics
+      </span>
 
       <div className={css.starsRow}>
         {[1, 2, 3, 4, 5].map(starIndex => {
@@ -34,7 +37,7 @@ export const ScoreSummary = ({
           return (
             <StarIcon
               key={starIndex}
-              size={22}
+              size={isRow ? 20 : 22}
               fillPercent={fill}
               color={starColor}
             />

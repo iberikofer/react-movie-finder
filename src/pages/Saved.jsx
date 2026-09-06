@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { setMediaType } from 'fetch';
 import { useSavedMovies } from '../hooks/useSavedMovies';
@@ -15,6 +15,8 @@ export const Saved = () => {
   const [isInitialLoading, setIsInitialLoading] = useState(!hasLoadedSavedOnce);
   const [filterType, setFilterType] = useState('all'); // 'all', 'movie', 'tv'
   const [clearStatus, setClearStatus] = useState('idle'); // 'idle', 'confirming'
+  const timerRef = useRef(null);
+  const buttonRef = useRef(null);
   const location = useLocation();
 
   // Guarantee 0.5s initial centered loader ONLY on first load / reload of Saved page
@@ -26,6 +28,35 @@ export const Saved = () => {
       }, 500);
       return () => clearTimeout(timer);
     }
+  }, []);
+
+  // Handle outside click when in 'confirming' state
+  useEffect(() => {
+    if (clearStatus !== 'confirming') return;
+
+    const handleOutsideClick = event => {
+      if (buttonRef.current && !buttonRef.current.contains(event.target)) {
+        if (timerRef.current) clearTimeout(timerRef.current);
+        setClearStatus('idle');
+      }
+    };
+
+    // Attach click listener on next tick to avoid capturing the initiating click
+    const delayTimer = setTimeout(() => {
+      document.addEventListener('click', handleOutsideClick);
+    }, 0);
+
+    return () => {
+      clearTimeout(delayTimer);
+      document.removeEventListener('click', handleOutsideClick);
+    };
+  }, [clearStatus]);
+
+  // Cleanup timers on unmount
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+    };
   }, []);
 
   const moviesCount = useMemo(
@@ -42,12 +73,17 @@ export const Saved = () => {
     return savedMovies.filter(m => m.media_type === filterType);
   }, [savedMovies, filterType]);
 
-  const handleClear = () => {
+  const handleClear = event => {
+    event.stopPropagation();
     if (clearStatus === 'idle') {
       setClearStatus('confirming');
-      setTimeout(() => setClearStatus('idle'), 4000);
+      if (timerRef.current) clearTimeout(timerRef.current);
+      timerRef.current = setTimeout(() => {
+        setClearStatus('idle');
+      }, 4000);
       return;
     }
+    if (timerRef.current) clearTimeout(timerRef.current);
     clearAll();
     setClearStatus('idle');
   };
@@ -71,23 +107,6 @@ export const Saved = () => {
                   {savedMovies.length} {savedMovies.length === 1 ? 'title' : 'titles'}
                 </span>
               </h1>
-
-              <button
-                type="button"
-                className={`${css.clearAllBtn} ${
-                  clearStatus === 'confirming' ? css.clearAllBtnConfirm : ''
-                }`}
-                onClick={handleClear}
-                title={
-                  clearStatus === 'confirming'
-                    ? 'Click again to permanently clear all saved titles'
-                    : 'Clear all saved titles from your watchlist'
-                }
-              >
-                {clearStatus === 'confirming'
-                  ? '⚠️ Confirm Clear All'
-                  : '🗑️ Clear Watchlist'}
-              </button>
             </div>
             <p className={css.subtitle}>
               Your personal collection of saved movies and series stored directly in your browser.
@@ -126,6 +145,24 @@ export const Saved = () => {
                 📺 Series ({tvCount})
               </button>
             </div>
+
+            <button
+              ref={buttonRef}
+              type="button"
+              className={`${css.clearAllBtn} ${
+                clearStatus === 'confirming' ? css.clearAllBtnConfirm : ''
+              }`}
+              onClick={handleClear}
+              title={
+                clearStatus === 'confirming'
+                  ? 'Click again to permanently clear all saved titles'
+                  : 'Clear all saved titles from your watchlist'
+              }
+            >
+              {clearStatus === 'confirming'
+                ? '⚠️ Confirm Clear All'
+                : '🗑️ Clear Watchlist'}
+            </button>
           </div>
         )}
 

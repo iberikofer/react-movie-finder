@@ -1,7 +1,9 @@
 .container {
-  max-width: 1200px;
+  width: 100%;
+  max-width: 1320px;
   margin: 0 auto;
   padding: 30px 24px 60px 24px;
+  box-sizing: border-box;
   animation: pageFadeSlideIn 0.35s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
@@ -15,11 +17,11 @@
 }
 
 .mainTitle {
-  font-size: 2.3rem;
+  font-size: 2.6rem;
   font-weight: 800;
   color: var(--color-text);
   margin: 0;
-  letter-spacing: -0.5px;
+  letter-spacing: -0.6px;
   text-align: center;
 }
 
@@ -34,10 +36,14 @@
 
 .movieGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: 26px;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 20px;
   list-style: none;
   padding: 0;
+  margin: 0;
+  width: 100%;
+  position: relative;
+  z-index: 1;
 }
 
 .movieCard {
@@ -232,22 +238,38 @@
   }
 }
 
+@media (max-width: 1100px) {
+  .movieGrid {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 18px;
+  }
+}
+
+@media (max-width: 860px) {
+  .movieGrid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+  }
+}
+
 @media (max-width: 768px) {
   .container {
     padding: 20px 14px 40px 14px;
   }
 
   .mainTitle {
-    font-size: 1.8rem;
-  }
-
-  .movieGrid {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 14px;
+    font-size: 2rem;
   }
 
   .movieTitle {
     font-size: 0.88rem;
+  }
+}
+
+@media (max-width: 640px) {
+  .movieGrid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 14px;
   }
 }
 

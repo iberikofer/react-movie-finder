@@ -15,7 +15,13 @@ syncAmbientAnimation();
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
-    <BrowserRouter basename="/react-movie-finder">
+    <BrowserRouter
+      basename="/react-movie-finder"
+      future={{
+        v7_startTransition: true,
+        v7_relativeSplatPath: true,
+      }}
+    >
       <App />
     </BrowserRouter>
   </React.StrictMode>

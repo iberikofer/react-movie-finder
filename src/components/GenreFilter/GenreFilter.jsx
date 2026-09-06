@@ -185,9 +185,6 @@ export const GenreFilter = ({
               <span className={css.pillText}>
                 {genre.id === 'all' ? allLabel : genre.name}
               </span>
-              {isSelected && genre.id !== 'all' && (
-                <span className={css.activeCheck} aria-hidden="true">✔</span>
-              )}
             </button>
           );
         })}

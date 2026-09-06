@@ -1,6 +1,6 @@
 .container {
   width: 100%;
-  max-width: 1200px;
+  max-width: 1320px;
   margin: 0 auto;
   padding: 30px 24px 60px 24px;
   box-sizing: border-box;
@@ -27,9 +27,9 @@
 }
 
 .mainTitle {
-  font-size: 2.2rem;
+  font-size: 2.6rem;
   font-weight: 800;
-  letter-spacing: -0.5px;
+  letter-spacing: -0.6px;
   color: var(--color-text);
   margin: 0;
   display: flex;
@@ -39,7 +39,7 @@
 
 .titleIcon {
   color: #10b981;
-  font-size: 1.8rem;
+  font-size: 2.1rem;
   filter: drop-shadow(0 0 10px rgba(16, 185, 129, 0.4));
 }
 
@@ -112,8 +112,8 @@
   background: rgba(244, 63, 94, 0.12);
   border: 1px solid rgba(244, 63, 94, 0.35);
   color: #ff9dae;
-  padding: 8px 18px;
-  border-radius: 10px;
+  padding: 7px 14px;
+  border-radius: 8px;
   font-size: 0.85rem;
   font-weight: 600;
   cursor: pointer;
@@ -135,34 +135,33 @@
 }
 
 .clearAllBtn:hover {
-  background: rgba(244, 63, 94, 0.25);
-  border-color: rgba(244, 63, 94, 0.6);
-  color: #fff;
+  background: rgba(244, 63, 94, 0.2);
+  border-color: rgba(244, 63, 94, 0.5);
+  color: #ff9dae;
   transform: translateY(-1px);
 }
 
 .clearAllBtnConfirm {
-  background: rgba(244, 63, 94, 0.85);
-  border-color: #f43f5e;
-  color: #fff;
-  font-weight: 700;
-  animation: pulseDelete 1s infinite alternate;
+  background: rgba(244, 63, 94, 0.3) !important;
+  border-color: rgba(244, 63, 94, 0.8) !important;
+  color: #ffb3c0 !important;
+  animation: pulseWarning 1s infinite alternate;
 }
 
-@keyframes pulseDelete {
+@keyframes pulseWarning {
   from {
-    box-shadow: 0 0 8px rgba(244, 63, 94, 0.4);
+    box-shadow: 0 0 4px rgba(244, 63, 94, 0.3);
   }
   to {
-    box-shadow: 0 0 18px rgba(244, 63, 94, 0.8);
+    box-shadow: 0 0 12px rgba(244, 63, 94, 0.7);
   }
 }
 
 /* Movies Grid */
 .movieGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: 26px;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 20px;
   list-style: none;
   padding: 0;
   margin: 0;
@@ -378,15 +377,31 @@
   color: #fff;
 }
 
+@media (max-width: 1100px) {
+  .movieGrid {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 18px;
+  }
+}
+
+@media (max-width: 860px) {
+  .movieGrid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+  }
+}
+
 @media (max-width: 768px) {
   .container {
     padding: 20px 14px 40px 14px;
   }
 
   .mainTitle {
-    font-size: 1.7rem;
+    font-size: 2rem;
   }
+}
 
+@media (max-width: 640px) {
   .movieGrid {
     grid-template-columns: repeat(2, 1fr);
     gap: 14px;

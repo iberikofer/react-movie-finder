@@ -11,7 +11,19 @@ export const MovieGallery = ({ movieId, movieTitle = 'Movie' }) => {
   const [images, setImages] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [lightboxIndex, setLightboxIndex] = useState(null);
-  const [isImageLoading, setIsImageLoading] = useState(true);
+  const [viewState, setViewState] = useState({
+    index: null,
+    imageReady: false,
+    minTimeReady: false,
+  });
+
+  if (lightboxIndex !== viewState.index) {
+    setViewState({
+      index: lightboxIndex,
+      imageReady: false,
+      minTimeReady: false,
+    });
+  }
 
   const trackRef = useRef(null);
   const set1Ref = useRef(null);
@@ -22,13 +34,38 @@ export const MovieGallery = ({ movieId, movieTitle = 'Movie' }) => {
   const scrollPosRef = useRef(0);
   const targetScrollRef = useRef(null);
 
-  // Keep refs in sync with state
+  // Keep refs in sync with state and enforce a minimum 500ms loader duration per photo
   useEffect(() => {
     lightboxOpenRef.current = lightboxIndex !== null;
-    if (lightboxIndex !== null) {
-      setIsImageLoading(true);
-    }
+    if (lightboxIndex === null) return;
+
+    const timer = setTimeout(() => {
+      setViewState(prev => {
+        if (prev.index === lightboxIndex) {
+          return { ...prev, minTimeReady: true };
+        }
+        return prev;
+      });
+    }, 500);
+
+    return () => {
+      clearTimeout(timer);
+    };
   }, [lightboxIndex]);
+
+  const handleImageReady = useCallback(idx => {
+    setViewState(prev => {
+      if (prev.index === idx) {
+        return { ...prev, imageReady: true };
+      }
+      return prev;
+    });
+  }, []);
+
+  const isImageLoading =
+    lightboxIndex === null ||
+    !viewState.imageReady ||
+    !viewState.minTimeReady;
 
   // Fetch backdrop images for the movie/show
   useEffect(() => {
@@ -331,10 +368,8 @@ export const MovieGallery = ({ movieId, movieTitle = 'Movie' }) => {
       if (e.key === 'Escape') {
         setLightboxIndex(null);
       } else if (images.length > 1 && e.key === 'ArrowRight') {
-        setIsImageLoading(true);
         setLightboxIndex(prev => (prev + 1) % images.length);
       } else if (images.length > 1 && e.key === 'ArrowLeft') {
-        setIsImageLoading(true);
         setLightboxIndex(prev => (prev - 1 + images.length) % images.length);
       }
     };
@@ -375,14 +410,12 @@ export const MovieGallery = ({ movieId, movieTitle = 'Movie' }) => {
         key={`${item.file_path}-${setKey}-${idx}`}
         className={css.photoCard}
         onClick={() => {
-          setIsImageLoading(true);
           setLightboxIndex(originalIdx);
         }}
         role="button"
         tabIndex={0}
         onKeyDown={e => {
           if (e.key === 'Enter' || e.key === ' ') {
-            setIsImageLoading(true);
             setLightboxIndex(originalIdx);
           }
         }}
@@ -527,7 +560,6 @@ export const MovieGallery = ({ movieId, movieTitle = 'Movie' }) => {
                 className={`${css.lightboxArrow} ${css.lightboxPrev}`}
                 onClick={e => {
                   e.stopPropagation();
-                  setIsImageLoading(true);
                   setLightboxIndex(prev => (prev - 1 + images.length) % images.length);
                 }}
                 aria-label="Previous image"
@@ -560,8 +592,8 @@ export const MovieGallery = ({ movieId, movieTitle = 'Movie' }) => {
                   className={`${css.lightboxImage} ${
                     isImageLoading ? css.imageHidden : css.imageVisible
                   }`}
-                  onLoad={() => setIsImageLoading(false)}
-                  onError={() => setIsImageLoading(false)}
+                  onLoad={() => handleImageReady(lightboxIndex)}
+                  onError={() => handleImageReady(lightboxIndex)}
                 />
               </div>
 
@@ -586,7 +618,6 @@ export const MovieGallery = ({ movieId, movieTitle = 'Movie' }) => {
                 className={`${css.lightboxArrow} ${css.lightboxNext}`}
                 onClick={e => {
                   e.stopPropagation();
-                  setIsImageLoading(true);
                   setLightboxIndex(prev => (prev + 1) % images.length);
                 }}
                 aria-label="Next image"

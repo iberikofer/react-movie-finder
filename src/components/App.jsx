@@ -30,9 +30,9 @@ export const App = () => {
       <Routes>
         <Route path="/" element={<Header />}>
             <Route index element={<Home />} />
-            <Route path="saved" element={<Saved />} />
-            <Route path="trending" element={<Trending />} />
             <Route path="movies" element={<Movies />} />
+            <Route path="trending" element={<Trending />} />
+            <Route path="saved" element={<Saved />} />
             <Route path="movies/:movieId" element={<MovieDetails />}>
               <Route path="rating" element={<RatingDistribution />} />
               <Route path="info" element={<MovieInfo />} />

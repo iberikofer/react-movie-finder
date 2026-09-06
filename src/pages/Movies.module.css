@@ -1,7 +1,9 @@
 .searchSection {
-  max-width: 1200px;
+  width: 100%;
+  max-width: 1320px;
   margin: 0 auto;
   padding: 30px 24px 60px 24px;
+  box-sizing: border-box;
   animation: pageFadeSlideIn 0.35s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
@@ -19,21 +21,36 @@
 }
 
 .searchForm {
+  width: 100%;
   display: flex;
   justify-content: center;
   margin-bottom: 40px;
+  position: relative;
+  z-index: 500;
+  box-sizing: border-box;
 }
 
 .formInner {
   display: flex;
   flex-direction: column;
   align-items: center;
+  width: 840px;
+  max-width: 100%;
+  position: relative;
+  z-index: 500;
+  box-sizing: border-box;
+}
+
+.searchCard {
   width: 100%;
-  max-width: 500px;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  z-index: 500;
 }
 
 .debounceStatus {
-  margin-top: 12px;
+  margin-top: 18px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -94,7 +111,6 @@
 .inputWrapper {
   position: relative;
   width: 100%;
-  max-width: 500px;
   display: flex;
   align-items: center;
 }
@@ -105,14 +121,22 @@
   background: rgba(42, 8, 12, 0.6);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(254, 243, 199, 0.25);
-  border-radius: 14px;
+  border: 1px solid rgba(15, 163, 127, 0.35);
+  border-bottom: 1px solid rgba(15, 163, 127, 0.2);
+  border-radius: 14px 14px 0 0;
   font-size: 1.05rem;
   color: var(--color-text);
   font-family: inherit;
   outline: none;
   transition: all 0.25s ease;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+  box-sizing: border-box;
+}
+
+.searchInput:focus {
+  border-color: #10b981;
+  border-bottom-color: rgba(16, 185, 129, 0.4);
+  box-shadow: 0 -4px 20px rgba(15, 163, 127, 0.25), -4px 0 20px rgba(15, 163, 127, 0.2), 4px 0 20px rgba(15, 163, 127, 0.2);
 }
 
 .searchInput::-webkit-search-cancel-button,
@@ -167,10 +191,14 @@
 
 .movieGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: 26px;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 20px;
   list-style: none;
   padding: 0;
+  margin: 0;
+  width: 100%;
+  position: relative;
+  z-index: 1;
 }
 
 .movieCard {
@@ -278,6 +306,20 @@
   font-style: italic;
 }
 
+@media (max-width: 1100px) {
+  .movieGrid {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 18px;
+  }
+}
+
+@media (max-width: 860px) {
+  .movieGrid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+  }
+}
+
 @media (max-width: 768px) {
   .searchSection {
     padding: 20px 14px 40px 14px;
@@ -287,13 +329,15 @@
     font-size: 2rem;
   }
 
+  .movieTitle {
+    font-size: 0.88rem;
+  }
+}
+
+@media (max-width: 640px) {
   .movieGrid {
     grid-template-columns: repeat(2, 1fr);
     gap: 14px;
-  }
-
-  .movieTitle {
-    font-size: 0.88rem;
   }
 }
 

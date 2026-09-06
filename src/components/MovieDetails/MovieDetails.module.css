@@ -1,7 +1,9 @@
 .pageWrapper {
-  max-width: 1380px;
+  width: 100%;
+  max-width: 1680px;
   margin: 0 auto;
-  padding: 24px 20px 60px 20px;
+  padding: 24px 28px 60px 28px;
+  box-sizing: border-box;
   animation: pageFadeSlideIn 0.35s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
@@ -47,9 +49,11 @@
 
 .detailsContainer {
   display: flex;
+  width: 100%;
+  box-sizing: border-box;
   min-height: 544px;
-  gap: 36px;
-  padding: 32px;
+  gap: 40px;
+  padding: 36px 40px;
   background: rgba(42, 8, 12, 0.65);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
@@ -74,7 +78,7 @@
 .poster {
   display: block;
   width: 100%;
-  max-width: 320px;
+  max-width: 340px;
   height: auto;
   object-fit: cover;
   border-radius: 0;
@@ -139,7 +143,72 @@
   font-size: 1.05rem;
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 10px;
+}
+
+.ageRatingRow {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 0 0 16px 0;
+}
+
+.ageRatingBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 5px 12px;
+  min-height: 28px;
+  box-sizing: border-box;
+  border-radius: 8px;
+  font-size: 0.88rem;
+  font-weight: 800;
+  letter-spacing: 0.4px;
+  user-select: text;
+  -webkit-user-select: text;
+  white-space: nowrap;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+  line-height: 1.2;
+}
+
+.ageRatingAdult {
+  background: rgba(244, 63, 94, 0.16);
+  border: 1px solid rgba(244, 63, 94, 0.55);
+  color: #ffb3c0;
+}
+
+.ageRatingTeen {
+  background: rgba(245, 158, 11, 0.16);
+  border: 1px solid rgba(245, 158, 11, 0.55);
+  color: #fde68a;
+}
+
+.ageRatingGeneral {
+  background: rgba(16, 185, 129, 0.16);
+  border: 1px solid rgba(16, 185, 129, 0.55);
+  color: #a7f3d0;
+}
+
+.ageRatingUnavailableBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  min-height: 28px;
+  box-sizing: border-box;
+  border-radius: 8px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+  background: rgba(254, 243, 199, 0.05);
+  border: 1px dashed rgba(254, 243, 199, 0.25);
+  color: var(--color-text-muted);
+  user-select: text;
+  -webkit-user-select: text;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+  line-height: 1.2;
 }
 
 .tmdbBadge {
@@ -162,10 +231,10 @@
   line-height: 1.65;
   color: var(--color-text-muted);
   font-size: 1.02rem;
-  margin: 0 0 8px 0;
+  margin: 0;
 }
 
-.infoContent h2 {
+.infoContent > h2 {
   font-size: 1.25rem;
   font-weight: 700;
   color: var(--color-text);
@@ -177,7 +246,7 @@
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
-  margin: 10px 0 12px 0;
+  margin: 0;
   user-select: text;
   -webkit-user-select: text;
 }
@@ -190,26 +259,43 @@
   background: rgba(6, 44, 38, 0.75);
   border: 1px solid rgba(15, 163, 127, 0.35);
   color: #fef3c7;
-  padding: 6px 14px;
-  border-radius: 20px;
+  padding: 6px 12px;
+  border-radius: 8px;
   font-size: 0.88rem;
   font-weight: 600;
   letter-spacing: 0.3px;
-  user-select: text;
-  -webkit-user-select: text;
-  cursor: text;
-  transition: border-color 0.2s ease, background-color 0.2s ease;
+  text-decoration: none;
+  user-select: none;
+  -webkit-user-select: none;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Anti-hover-jitter buffer: extends hit-box beyond translateY offset */
+.genreTag::before {
+  content: '';
+  position: absolute;
+  inset: -4px -2px -6px -2px;
+  border-radius: inherit;
+  pointer-events: auto;
 }
 
 .genreTag span {
-  user-select: text;
-  -webkit-user-select: text;
-  cursor: text;
+  user-select: none;
+  -webkit-user-select: none;
+  pointer-events: none;
 }
 
 .genreTag:hover {
-  border-color: rgba(15, 163, 127, 0.6);
-  background: rgba(8, 56, 48, 0.85);
+  border-color: #10b981;
+  background: rgba(8, 56, 48, 0.95);
+  color: #ffffff;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 14px rgba(16, 185, 129, 0.35);
+}
+
+.genreTag:active {
+  transform: scale(0.95) translateY(0);
 }
 
 .genreIcon {

@@ -1,5 +1,5 @@
 import { getMovieDetails, setMediaType } from 'fetch';
-import { useState, useEffect, useCallback, Suspense } from 'react';
+import { useState, useEffect, useCallback, useRef, Suspense } from 'react';
 import { useParams, useLocation, useSearchParams, Link, NavLink, Outlet } from 'react-router-dom';
 import CriticsScore from '../CriticsScore/CriticsScore';
 import { getGenreIcon } from '../GenreFilter/GenreFilter';
@@ -18,16 +18,18 @@ export const MovieDetails = () => {
   const [searchParams] = useSearchParams();
   const explicitType = searchParams.get('type') || location.state?.mediaType;
   const backLinkHref = location.state?.from ?? '/';
+  const fetchedMovieIdRef = useRef(null);
 
-  const fetchDetails = useCallback(async () => {
+  const fetchDetails = useCallback(async (targetMovieId, typeHint) => {
     setIsLoading(true);
     setHasError(false);
 
     try {
-      const data = await getMovieDetails(movieId, explicitType);
+      const data = await getMovieDetails(targetMovieId, typeHint);
       setSelectedMovie(data);
+      fetchedMovieIdRef.current = String(targetMovieId);
       if (data?.media_type) {
-        setMediaType(movieId, data.media_type);
+        setMediaType(targetMovieId, data.media_type);
       }
     } catch (error) {
       console.error('Failed to load movie details:', error);
@@ -35,11 +37,13 @@ export const MovieDetails = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [movieId, explicitType]);
+  }, []);
 
   useEffect(() => {
-    fetchDetails();
-  }, [fetchDetails]);
+    if (fetchedMovieIdRef.current !== String(movieId)) {
+      fetchDetails(movieId, explicitType);
+    }
+  }, [movieId, explicitType, fetchDetails]);
 
   const displayTitle = selectedMovie?.title || selectedMovie?.name || '';
   const isTv =
@@ -64,7 +68,7 @@ export const MovieDetails = () => {
                 <div className={css.posterWrapper}>
                   <img
                     className={css.poster}
-                    src="https://placehold.co/342x513/2a2a2a/ffffff?text=No+Poster"
+                    src="https://placehold.co/500x750/2a2a2a/ffffff?text=No+Poster"
                     alt="No Poster"
                   />
                 </div>
@@ -72,13 +76,6 @@ export const MovieDetails = () => {
 
               <div className={css.infoContent}>
                 <h1 className={css.movieTitle}>Movie Title Unavailable</h1>
-
-                <div className={css.scoreSection}>
-                  <p className={css.score}>
-                    <strong className={css.tmdbBadge}>TMDB Score:</strong>{' '}
-                    <span className={css.tmdbValue}>N/A</span>
-                  </p>
-                </div>
 
                 <h2>Overview</h2>
                 <p className={css.overviewText}>
@@ -90,13 +87,30 @@ export const MovieDetails = () => {
                   <span className={css.genreTag}>Unavailable</span>
                 </div>
 
-                <div className={css.scoreSection} style={{ marginTop: '16px' }}>
-                  <p className={css.score}>
-                    <strong className={css.tmdbBadge}>Critics Score:</strong>{' '}
-                    <span style={{ color: 'var(--color-text-muted)' }}>
-                      ★★★★★ Be the first to rate!
-                    </span>
-                  </p>
+                <div className={css.ratingsSkeleton} style={{ marginTop: '22px' }}>
+                  <h2 style={{ fontSize: '1.35rem', fontWeight: 700, margin: '0 0 16px 0' }}>Ratings</h2>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                    <p className={css.score} style={{ margin: 0 }}>
+                      <span className={css.tmdbBadge}>TMDB:</span>{' '}
+                      <span className={css.tmdbValue}>N/A</span>
+                    </p>
+                    <p className={css.score} style={{ margin: 0 }}>
+                      <span className={css.tmdbBadge}>IMDb:</span>{' '}
+                      <span className={css.tmdbValue}>N/A</span>
+                    </p>
+                    <p className={css.score} style={{ margin: 0 }}>
+                      <span className={css.tmdbBadge}>Critics:</span>{' '}
+                      <span style={{ color: 'var(--color-text-muted)' }}>
+                        ★★★★★ Be the first to rate!
+                      </span>
+                    </p>
+                    <p className={css.score} style={{ margin: 0 }}>
+                      <span className={css.tmdbBadge} style={{ color: '#34d399' }}>Your Rating:</span>{' '}
+                      <span style={{ color: 'var(--color-text-muted)' }}>
+                        ★★★★★
+                      </span>
+                    </p>
+                  </div>
                 </div>
               </div>
             </article>
@@ -154,7 +168,7 @@ export const MovieDetails = () => {
               <div className={css.errorButtonRow}>
                 <button
                   type="button"
-                  onClick={fetchDetails}
+                  onClick={() => fetchDetails(movieId, explicitType)}
                   className={css.errorRetryBtn}
                 >
                   ↻ Try Again
@@ -176,8 +190,8 @@ export const MovieDetails = () => {
                     className={css.poster}
                     src={
                       selectedMovie.poster_path
-                        ? `https://image.tmdb.org/t/p/w342${selectedMovie.poster_path}`
-                        : 'https://placehold.co/342x513/2a2a2a/ffffff?text=No+Poster'
+                        ? `https://image.tmdb.org/t/p/w500${selectedMovie.poster_path}`
+                        : 'https://placehold.co/500x750/2a2a2a/ffffff?text=No+Poster'
                     }
                     alt={displayTitle || 'Movie poster'}
                   />
@@ -198,15 +212,34 @@ export const MovieDetails = () => {
                   </div>
                 </div>
 
-                <div className={css.scoreSection}>
-                  <p className={css.score}>
-                    <strong className={css.tmdbBadge}>TMDB Score:</strong>{' '}
-                    <span className={css.tmdbValue}>
-                      {selectedMovie.vote_average
-                        ? `${Math.round(selectedMovie.vote_average * 10)}%`
-                        : 'N/A'}
+                <div className={css.ageRatingRow}>
+                  {selectedMovie.age_rating ? (
+                    <span
+                      className={`${css.ageRatingBadge} ${
+                        selectedMovie.age_rating.includes('18+') ||
+                        selectedMovie.age_rating.includes('US: R') ||
+                        selectedMovie.age_rating.includes('NC-17') ||
+                        selectedMovie.age_rating.includes('TV-MA') ||
+                        selectedMovie.age_rating.includes('Adult')
+                          ? css.ageRatingAdult
+                          : selectedMovie.age_rating.includes('16+') ||
+                            selectedMovie.age_rating.includes('15+') ||
+                            selectedMovie.age_rating.includes('14+') ||
+                            selectedMovie.age_rating.includes('12+') ||
+                            selectedMovie.age_rating.includes('PG-13') ||
+                            selectedMovie.age_rating.includes('TV-14')
+                          ? css.ageRatingTeen
+                          : css.ageRatingGeneral
+                      }`}
+                      title="Age Restriction (Europe | USA)"
+                    >
+                      {selectedMovie.age_rating}
                     </span>
-                  </p>
+                  ) : (
+                    <span className={css.ageRatingUnavailableBadge}>
+                      Age rating currently unavailable
+                    </span>
+                  )}
                 </div>
 
                 <h2>Overview</h2>
@@ -218,20 +251,26 @@ export const MovieDetails = () => {
                 <div className={css.genres}>
                   {selectedMovie.genres && selectedMovie.genres.length > 0 ? (
                     selectedMovie.genres.map(genre => (
-                      <span key={genre.id} className={css.genreTag}>
+                      <Link
+                        key={genre.id}
+                        to={`/movies?genres=${genre.id}`}
+                        state={{ from: location }}
+                        className={css.genreTag}
+                        title={`Browse ${genre.name} movies on Search`}
+                      >
                         <span className={css.genreIcon} aria-hidden="true">
                           {getGenreIcon(genre.id, genre.name)}
                         </span>
                         <span>{genre.name}</span>
-                      </span>
+                      </Link>
                     ))
                   ) : (
                     <span>No genres specified</span>
                   )}
                 </div>
 
-                {/* Custom 5-star Critics Score Component */}
-                <CriticsScore movieId={movieId} />
+                {/* Unified Ratings Component (TMDB, IMDb, Critics) */}
+                <CriticsScore movieId={movieId} movie={selectedMovie} />
 
                 {/* Warning banner for Russian-produced content */}
                 {Boolean(
@@ -271,10 +310,9 @@ export const MovieDetails = () => {
               <NavLink
                 to="rating"
                 preventScrollReset={true}
-                state={{ from: backLinkHref }}
-                onClick={() => {
-                  const currentY = window.scrollY;
-                  setTimeout(() => window.scrollTo({ top: currentY, behavior: 'instant' }), 0);
+                state={{
+                  from: backLinkHref,
+                  mediaType: selectedMovie?.media_type || explicitType,
                 }}
                 className={({ isActive }) =>
                   `${css.navTile} ${isActive ? css.navTileActive : ''}`
@@ -287,10 +325,9 @@ export const MovieDetails = () => {
               <NavLink
                 to="info"
                 preventScrollReset={true}
-                state={{ from: backLinkHref }}
-                onClick={() => {
-                  const currentY = window.scrollY;
-                  setTimeout(() => window.scrollTo({ top: currentY, behavior: 'instant' }), 0);
+                state={{
+                  from: backLinkHref,
+                  mediaType: selectedMovie?.media_type || explicitType,
                 }}
                 className={({ isActive }) =>
                   `${css.navTile} ${isActive ? css.navTileActive : ''}`
@@ -303,10 +340,9 @@ export const MovieDetails = () => {
               <NavLink
                 to="trailer"
                 preventScrollReset={true}
-                state={{ from: backLinkHref }}
-                onClick={() => {
-                  const currentY = window.scrollY;
-                  setTimeout(() => window.scrollTo({ top: currentY, behavior: 'instant' }), 0);
+                state={{
+                  from: backLinkHref,
+                  mediaType: selectedMovie?.media_type || explicitType,
                 }}
                 className={({ isActive }) =>
                   `${css.navTile} ${isActive ? css.navTileActive : ''}`
@@ -319,10 +355,9 @@ export const MovieDetails = () => {
               <NavLink
                 to="cast"
                 preventScrollReset={true}
-                state={{ from: backLinkHref }}
-                onClick={() => {
-                  const currentY = window.scrollY;
-                  setTimeout(() => window.scrollTo({ top: currentY, behavior: 'instant' }), 0);
+                state={{
+                  from: backLinkHref,
+                  mediaType: selectedMovie?.media_type || explicitType,
                 }}
                 className={({ isActive }) =>
                   `${css.navTile} ${isActive ? css.navTileActive : ''}`
@@ -335,10 +370,9 @@ export const MovieDetails = () => {
               <NavLink
                 to="reviews"
                 preventScrollReset={true}
-                state={{ from: backLinkHref }}
-                onClick={() => {
-                  const currentY = window.scrollY;
-                  setTimeout(() => window.scrollTo({ top: currentY, behavior: 'instant' }), 0);
+                state={{
+                  from: backLinkHref,
+                  mediaType: selectedMovie?.media_type || explicitType,
                 }}
                 className={({ isActive }) =>
                   `${css.navTile} ${isActive ? css.navTileActive : ''}`
@@ -351,10 +385,9 @@ export const MovieDetails = () => {
               <NavLink
                 to="similar"
                 preventScrollReset={true}
-                state={{ from: backLinkHref }}
-                onClick={() => {
-                  const currentY = window.scrollY;
-                  setTimeout(() => window.scrollTo({ top: currentY, behavior: 'instant' }), 0);
+                state={{
+                  from: backLinkHref,
+                  mediaType: selectedMovie?.media_type || explicitType,
                 }}
                 className={({ isActive }) =>
                   `${css.navTile} ${isActive ? css.navTileActive : ''}`
@@ -366,7 +399,7 @@ export const MovieDetails = () => {
             </nav>
           </div>
 
-          <div key={location.pathname} className={css.outletWrapper}>
+          <div className={css.outletWrapper}>
             <Suspense fallback={<Loader caption="Loading section..." />}>
               <Outlet />
             </Suspense>
