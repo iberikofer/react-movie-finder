@@ -1,12 +1,14 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useSearchParams, Link, useLocation } from 'react-router-dom';
-import { getMovies } from 'fetch';
+import { getMovies, getMoviesByGenre } from 'fetch';
 import MovieCardRatingBadge from '../components/CriticsScore/MovieCardRatingBadge';
+import GenreFilter from '../components/GenreFilter/GenreFilter';
 import Loader from '../components/Loader/Loader';
 import css from './Movies.module.css';
 
 export const Movies = () => {
   const [movies, setMovies] = useState([]);
+  const [selectedGenres, setSelectedGenres] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isPendingDebounce, setIsPendingDebounce] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
@@ -35,20 +37,24 @@ export const Movies = () => {
     }
   }, []);
 
+  const handleToggleGenre = updatedGenres => {
+    setSelectedGenres(updatedGenres);
+    if (!queryText.trim() && updatedGenres.length > 0) {
+      setIsLoading(true);
+    }
+  };
+
+  // Text search debounce effect
   useEffect(() => {
     if (!queryText.trim()) {
-      setMovies([]);
-      setIsLoading(false);
       setIsPendingDebounce(false);
       clearTimeout(debounceTimerRef.current);
       return;
     }
 
     setIsPendingDebounce(true);
-
     clearTimeout(debounceTimerRef.current);
 
-    // 1.5-second debounce before sending API request
     debounceTimerRef.current = setTimeout(() => {
       executeSearch(queryText);
     }, 1500);
@@ -57,6 +63,44 @@ export const Movies = () => {
       clearTimeout(debounceTimerRef.current);
     };
   }, [queryText, executeSearch]);
+
+  // Genre discovery effect when search query is empty
+  useEffect(() => {
+    if (queryText.trim()) {
+      return;
+    }
+
+    if (selectedGenres.length === 0) {
+      setMovies([]);
+      setIsLoading(false);
+      return;
+    }
+
+    let isCurrent = true;
+    setIsLoading(true);
+
+    const loadGenreMovies = async () => {
+      try {
+        const data = await getMoviesByGenre(selectedGenres, 1);
+        if (!isCurrent) return;
+        setMovies(data?.results || []);
+      } catch (err) {
+        if (!isCurrent) return;
+        console.error('Failed to load genre movies:', err);
+        setMovies([]);
+      } finally {
+        if (isCurrent) {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    loadGenreMovies();
+
+    return () => {
+      isCurrent = false;
+    };
+  }, [queryText, selectedGenres]);
 
   const handleSubmit = e => {
     e.preventDefault();
@@ -81,6 +125,15 @@ export const Movies = () => {
       inputRef.current.focus();
     }
   };
+
+  const displayedMovies =
+    selectedGenres.length === 0 || !queryText.trim()
+      ? movies
+      : movies.filter(
+          movie =>
+            Array.isArray(movie.genre_ids) &&
+            selectedGenres.every(id => movie.genre_ids.includes(Number(id)))
+        );
 
   return (
     <div className={css.searchSection}>
@@ -129,11 +182,17 @@ export const Movies = () => {
         </div>
       </form>
 
+      <GenreFilter
+        selectedGenres={selectedGenres}
+        onToggleGenre={handleToggleGenre}
+        allLabel="All Genres"
+      />
+
       {isLoading ? (
-        <Loader caption={`Searching for "${queryText}"...`} />
-      ) : movies.length > 0 ? (
+        <Loader caption={queryText ? `Searching for "${queryText}"...` : 'Loading genre movies...'} />
+      ) : displayedMovies.length > 0 ? (
         <ul className={css.movieGrid}>
-          {movies.map(movie => {
+          {displayedMovies.map(movie => {
             const title = movie.title || movie.name;
             return (
               <li key={movie.id} className={css.movieCard}>
@@ -163,9 +222,11 @@ export const Movies = () => {
           })}
         </ul>
       ) : (
-        queryText && (
+        (queryText || selectedGenres.length > 0) && (
           <p className={css.noResults}>
-            No movies found for "{queryText}"
+            {queryText
+              ? `No movies found matching the selected genres for "${queryText}"`
+              : 'No movies found for the selected genres'}
           </p>
         )
       )}

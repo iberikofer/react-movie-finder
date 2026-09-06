@@ -60,13 +60,15 @@ export const MovieGallery = ({ movieId, movieTitle = 'Movie' }) => {
     };
   }, [movieId]);
 
-  // Create base items list with minimum 8 photos so it spans beyond any screen width
-  const repeatFactor = images.length > 0 && images.length < 8
+  const hasFewPhotos = images.length < 5;
+
+  // Create base items list with minimum 8 photos so it spans beyond any screen width (only when >= 5 photos)
+  const repeatFactor = !hasFewPhotos && images.length < 8
     ? Math.ceil(8 / images.length)
     : 1;
 
   const baseItems = images.length > 0
-    ? Array.from({ length: repeatFactor }, () => images).flat()
+    ? (hasFewPhotos ? images : Array.from({ length: repeatFactor }, () => images).flat())
     : [];
 
   // Helper to measure exact width of 1 set (all cards + gap)
@@ -96,7 +98,7 @@ export const MovieGallery = ({ movieId, movieTitle = 'Movie' }) => {
   // Initialize track scroll position to Set 2 (middle set) on load
   useEffect(() => {
     const track = trackRef.current;
-    if (!track || baseItems.length === 0) return;
+    if (!track || baseItems.length === 0 || hasFewPhotos) return;
 
     let attempts = 0;
     let timerId;
@@ -114,12 +116,12 @@ export const MovieGallery = ({ movieId, movieTitle = 'Movie' }) => {
 
     timerId = setTimeout(initScroll, 40);
     return () => clearTimeout(timerId);
-  }, [baseItems.length, getSingleSetWidth]);
+  }, [baseItems.length, getSingleSetWidth, hasFewPhotos]);
 
   // Sync scroll position and resume auto-drift when browser finishes smooth scroll
   useEffect(() => {
     const track = trackRef.current;
-    if (!track) return;
+    if (!track || hasFewPhotos) return;
 
     const handleScrollEnd = () => {
       if (isManualScrollingRef.current) {
@@ -147,11 +149,11 @@ export const MovieGallery = ({ movieId, movieTitle = 'Movie' }) => {
       track.removeEventListener('scrollend', handleScrollEnd);
       clearTimeout(manualTimeoutRef.current);
     };
-  }, [getSingleSetWidth]);
+  }, [getSingleSetWidth, hasFewPhotos]);
 
   // Continuous, slow, buttery-smooth linear marquee loop via requestAnimationFrame
   useEffect(() => {
-    if (images.length <= 1) return;
+    if (hasFewPhotos) return;
 
     let animationFrameId;
     let lastTime = performance.now();
@@ -191,7 +193,7 @@ export const MovieGallery = ({ movieId, movieTitle = 'Movie' }) => {
     return () => {
       cancelAnimationFrame(animationFrameId);
     };
-  }, [images.length, getSingleSetWidth]);
+  }, [hasFewPhotos, getSingleSetWidth]);
 
   // Manual Next arrow: reveals peeking photo on right + next one ("через одну") flush with right edge
   const scrollNext = useCallback(() => {
@@ -411,54 +413,64 @@ export const MovieGallery = ({ movieId, movieTitle = 'Movie' }) => {
           <span className={css.photoCountBadge}>{images.length} photos</span>
         </div>
 
-        <div className={css.controlsGroup}>
-          <button
-            type="button"
-            className={css.navArrowBtn}
-            onClick={scrollPrev}
-            aria-label="Previous photos"
-            title="Previous photos"
-          >
-            ‹
-          </button>
-          <button
-            type="button"
-            className={css.navArrowBtn}
-            onClick={scrollNext}
-            aria-label="Next photos"
-            title="Next photos"
-          >
-            ›
-          </button>
-        </div>
+        {!hasFewPhotos && (
+          <div className={css.controlsGroup}>
+            <button
+              type="button"
+              className={css.navArrowBtn}
+              onClick={scrollPrev}
+              aria-label="Previous photos"
+              title="Previous photos"
+            >
+              ‹
+            </button>
+            <button
+              type="button"
+              className={css.navArrowBtn}
+              onClick={scrollNext}
+              aria-label="Next photos"
+              title="Next photos"
+            >
+              ›
+            </button>
+          </div>
+        )}
       </div>
 
-      <div
-        className={css.carouselTrack}
-        ref={trackRef}
-        onScroll={handleScroll}
-        onMouseEnter={() => {
-          isHoveredRef.current = true;
-        }}
-        onMouseLeave={() => {
-          isHoveredRef.current = false;
-        }}
-      >
-        {/* Set 1 (Buffer on left for seamless backward scrolling) */}
-        <div ref={set1Ref} className={css.photoSet}>
-          {baseItems.map((item, idx) => renderPhotoCard(item, idx, 'set1'))}
+      {hasFewPhotos ? (
+        <div className={`${css.carouselTrack} ${css.fewPhotosTrack}`}>
+          <div className={`${css.photoSet} ${css.fewPhotosSet}`}>
+            {images.map((item, idx) => renderPhotoCard(item, idx, 'single'))}
+          </div>
         </div>
+      ) : (
+        <div
+          className={css.carouselTrack}
+          ref={trackRef}
+          onScroll={handleScroll}
+          onMouseEnter={() => {
+            isHoveredRef.current = true;
+          }}
+          onMouseLeave={() => {
+            isHoveredRef.current = false;
+          }}
+        >
+          {/* Set 1 (Buffer on left for seamless backward scrolling) */}
+          <div ref={set1Ref} className={css.photoSet}>
+            {baseItems.map((item, idx) => renderPhotoCard(item, idx, 'set1'))}
+          </div>
 
-        {/* Set 2 (Active set where initial viewing begins) */}
-        <div className={css.photoSet}>
-          {baseItems.map((item, idx) => renderPhotoCard(item, idx, 'set2'))}
-        </div>
+          {/* Set 2 (Active set where initial viewing begins) */}
+          <div className={css.photoSet}>
+            {baseItems.map((item, idx) => renderPhotoCard(item, idx, 'set2'))}
+          </div>
 
-        {/* Set 3 (Buffer on right for seamless infinite continuation) */}
-        <div className={css.photoSet}>
-          {baseItems.map((item, idx) => renderPhotoCard(item, idx, 'set3'))}
+          {/* Set 3 (Buffer on right for seamless infinite continuation) */}
+          <div className={css.photoSet}>
+            {baseItems.map((item, idx) => renderPhotoCard(item, idx, 'set3'))}
+          </div>
         </div>
-      </div>
+      )}
 
       {lightboxIndex !== null && images[lightboxIndex] && (() => {
         const currentImg = images[lightboxIndex];

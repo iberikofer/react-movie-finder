@@ -28,8 +28,25 @@ export const getMovies = queryText => {
   );
 };
 
-export const getTrendingMovies = () => {
-  return request('/trending/all/day?language=en-US');
+export const getTrendingMovies = (page = 1) => {
+  return request(`/trending/all/day?language=en-US&page=${page}`);
+};
+
+export const getMovieGenres = async () => {
+  try {
+    const data = await request('/genre/movie/list?language=en-US');
+    return data.genres || [];
+  } catch (error) {
+    console.error('Failed to load genres:', error);
+    return [];
+  }
+};
+
+export const getMoviesByGenre = (genreIds, page = 1) => {
+  const genreParam = Array.isArray(genreIds) ? genreIds.join(',') : genreIds;
+  return request(
+    `/discover/movie?sort_by=popularity.desc&with_genres=${genreParam}&page=${page}&language=en-US`
+  );
 };
 
 export const getMovieDetails = async movieId => {
