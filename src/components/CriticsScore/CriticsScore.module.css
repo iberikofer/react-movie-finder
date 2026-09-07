@@ -142,11 +142,9 @@
 .tmdbPercentBadge {
   font-size: 1.05rem;
   font-weight: 800;
-  color: #059669;
-  background: rgba(5, 150, 105, 0.15);
-  padding: 2px 8px;
-  border-radius: 6px;
-  border: 1px solid rgba(5, 150, 105, 0.3);
+  color: var(--color-text);
+  display: inline-flex;
+  align-items: center;
   line-height: 1.2;
 }
 

@@ -9,9 +9,11 @@
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   z-index: 6;
-  pointer-events: none;
   user-select: none;
-  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  -webkit-user-select: none;
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 0.2s ease,
+              filter 0.2s ease;
 }
 
 /* On Card Posters */
@@ -22,6 +24,18 @@
   padding: 5px 12px;
   font-size: 0.76rem;
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.45);
+  pointer-events: auto;
+  cursor: pointer;
+}
+
+.posterBadge:hover {
+  transform: scale(1.08);
+  filter: brightness(1.18);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.6);
+}
+
+.posterBadge:active {
+  transform: scale(0.97);
 }
 
 /* On Movie Details Page (as requested in screenshot) */

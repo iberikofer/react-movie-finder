@@ -77,16 +77,20 @@ export const CriticsScore = ({ movieId, movie }) => {
             <span className={css.sourceLinkTmdb}>TMDB</span>
           )}
           <div className={css.ratingDataGroup}>
-            <span className={css.tmdbPercentBadge}>
-              {movie?.vote_average
-                ? `${Math.round(movie.vote_average * 10)}%`
-                : 'N/A'}
-            </span>
-            {movie?.vote_count > 0 && (
-              <span className={css.voteCount}>
-                ({movie.vote_count.toLocaleString()}{' '}
-                {movie.vote_count === 1 ? 'vote' : 'votes'})
-              </span>
+            {movie?.vote_average ? (
+              <>
+                <span className={css.tmdbPercentBadge}>
+                  {`${Math.round(movie.vote_average * 10)}%`}
+                </span>
+                {movie?.vote_count > 0 && (
+                  <span className={css.voteCount}>
+                    ({movie.vote_count.toLocaleString()}{' '}
+                    {movie.vote_count === 1 ? 'vote' : 'votes'})
+                  </span>
+                )}
+              </>
+            ) : (
+              <span className={css.emptyInvite}>N/A</span>
             )}
           </div>
         </div>

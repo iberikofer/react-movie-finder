@@ -1,12 +1,14 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { setMediaType, getMovieDetails } from 'fetch';
+import { setMediaType, getMovieDetails, matchesAgeFilter } from 'fetch';
 import { useSavedMovies, getSavedMovies } from '../hooks/useSavedMovies';
 import FilterBar, { SAVED_SORT_OPTIONS } from '../components/FilterBar/FilterBar';
 import MediaTypeBadge from '../components/MediaTypeBadge/MediaTypeBadge';
+import AgeRatingBadge from '../components/AgeRatingBadge/AgeRatingBadge';
 import MovieCardRatingBadge from '../components/CriticsScore/MovieCardRatingBadge';
 import SaveMovieButton from '../components/SaveMovieButton/SaveMovieButton';
 import Loader from '../components/Loader/Loader';
+import { clearPageSession } from '../utils/sessionStorage';
 import css from './Saved.module.css';
 
 let hasLoadedSavedOnce = false;
@@ -23,44 +25,7 @@ const getMovieGenreIds = movie => {
 };
 
 const matchesAgeRating = (ratingStr, filterAge) => {
-  if (!ratingStr) return false;
-  if (filterAge === 'all') return true;
-  const str = String(ratingStr).toUpperCase();
-
-  switch (filterAge) {
-    case '18+':
-      return (
-        str.includes('18+') ||
-        str.includes('US: R') ||
-        str.includes('US: NC-17') ||
-        str.includes('TV-MA') ||
-        str.includes('ADULT')
-      );
-    case '16+':
-      return (
-        str.includes('16+') ||
-        str.includes('15+') ||
-        str.includes('14+') ||
-        str.includes('TV-14')
-      );
-    case '12+':
-      return str.includes('12+') || str.includes('PG-13') || str.includes('13+');
-    case '6+':
-      return (
-        str.includes('6+') ||
-        str.includes('7+') ||
-        (str.includes('PG') && !str.includes('PG-13'))
-      );
-    case '0+':
-      return (
-        str.includes('0+') ||
-        str.includes('US: G') ||
-        str.includes('TV-G') ||
-        str.includes('TV-Y')
-      );
-    default:
-      return str.includes(filterAge.toUpperCase());
-  }
+  return matchesAgeFilter(ratingStr, filterAge);
 };
 
 export const Saved = () => {
@@ -240,6 +205,10 @@ export const Saved = () => {
     setSelectedGenres(prev =>
       prev.includes(genreId) ? prev.filter(id => id !== genreId) : [...prev, genreId]
     );
+  };
+
+  const handleGenresChange = newGenres => {
+    setSelectedGenres(newGenres);
   };
 
   const handleResetAllFilters = () => {
@@ -463,6 +432,7 @@ export const Saved = () => {
                   selectedGenres={selectedGenres}
                   onToggleGenre={handleToggleGenre}
                   onClearGenres={() => setSelectedGenres([])}
+                  onGenresChange={handleGenresChange}
                   sortBy={sortBy}
                   onSortChange={setSortBy}
                   onResetFilters={handleResetAllFilters}
@@ -493,10 +463,11 @@ export const Saved = () => {
                     to={`/movies/${movie.id}${
                       movie.media_type === 'tv' ? '?type=tv' : ''
                     }`}
-                    state={{ from: location, mediaType: movie.media_type }}
+                    state={{ from: location, mediaType: movie.media_type, source: 'saved' }}
                     className={css.movieLink}
                     draggable="false"
                     onClick={e => {
+                      sessionStorage.setItem('movie_origin_tab', 'saved');
                       if (isRemoving) {
                         e.preventDefault();
                         return;
@@ -530,6 +501,11 @@ export const Saved = () => {
                       <MediaTypeBadge
                         mediaType={movie.media_type}
                         item={movie}
+                        onFilterType={setFilterType}
+                      />
+                      <AgeRatingBadge
+                        movie={movie}
+                        onFilterAge={setFilterAge}
                       />
                       <SaveMovieButton
                         movie={movie}
@@ -562,7 +538,11 @@ export const Saved = () => {
             </p>
             {savedMovies.length === 0 ? (
               <div className={css.emptyActions}>
-                <Link to="/trending" className={css.primaryCta}>
+                <Link
+                  to="/trending"
+                  className={css.primaryCta}
+                  onClick={() => clearPageSession('trending_session')}
+                >
                   <span>🔥 Explore Trending Now</span>
                 </Link>
                 <Link to="/movies" className={css.secondaryCta}>

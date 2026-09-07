@@ -1,10 +1,17 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useSearchParams, Link, useLocation } from 'react-router-dom';
-import { searchMedia, discoverMedia, setMediaType } from 'fetch';
+import {
+  searchMedia,
+  discoverMedia,
+  setMediaType,
+  getMediaAgeRating,
+  matchesAgeFilter,
+} from 'fetch';
 import MovieCardRatingBadge from '../components/CriticsScore/MovieCardRatingBadge';
 import FilterBar from '../components/FilterBar/FilterBar';
 import Loader from '../components/Loader/Loader';
 import MediaTypeBadge from '../components/MediaTypeBadge/MediaTypeBadge';
+import AgeRatingBadge from '../components/AgeRatingBadge/AgeRatingBadge';
 import SaveMovieButton from '../components/SaveMovieButton/SaveMovieButton';
 import {
   savePageSession,
@@ -39,10 +46,9 @@ export const Movies = () => {
 
   const restoredSessionRef = useRef(null);
   if (!restoredSessionRef.current) {
-    const saved = getPageSession('movies_session');
+    const saved = getPageSession('movies_session', filterKey);
     if (
       saved &&
-      saved.filterKey === filterKey &&
       Array.isArray(saved.movies) &&
       saved.movies.length > 0
     ) {
@@ -66,7 +72,11 @@ export const Movies = () => {
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [isPendingDebounce, setIsPendingDebounce] = useState(false);
   const [isInputFocused, setIsInputFocused] = useState(false);
-  const hasRestoredForFilterRef = useRef(Boolean(restoredSessionRef.current));
+  const lastLoadedFilterKeyRef = useRef(
+    restoredSessionRef.current ? filterKey : null
+  );
+  const isRestoringScrollRef = useRef(false);
+  const lastUserScrollYRef = useRef(0);
 
   const hasActiveFilters =
     filterType !== 'all' ||
@@ -117,6 +127,10 @@ export const Movies = () => {
     updateFilterParams({ genres: updated.length > 0 ? updated.join(',') : '' });
   };
 
+  const handleGenresChange = newGenres => {
+    updateFilterParams({ genres: newGenres.length > 0 ? newGenres.join(',') : '' });
+  };
+
   const handleClearGenres = () => {
     updateFilterParams({ genres: '' });
   };
@@ -137,27 +151,71 @@ export const Movies = () => {
     }
   }, []);
 
-  // Restore scroll position when restored from session
-  useEffect(() => {
-    if (restoredSessionRef.current?.scrollY > 0) {
-      const targetY = restoredSessionRef.current.scrollY;
-      const restore = () => {
+  // Helper: fast and smooth scroll restoration
+  const restoreScrollTo = useCallback((targetY) => {
+    if (!(targetY > 0)) return;
+    isRestoringScrollRef.current = true;
+
+    let rafId = null;
+    let timeoutId = setTimeout(() => {
+      const startY = window.scrollY;
+      const diff = targetY - startY;
+      if (Math.abs(diff) < 8) {
         window.scrollTo({ top: targetY, behavior: 'instant' });
+        isRestoringScrollRef.current = false;
+        return;
+      }
+
+      // Fast and responsive duration: 220ms - 380ms depending on distance
+      const duration = Math.min(380, Math.max(220, Math.abs(diff) * 0.22));
+      const startTime = performance.now();
+      const easeOutCubic = t => 1 - Math.pow(1 - t, 3);
+
+      const step = now => {
+        const elapsed = now - startTime;
+        const progress = Math.min(1, elapsed / duration);
+        const ease = easeOutCubic(progress);
+        window.scrollTo({ top: Math.round(startY + diff * ease), behavior: 'instant' });
+
+        if (progress < 1) {
+          rafId = requestAnimationFrame(step);
+        } else {
+          window.scrollTo({ top: targetY, behavior: 'instant' });
+          setTimeout(() => {
+            isRestoringScrollRef.current = false;
+          }, 80);
+        }
       };
-      requestAnimationFrame(restore);
-      const timer = setTimeout(restore, 40);
-      return () => clearTimeout(timer);
-    }
+
+      rafId = requestAnimationFrame(step);
+    }, 40);
+
+    return () => {
+      clearTimeout(timeoutId);
+      if (rafId) cancelAnimationFrame(rafId);
+      isRestoringScrollRef.current = false;
+    };
   }, []);
 
-  // Track and save scroll position to session
+  // Restore scroll position with safe retries when restored from session at mount
+  useEffect(() => {
+    if (restoredSessionRef.current?.scrollY > 0) {
+      return restoreScrollTo(restoredSessionRef.current.scrollY);
+    }
+  }, [restoreScrollTo]);
+
+  // Track and save scroll position to session, guarded against restoration resets
   useEffect(() => {
     let scrollTimeout = null;
     const handleScroll = () => {
+      if (isRestoringScrollRef.current) return;
+      lastUserScrollYRef.current = window.scrollY;
       if (scrollTimeout) return;
       scrollTimeout = setTimeout(() => {
         scrollTimeout = null;
-        updatePageScroll('movies_session', window.scrollY);
+        if (!isRestoringScrollRef.current) {
+          updatePageScroll('movies_session', window.scrollY, filterKey);
+        }
       }, 150);
     };
 
@@ -165,9 +223,11 @@ export const Movies = () => {
     return () => {
       if (scrollTimeout) clearTimeout(scrollTimeout);
       window.removeEventListener('scroll', handleScroll);
-      updatePageScroll('movies_session', window.scrollY);
+      if (!isRestoringScrollRef.current && lastUserScrollYRef.current > 0) {
+        updatePageScroll('movies_session', lastUserScrollYRef.current, filterKey);
+      }
     };
-  }, []);
+  }, [filterKey]);
 
   const executeSearch = useCallback(
     async query => {
@@ -195,16 +255,26 @@ export const Movies = () => {
         results.forEach(item => {
           if (item.media_type) setMediaType(item.id, item.media_type);
         });
-        setMovies(results);
+        let finalResults = results;
+        if (filterAge !== 'all') {
+          finalResults = await Promise.all(
+            results.map(async item => {
+              const rating = await getMediaAgeRating(item.id, item.media_type);
+              return { ...item, age_rating: rating };
+            })
+          );
+        }
+        setMovies(finalResults);
         setPage(1);
         setTotalPages(data.total_pages || 1);
         savePageSession('movies_session', {
           filterKey,
-          movies: results,
+          movies: finalResults,
           page: 1,
           totalPages: data.total_pages || 1,
           scrollY: 0,
         });
+        lastLoadedFilterKeyRef.current = filterKey;
       } catch (error) {
         console.error('Failed to search media:', error);
         setMovies([]);
@@ -214,13 +284,29 @@ export const Movies = () => {
         setIsLoading(false);
       }
     },
-    [filterType, hasActiveFilters, filterKey]
+    [filterType, filterAge, hasActiveFilters, filterKey]
   );
 
   // Text search debounce effect
   useEffect(() => {
-    if (hasRestoredForFilterRef.current) {
-      hasRestoredForFilterRef.current = false;
+    if (lastLoadedFilterKeyRef.current === filterKey) {
+      return;
+    }
+
+    // Check if we have cached data for this filter state (from prior search, navigation or load more)
+    const saved = getPageSession('movies_session', filterKey);
+    if (
+      saved &&
+      Array.isArray(saved.movies) &&
+      saved.movies.length > 0
+    ) {
+      setMovies(saved.movies);
+      setPage(saved.page || 1);
+      setTotalPages(saved.totalPages || 1);
+      setIsLoading(false);
+      setIsPendingDebounce(false);
+      lastLoadedFilterKeyRef.current = filterKey;
+      restoreScrollTo(saved.scrollY || 0);
       return;
     }
 
@@ -240,7 +326,7 @@ export const Movies = () => {
     return () => {
       clearTimeout(debounceTimerRef.current);
     };
-  }, [queryText, executeSearch]);
+  }, [queryText, executeSearch, filterKey, restoreScrollTo]);
 
   // Discovery mode effect when search query is empty
   useEffect(() => {
@@ -248,8 +334,23 @@ export const Movies = () => {
       return;
     }
 
-    if (hasRestoredForFilterRef.current) {
-      hasRestoredForFilterRef.current = false;
+    if (lastLoadedFilterKeyRef.current === filterKey) {
+      return;
+    }
+
+    // Check if we have cached data for this filter state (from prior discovery or navigation)
+    const saved = getPageSession('movies_session', filterKey);
+    if (
+      saved &&
+      Array.isArray(saved.movies) &&
+      saved.movies.length > 0
+    ) {
+      setMovies(saved.movies);
+      setPage(saved.page || 1);
+      setTotalPages(saved.totalPages || 1);
+      setIsLoading(false);
+      lastLoadedFilterKeyRef.current = filterKey;
+      restoreScrollTo(saved.scrollY || 0);
       return;
     }
 
@@ -267,33 +368,90 @@ export const Movies = () => {
     const loadFilteredMedia = async () => {
       const startTime = Date.now();
       try {
-        const data = await discoverMedia({
-          type: filterType,
-          genreIds: selectedGenres,
-          age: filterAge,
-          sortBy,
-          page: 1,
-        });
+        let items = [];
+        let curPage = 1;
+        let totPages = 1;
+
+        if (filterAge === 'all') {
+          const data = await discoverMedia({
+            type: filterType,
+            genreIds: selectedGenres,
+            age: filterAge,
+            sortBy,
+            page: 1,
+          });
+          if (!isCurrent) return;
+          const results = (data?.results || []).filter(movie => movie.title || movie.name);
+          results.forEach(item => {
+            if (item.media_type) setMediaType(item.id, item.media_type);
+          });
+          items = results;
+          curPage = 1;
+          totPages = data?.total_pages || 1;
+        } else {
+          // Hybrid approach: scan and verify age ratings
+          let p = 1;
+          let fetchedCount = 0;
+          let maxPagesToScan = 4;
+          totPages = 1;
+
+          while (isCurrent && items.length < 15 && p <= totPages && fetchedCount < maxPagesToScan) {
+            const data = await discoverMedia({
+              type: filterType,
+              genreIds: selectedGenres,
+              age: filterAge,
+              sortBy,
+              page: p,
+            });
+            if (!isCurrent) return;
+            totPages = data?.total_pages || 1;
+            const raw = (data?.results || []).filter(movie => movie.title || movie.name);
+            raw.forEach(item => {
+              if (item.media_type) setMediaType(item.id, item.media_type);
+            });
+
+            const enriched = await Promise.all(
+              raw.map(async item => {
+                const rating = await getMediaAgeRating(item.id, item.media_type);
+                return { ...item, age_rating: rating };
+              })
+            );
+
+            const matched = enriched.filter(item => matchesAgeFilter(item.age_rating, filterAge));
+            const existingKeys = new Set(items.map(m => `${m.media_type || 'movie'}-${m.id}`));
+            matched.forEach(item => {
+              const key = `${item.media_type || 'movie'}-${item.id}`;
+              if (!existingKeys.has(key)) {
+                existingKeys.add(key);
+                items.push(item);
+              }
+            });
+
+            curPage = p;
+            p += 1;
+            fetchedCount += 1;
+            if (raw.length === 0) break;
+          }
+        }
+
         if (!isCurrent) return;
         const elapsed = Date.now() - startTime;
         if (elapsed < 500) {
           await new Promise(resolve => setTimeout(resolve, 500 - elapsed));
         }
         if (!isCurrent) return;
-        const results = (data?.results || []).filter(movie => movie.title || movie.name);
-        results.forEach(item => {
-          if (item.media_type) setMediaType(item.id, item.media_type);
-        });
-        setMovies(results);
-        setPage(1);
-        setTotalPages(data?.total_pages || 1);
+
+        setMovies(items);
+        setPage(curPage);
+        setTotalPages(totPages);
         savePageSession('movies_session', {
           filterKey,
-          movies: results,
-          page: 1,
-          totalPages: data?.total_pages || 1,
+          movies: items,
+          page: curPage,
+          totalPages: totPages,
           scrollY: 0,
         });
+        lastLoadedFilterKeyRef.current = filterKey;
       } catch (err) {
         if (!isCurrent) return;
         console.error('Failed to discover media:', err);
@@ -312,7 +470,7 @@ export const Movies = () => {
     return () => {
       isCurrent = false;
     };
-  }, [queryText, hasActiveFilters, filterType, selectedGenres, filterAge, sortBy, filterKey]);
+  }, [queryText, hasActiveFilters, filterType, selectedGenres, filterAge, sortBy, filterKey, restoreScrollTo]);
 
   const handleSubmit = e => {
     e.preventDefault();
@@ -338,47 +496,147 @@ export const Movies = () => {
     if (isLoadingMore || page >= totalPages) return;
     setIsLoadingMore(true);
 
-    const nextPage = page + 1;
     try {
-      let data;
       if (queryText.trim()) {
-        data = await searchMedia(queryText.trim(), nextPage, filterType);
-      } else {
-        data = await discoverMedia({
+        const nextPage = page + 1;
+        const data = await searchMedia(queryText.trim(), nextPage, filterType);
+        if (data?.results) {
+          const newResults = data.results.filter(movie => movie.title || movie.name);
+          newResults.forEach(item => {
+            if (item.media_type) setMediaType(item.id, item.media_type);
+          });
+          let processedResults = newResults;
+          if (filterAge !== 'all') {
+            processedResults = await Promise.all(
+              newResults.map(async item => {
+                const rating = await getMediaAgeRating(item.id, item.media_type);
+                return { ...item, age_rating: rating };
+              })
+            );
+          }
+          if (processedResults.length === 0) {
+            setTotalPages(page);
+          } else {
+            setMovies(prev => {
+              const existingKeys = new Set(prev.map(m => `${m.media_type || 'movie'}-${m.id}`));
+              const uniqueNew = processedResults.filter(
+                m => !existingKeys.has(`${m.media_type || 'movie'}-${m.id}`)
+              );
+              const updated = [...prev, ...uniqueNew];
+              savePageSession('movies_session', {
+                filterKey,
+                movies: updated,
+                page: nextPage,
+                totalPages: data.total_pages || 1,
+                scrollY: Math.round(window.scrollY),
+              });
+              return updated;
+            });
+            setPage(nextPage);
+            setTotalPages(data.total_pages || 1);
+          }
+        }
+      } else if (filterAge === 'all') {
+        const nextPage = page + 1;
+        const data = await discoverMedia({
           type: filterType,
           genreIds: selectedGenres,
           age: filterAge,
           sortBy,
           page: nextPage,
         });
-      }
 
-      if (data?.results) {
-        const newResults = data.results.filter(movie => movie.title || movie.name);
-        newResults.forEach(item => {
-          if (item.media_type) setMediaType(item.id, item.media_type);
-        });
-        if (newResults.length === 0) {
-          setTotalPages(page);
-        } else {
+        if (data?.results) {
+          const newResults = data.results.filter(movie => movie.title || movie.name);
+          newResults.forEach(item => {
+            if (item.media_type) setMediaType(item.id, item.media_type);
+          });
+          if (newResults.length === 0) {
+            setTotalPages(page);
+          } else {
+            setMovies(prev => {
+              const existingKeys = new Set(prev.map(m => `${m.media_type || 'movie'}-${m.id}`));
+              const uniqueNew = newResults.filter(
+                m => !existingKeys.has(`${m.media_type || 'movie'}-${m.id}`)
+              );
+              const updated = [...prev, ...uniqueNew];
+              savePageSession('movies_session', {
+                filterKey,
+                movies: updated,
+                page: nextPage,
+                totalPages: data.total_pages || 1,
+                scrollY: Math.round(window.scrollY),
+              });
+              return updated;
+            });
+            setPage(nextPage);
+            setTotalPages(data.total_pages || 1);
+          }
+        }
+      } else {
+        // Hybrid age filtering load more
+        let p = page + 1;
+        let newItems = [];
+        let fetchedCount = 0;
+        let maxPagesToScan = 3;
+        let totPages = totalPages;
+
+        while (newItems.length < 10 && p <= totPages && fetchedCount < maxPagesToScan) {
+          const data = await discoverMedia({
+            type: filterType,
+            genreIds: selectedGenres,
+            age: filterAge,
+            sortBy,
+            page: p,
+          });
+
+          totPages = data?.total_pages || 1;
+          const raw = (data?.results || []).filter(movie => movie.title || movie.name);
+          raw.forEach(item => {
+            if (item.media_type) setMediaType(item.id, item.media_type);
+          });
+
+          const enriched = await Promise.all(
+            raw.map(async item => {
+              const rating = await getMediaAgeRating(item.id, item.media_type);
+              return { ...item, age_rating: rating };
+            })
+          );
+
+          const matched = enriched.filter(item => matchesAgeFilter(item.age_rating, filterAge));
+          const existingKeys = new Set([
+            ...movies.map(m => `${m.media_type || 'movie'}-${m.id}`),
+            ...newItems.map(m => `${m.media_type || 'movie'}-${m.id}`),
+          ]);
+          matched.forEach(item => {
+            const key = `${item.media_type || 'movie'}-${item.id}`;
+            if (!existingKeys.has(key)) {
+              existingKeys.add(key);
+              newItems.push(item);
+            }
+          });
+
+          fetchedCount += 1;
+          if (raw.length === 0) break;
+          p += 1;
+        }
+
+        const finalPage = Math.max(page, p - 1);
+        if (newItems.length > 0) {
           setMovies(prev => {
-            const existingKeys = new Set(prev.map(m => `${m.media_type || 'movie'}-${m.id}`));
-            const uniqueNew = newResults.filter(
-              m => !existingKeys.has(`${m.media_type || 'movie'}-${m.id}`)
-            );
-            const updated = [...prev, ...uniqueNew];
+            const updated = [...prev, ...newItems];
             savePageSession('movies_session', {
               filterKey,
               movies: updated,
-              page: nextPage,
-              totalPages: data.total_pages || 1,
+              page: finalPage,
+              totalPages: totPages,
               scrollY: Math.round(window.scrollY),
             });
             return updated;
           });
-          setPage(nextPage);
-          setTotalPages(data.total_pages || 1);
         }
+        setPage(finalPage);
+        setTotalPages(totPages);
       }
     } catch (error) {
       console.error('Failed to load more media:', error);
@@ -399,6 +657,9 @@ export const Movies = () => {
       }
       if (filterType !== 'all') {
         list = list.filter(m => m.media_type === filterType);
+      }
+      if (filterAge !== 'all') {
+        list = list.filter(m => matchesAgeFilter(m.age_rating, filterAge));
       }
       if (sortBy === 'vote_average.desc') {
         list = [...list].sort((a, b) => (b.vote_average || 0) - (a.vote_average || 0));
@@ -435,7 +696,7 @@ export const Movies = () => {
     }
 
     return list;
-  }, [movies, queryText, selectedGenres, filterType, sortBy, page, totalPages]);
+  }, [movies, queryText, selectedGenres, filterType, filterAge, sortBy, page, totalPages]);
 
   if (isInitialLoading) {
     return <Loader isCentered caption="Loading search..." />;
@@ -489,6 +750,7 @@ export const Movies = () => {
               selectedGenres={selectedGenres}
               onToggleGenre={handleToggleGenre}
               onClearGenres={handleClearGenres}
+              onGenresChange={handleGenresChange}
               sortBy={sortBy}
               onSortChange={handleSortChange}
               onResetFilters={handleResetAllFilters}
@@ -530,11 +792,12 @@ export const Movies = () => {
                 <li key={movie.id} className={css.movieCard}>
                   <Link
                     to={`/movies/${movie.id}`}
-                    state={{ from: location, mediaType: movie.media_type }}
+                    state={{ from: location, mediaType: movie.media_type, source: 'movies' }}
                     className={css.movieLink}
                     draggable="false"
                     onClick={e => {
-                      updatePageScroll('movies_session', window.scrollY);
+                      sessionStorage.setItem('movie_origin_tab', 'movies');
+                      updatePageScroll('movies_session', window.scrollY, filterKey, true);
                       const selection = window.getSelection();
                       if (
                         selection &&
@@ -557,7 +820,15 @@ export const Movies = () => {
                         className={css.poster}
                       />
                       <MovieCardRatingBadge movieId={movie.id} />
-                      <MediaTypeBadge mediaType={movie.media_type} item={movie} />
+                      <MediaTypeBadge
+                        mediaType={movie.media_type}
+                        item={movie}
+                        onFilterType={handleTypeChange}
+                      />
+                      <AgeRatingBadge
+                        movie={movie}
+                        onFilterAge={handleAgeChange}
+                      />
                       <SaveMovieButton movie={movie} />
                     </div>
                     <div className={css.titleWrapper}>

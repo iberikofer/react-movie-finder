@@ -20,6 +20,21 @@ export const MovieDetails = () => {
   const backLinkHref = location.state?.from ?? '/';
   const fetchedMovieIdRef = useRef(null);
 
+  const originSource =
+    location.state?.source ||
+    sessionStorage.getItem('movie_origin_tab') ||
+    (backLinkHref?.pathname?.includes('trending') || String(backLinkHref).includes('trending')
+      ? 'trending'
+      : backLinkHref?.pathname?.includes('saved') || String(backLinkHref).includes('saved')
+      ? 'saved'
+      : 'movies');
+
+  useEffect(() => {
+    if (originSource) {
+      sessionStorage.setItem('movie_origin_tab', originSource);
+    }
+  }, [originSource]);
+
   const fetchDetails = useCallback(async (targetMovieId, typeHint) => {
     setIsLoading(true);
     setHasError(false);
@@ -313,6 +328,7 @@ export const MovieDetails = () => {
                 state={{
                   from: backLinkHref,
                   mediaType: selectedMovie?.media_type || explicitType,
+                  source: originSource,
                 }}
                 className={({ isActive }) =>
                   `${css.navTile} ${isActive ? css.navTileActive : ''}`
@@ -328,6 +344,7 @@ export const MovieDetails = () => {
                 state={{
                   from: backLinkHref,
                   mediaType: selectedMovie?.media_type || explicitType,
+                  source: originSource,
                 }}
                 className={({ isActive }) =>
                   `${css.navTile} ${isActive ? css.navTileActive : ''}`
@@ -343,6 +360,7 @@ export const MovieDetails = () => {
                 state={{
                   from: backLinkHref,
                   mediaType: selectedMovie?.media_type || explicitType,
+                  source: originSource,
                 }}
                 className={({ isActive }) =>
                   `${css.navTile} ${isActive ? css.navTileActive : ''}`
@@ -358,6 +376,7 @@ export const MovieDetails = () => {
                 state={{
                   from: backLinkHref,
                   mediaType: selectedMovie?.media_type || explicitType,
+                  source: originSource,
                 }}
                 className={({ isActive }) =>
                   `${css.navTile} ${isActive ? css.navTileActive : ''}`
@@ -373,6 +392,7 @@ export const MovieDetails = () => {
                 state={{
                   from: backLinkHref,
                   mediaType: selectedMovie?.media_type || explicitType,
+                  source: originSource,
                 }}
                 className={({ isActive }) =>
                   `${css.navTile} ${isActive ? css.navTileActive : ''}`
@@ -388,6 +408,7 @@ export const MovieDetails = () => {
                 state={{
                   from: backLinkHref,
                   mediaType: selectedMovie?.media_type || explicitType,
+                  source: originSource,
                 }}
                 className={({ isActive }) =>
                   `${css.navTile} ${isActive ? css.navTileActive : ''}`

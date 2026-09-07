@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
+import PropTypes from 'prop-types';
 import { createPortal } from 'react-dom';
 import { getMovieImages } from 'fetch';
 import Loader from '../Loader/Loader';
@@ -6,24 +7,132 @@ import css from './MovieGallery.module.css';
 
 // Speed of continuous drift in pixels per second
 const DRIFT_SPEED = 25;
+const GALLERY_CACHE_KEY = 'gallery_viewed_photos';
+
+const getViewedPhotosSet = () => {
+  try {
+    const raw = sessionStorage.getItem(GALLERY_CACHE_KEY);
+    if (!raw) return new Set();
+    const arr = JSON.parse(raw);
+    return new Set(Array.isArray(arr) ? arr : []);
+  } catch {
+    return new Set();
+  }
+};
+
+const markPhotoAsViewed = path => {
+  if (!path) return;
+  try {
+    const current = getViewedPhotosSet();
+    if (!current.has(path)) {
+      current.add(path);
+      sessionStorage.setItem(GALLERY_CACHE_KEY, JSON.stringify(Array.from(current)));
+    }
+  } catch {
+    // Ignore quota errors
+  }
+};
+
+const getLightboxImageUrl = img => {
+  if (!img?.file_path) return '';
+  // TMDB backdrop standard is w1280 (100KB, ultra-fast and crisp on any display).
+  // Posters standard is w780 (also fast and crisp).
+  const isPoster = img.aspect_ratio ? img.aspect_ratio < 1 : false;
+  return `https://image.tmdb.org/t/p/${isPoster ? 'w780' : 'w1280'}${img.file_path}`;
+};
+
+const getThumbnailUrl = path => {
+  if (!path) return '';
+  return `https://image.tmdb.org/t/p/w780${path}`;
+};
+
+const LightboxSlide = ({
+  img,
+  idx,
+  movieTitle,
+  slideDirection,
+  isCached,
+  onViewed,
+}) => {
+  const [isLoaded, setIsLoaded] = useState(() => isCached);
+  const imgRef = useRef(null);
+
+  const markLoaded = useCallback(() => {
+    setIsLoaded(true);
+    if (img?.file_path) {
+      onViewed(img.file_path);
+    }
+  }, [img?.file_path, onViewed]);
+
+  // Synchronously check if image is already cached in browser memory
+  useEffect(() => {
+    if (imgRef.current?.complete && imgRef.current?.naturalWidth > 0) {
+      markLoaded();
+    }
+  }, [markLoaded]);
+
+  // Safety fallback: dismiss loader if loading takes longer than 1.8s
+  useEffect(() => {
+    if (isLoaded) return;
+    const timer = setTimeout(() => {
+      markLoaded();
+    }, 1800);
+    return () => clearTimeout(timer);
+  }, [isLoaded, markLoaded]);
+
+  const slideClass =
+    slideDirection === 'next'
+      ? css.slideInFromRight
+      : slideDirection === 'prev'
+      ? css.slideInFromLeft
+      : css.slideFadeIn;
+
+  return (
+    <div className={`${css.slideContainer} ${slideClass}`}>
+      <img
+        ref={imgRef}
+        src={getLightboxImageUrl(img)}
+        alt={`${movieTitle} full resolution still ${idx + 1}`}
+        decoding="async"
+        fetchPriority="high"
+        className={`${css.lightboxImage} ${isLoaded ? css.imageVisible : css.imageFading}`}
+        onLoad={markLoaded}
+        onError={markLoaded}
+      />
+
+      {!isLoaded && (
+        <div className={css.lightboxLoaderContainer}>
+          <Loader caption="Loading image..." />
+        </div>
+      )}
+    </div>
+  );
+};
+
+LightboxSlide.propTypes = {
+  img: PropTypes.shape({
+    file_path: PropTypes.string,
+    aspect_ratio: PropTypes.number,
+    width: PropTypes.number,
+    height: PropTypes.number,
+  }),
+  idx: PropTypes.number.isRequired,
+  movieTitle: PropTypes.string,
+  slideDirection: PropTypes.oneOf(['next', 'prev', 'none']).isRequired,
+  isCached: PropTypes.bool.isRequired,
+  onViewed: PropTypes.func.isRequired,
+};
 
 export const MovieGallery = ({ movieId, movieTitle = 'Movie' }) => {
   const [images, setImages] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [lightboxIndex, setLightboxIndex] = useState(null);
-  const [viewState, setViewState] = useState({
-    index: null,
-    imageReady: false,
-    minTimeReady: false,
-  });
+  const [slideDirection, setSlideDirection] = useState('none');
+  const [loadedPhotos, setLoadedPhotos] = useState(() => getViewedPhotosSet());
+  const viewedPhotosSetRef = useRef(loadedPhotos);
 
-  if (lightboxIndex !== viewState.index) {
-    setViewState({
-      index: lightboxIndex,
-      imageReady: false,
-      minTimeReady: false,
-    });
-  }
+  const touchStartXRef = useRef(null);
+  const touchStartYRef = useRef(null);
 
   const trackRef = useRef(null);
   const set1Ref = useRef(null);
@@ -34,38 +143,101 @@ export const MovieGallery = ({ movieId, movieTitle = 'Movie' }) => {
   const scrollPosRef = useRef(0);
   const targetScrollRef = useRef(null);
 
-  // Keep refs in sync with state and enforce a minimum 500ms loader duration per photo
   useEffect(() => {
     lightboxOpenRef.current = lightboxIndex !== null;
-    if (lightboxIndex === null) return;
-
-    const timer = setTimeout(() => {
-      setViewState(prev => {
-        if (prev.index === lightboxIndex) {
-          return { ...prev, minTimeReady: true };
-        }
-        return prev;
-      });
-    }, 500);
-
-    return () => {
-      clearTimeout(timer);
-    };
   }, [lightboxIndex]);
 
-  const handleImageReady = useCallback(idx => {
-    setViewState(prev => {
-      if (prev.index === idx) {
-        return { ...prev, imageReady: true };
-      }
-      return prev;
+  const handlePhotoViewed = useCallback(path => {
+    if (!path) return;
+    markPhotoAsViewed(path);
+    viewedPhotosSetRef.current.add(path);
+    setLoadedPhotos(prev => {
+      if (prev.has(path)) return prev;
+      const next = new Set(prev);
+      next.add(path);
+      return next;
     });
   }, []);
 
-  const isImageLoading =
-    lightboxIndex === null ||
-    !viewState.imageReady ||
-    !viewState.minTimeReady;
+  const showNextImage = useCallback(() => {
+    if (images.length <= 1) return;
+    setSlideDirection('next');
+    setLightboxIndex(prev => (prev + 1) % images.length);
+  }, [images.length]);
+
+  const showPrevImage = useCallback(() => {
+    if (images.length <= 1) return;
+    setSlideDirection('prev');
+    setLightboxIndex(prev => (prev - 1 + images.length) % images.length);
+  }, [images.length]);
+
+  const closeLightbox = useCallback(() => {
+    setLightboxIndex(null);
+    setSlideDirection('none');
+  }, []);
+
+  const openLightbox = useCallback(idx => {
+    setSlideDirection('none');
+    setLightboxIndex(idx);
+  }, []);
+
+  const handleTouchStart = e => {
+    if (e.touches.length === 1) {
+      touchStartXRef.current = e.touches[0].clientX;
+      touchStartYRef.current = e.touches[0].clientY;
+    }
+  };
+
+  const handleTouchEnd = e => {
+    if (touchStartXRef.current === null || touchStartYRef.current === null) return;
+    const touchEndX = e.changedTouches[0].clientX;
+    const touchEndY = e.changedTouches[0].clientY;
+    const diffX = touchEndX - touchStartXRef.current;
+    const diffY = touchEndY - touchStartYRef.current;
+
+    if (Math.abs(diffX) > 45 && Math.abs(diffX) > Math.abs(diffY)) {
+      if (diffX < 0) {
+        showNextImage();
+      } else {
+        showPrevImage();
+      }
+    }
+    touchStartXRef.current = null;
+    touchStartYRef.current = null;
+  };
+
+  // Preload adjacent images (next and previous) softly into browser cache
+  useEffect(() => {
+    if (lightboxIndex === null || images.length <= 1) return;
+
+    const nextIdx = (lightboxIndex + 1) % images.length;
+    const prevIdx = (lightboxIndex - 1 + images.length) % images.length;
+
+    const nextImg = images[nextIdx];
+    const prevImg = images[prevIdx];
+
+    const preloadObjects = [];
+    [nextImg, prevImg].forEach(img => {
+      if (img?.file_path && !viewedPhotosSetRef.current.has(img.file_path)) {
+        const p = new Image();
+        p.onload = () => {
+          if (img.file_path) {
+            handlePhotoViewed(img.file_path);
+          }
+        };
+        p.src = getLightboxImageUrl(img);
+        preloadObjects.push(p);
+      }
+    });
+
+    return () => {
+      preloadObjects.forEach(p => {
+        p.onload = null;
+        p.onerror = null;
+        p.src = '';
+      });
+    };
+  }, [lightboxIndex, images, handlePhotoViewed]);
 
   // Fetch backdrop images for the movie/show
   useEffect(() => {
@@ -366,11 +538,11 @@ export const MovieGallery = ({ movieId, movieTitle = 'Movie' }) => {
 
     const handleKeyDown = e => {
       if (e.key === 'Escape') {
-        setLightboxIndex(null);
+        closeLightbox();
       } else if (images.length > 1 && e.key === 'ArrowRight') {
-        setLightboxIndex(prev => (prev + 1) % images.length);
+        showNextImage();
       } else if (images.length > 1 && e.key === 'ArrowLeft') {
-        setLightboxIndex(prev => (prev - 1 + images.length) % images.length);
+        showPrevImage();
       }
     };
 
@@ -379,7 +551,7 @@ export const MovieGallery = ({ movieId, movieTitle = 'Movie' }) => {
       document.body.style.overflow = originalOverflow;
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [lightboxIndex, images.length]);
+  }, [lightboxIndex, images.length, closeLightbox, showNextImage, showPrevImage]);
 
   if (isLoading) {
     return (
@@ -410,25 +582,28 @@ export const MovieGallery = ({ movieId, movieTitle = 'Movie' }) => {
         key={`${item.file_path}-${setKey}-${idx}`}
         className={css.photoCard}
         onClick={() => {
-          setLightboxIndex(originalIdx);
+          openLightbox(originalIdx);
         }}
         role="button"
         tabIndex={0}
         onKeyDown={e => {
           if (e.key === 'Enter' || e.key === ' ') {
-            setLightboxIndex(originalIdx);
+            openLightbox(originalIdx);
           }
         }}
         title="Click to view full screen"
       >
-        <img
-          src={`https://image.tmdb.org/t/p/w780${item.file_path}`}
-          alt={`${movieTitle} still ${originalIdx + 1}`}
-          className={css.thumbnail}
-          loading="lazy"
-        />
-        <div className={css.photoOverlay}>
-          <span className={css.zoomIcon}>🔍</span>
+        <div className={css.photoInner}>
+          <img
+            src={getThumbnailUrl(item.file_path)}
+            alt={`${movieTitle} still ${originalIdx + 1}`}
+            className={css.thumbnail}
+            loading="lazy"
+            decoding="async"
+          />
+          <div className={css.photoOverlay}>
+            <span className={css.zoomIcon}>🔍</span>
+          </div>
         </div>
       </div>
     );
@@ -540,14 +715,14 @@ export const MovieGallery = ({ movieId, movieTitle = 'Movie' }) => {
         return createPortal(
           <div
             className={css.lightboxOverlay}
-            onClick={() => setLightboxIndex(null)}
+            onClick={closeLightbox}
             role="dialog"
             aria-modal="true"
           >
             <button
               type="button"
               className={css.lightboxCloseBtn}
-              onClick={() => setLightboxIndex(null)}
+              onClick={closeLightbox}
               aria-label="Close fullscreen gallery"
               title="Close (Esc)"
             >
@@ -560,7 +735,7 @@ export const MovieGallery = ({ movieId, movieTitle = 'Movie' }) => {
                 className={`${css.lightboxArrow} ${css.lightboxPrev}`}
                 onClick={e => {
                   e.stopPropagation();
-                  setLightboxIndex(prev => (prev - 1 + images.length) % images.length);
+                  showPrevImage();
                 }}
                 aria-label="Previous image"
                 title="Previous (←)"
@@ -572,28 +747,25 @@ export const MovieGallery = ({ movieId, movieTitle = 'Movie' }) => {
             <div
               className={css.lightboxContent}
               onClick={e => e.stopPropagation()}
+              onTouchStart={handleTouchStart}
+              onTouchEnd={handleTouchEnd}
             >
               <div
-                className={`${css.lightboxImageWrapper} ${isImageLoading ? css.skeleton : ''}`}
+                className={`${css.lightboxImageWrapper} ${
+                  loadedPhotos.has(currentImg.file_path) ? '' : css.skeleton
+                }`}
                 style={{
                   '--img-aspect-ratio': aspectRatio,
                 }}
               >
-                {isImageLoading && (
-                  <div className={css.lightboxLoaderContainer}>
-                    <Loader caption="Loading image..." />
-                  </div>
-                )}
-
-                <img
-                  key={currentImg.file_path}
-                  src={`https://image.tmdb.org/t/p/original${currentImg.file_path}`}
-                  alt={`${movieTitle} full resolution still ${lightboxIndex + 1}`}
-                  className={`${css.lightboxImage} ${
-                    isImageLoading ? css.imageHidden : css.imageVisible
-                  }`}
-                  onLoad={() => handleImageReady(lightboxIndex)}
-                  onError={() => handleImageReady(lightboxIndex)}
+                <LightboxSlide
+                  key={`slide-${lightboxIndex}-${currentImg.file_path}`}
+                  img={currentImg}
+                  idx={lightboxIndex}
+                  movieTitle={movieTitle}
+                  slideDirection={slideDirection}
+                  isCached={loadedPhotos.has(currentImg.file_path)}
+                  onViewed={handlePhotoViewed}
                 />
               </div>
 
@@ -618,7 +790,7 @@ export const MovieGallery = ({ movieId, movieTitle = 'Movie' }) => {
                 className={`${css.lightboxArrow} ${css.lightboxNext}`}
                 onClick={e => {
                   e.stopPropagation();
-                  setLightboxIndex(prev => (prev + 1) % images.length);
+                  showNextImage();
                 }}
                 aria-label="Next image"
                 title="Next (→)"
@@ -632,6 +804,11 @@ export const MovieGallery = ({ movieId, movieTitle = 'Movie' }) => {
       })()}
     </div>
   );
+};
+
+MovieGallery.propTypes = {
+  movieId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
+  movieTitle: PropTypes.string,
 };
 
 export default MovieGallery;

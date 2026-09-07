@@ -112,7 +112,7 @@ export const discoverMedia = async ({
     '6+': 'PG',
     '12+': 'PG-13',
     '16+': 'R',
-    '18+': 'NC-17',
+    '18+': 'NC-17|R',
   };
 
   const tvCertMap = {
@@ -123,7 +123,11 @@ export const discoverMedia = async ({
     '18+': 'TV-MA',
   };
 
-  const movieCerts = ageArray.map(a => movieCertMap[a]).filter(Boolean);
+  const movieCerts = ageArray
+    .map(a => movieCertMap[a])
+    .filter(Boolean)
+    .flatMap(c => c.split('|'));
+  const uniqueMovieCerts = Array.from(new Set(movieCerts));
   const tvCerts = Array.from(new Set(ageArray.map(a => tvCertMap[a]).filter(Boolean)));
 
   const fetchMovieDiscover = (p = page) => {
@@ -132,8 +136,8 @@ export const discoverMedia = async ({
       url += '&vote_count.gte=100';
     }
     if (genreParam) url += `&with_genres=${genreParam}`;
-    if (movieCerts.length > 0) {
-      url += `&certification_country=US&certification=${movieCerts.join('|')}`;
+    if (uniqueMovieCerts.length > 0) {
+      url += `&certification_country=US&certification=${uniqueMovieCerts.join('|')}`;
     }
     return request(url);
   };
@@ -617,4 +621,169 @@ export const getMovieImages = async (movieId, explicitType) => {
   }
 };
 
+const ageRatingCache = new Map();
+const inFlightAgeRequests = new Map();
+const AGE_STORAGE_KEY = 'tmdb_card_age_ratings';
 
+export const formatShortAgeRating = rawRating => {
+  if (!rawRating) return 'N/A';
+  const str = String(rawRating).trim();
+  if (!str) return 'N/A';
+
+  // 1. If contains "N+" (e.g., 18+, 16+, 12+, 6+, 0+)
+  const plusMatch = str.match(/\b(\d{1,2})\+/);
+  if (plusMatch) {
+    return `${plusMatch[1]}+`;
+  }
+
+  // 2. Specific American / UK / standard rating tags
+  const upper = str.toUpperCase();
+  if (/\b(NC-17|ADULT|18)\b/.test(upper)) return '18+';
+  if (/\b(R|TV-MA|16)\b/.test(upper)) return '16+';
+  if (/\b(15)\b/.test(upper)) return '15+';
+  if (/\b(14)\b/.test(upper)) return '14+';
+  if (/\b(PG-13|TV-14|13|12)\b/.test(upper)) return '12+';
+  if (/\b(TV-PG|PG|6|7)\b/.test(upper)) return '6+';
+  if (/\b(TV-Y7)\b/.test(upper)) return '6+';
+  if (/\b(TV-Y|TV-G|G|U|0)\b/.test(upper)) return '0+';
+
+  // 3. Any standalone 1-2 digit number
+  const numMatch = str.match(/\b(\d{1,2})\b/);
+  if (numMatch) {
+    return `${numMatch[1]}+`;
+  }
+
+  return 'N/A';
+};
+
+export const mapAgeToCategory = rawRating => {
+  if (!rawRating) return 'N/A';
+  const short = formatShortAgeRating(rawRating);
+  if (short === 'N/A') return 'N/A';
+  if (short.startsWith('18')) return '18+';
+  if (short.startsWith('16') || short.startsWith('15')) return '16+';
+  if (
+    short.startsWith('14') ||
+    short.startsWith('13') ||
+    short.startsWith('12')
+  ) {
+    return '12+';
+  }
+  if (short.startsWith('7') || short.startsWith('6')) return '6+';
+  if (short.startsWith('0')) return '0+';
+  return short;
+};
+
+export const matchesAgeFilter = (itemRating, filterAge) => {
+  if (!filterAge || filterAge === 'all') return true;
+  const targetCategory = mapAgeToCategory(itemRating);
+  if (targetCategory === 'N/A') return false;
+
+  const selectedAges = Array.isArray(filterAge)
+    ? filterAge
+    : filterAge
+        .split(',')
+        .map(s => s.trim())
+        .filter(Boolean);
+
+  if (selectedAges.length === 0 || selectedAges.includes('all')) return true;
+  return selectedAges.includes(targetCategory);
+};
+
+export const getCachedAgeRating = id => {
+  if (!id) return null;
+  const key = String(id);
+  if (ageRatingCache.has(key)) return ageRatingCache.get(key);
+  try {
+    const raw = sessionStorage.getItem(AGE_STORAGE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed[key]) {
+        ageRatingCache.set(key, parsed[key]);
+        return parsed[key];
+      }
+    }
+  } catch {
+    // Ignore storage parse error
+  }
+  return null;
+};
+
+export const setCachedAgeRating = (id, rating) => {
+  if (!id || !rating) return;
+  const key = String(id);
+  ageRatingCache.set(key, rating);
+  try {
+    const raw = sessionStorage.getItem(AGE_STORAGE_KEY);
+    const parsed = raw ? JSON.parse(raw) : {};
+    parsed[key] = rating;
+    sessionStorage.setItem(AGE_STORAGE_KEY, JSON.stringify(parsed));
+  } catch {
+    // Ignore storage quota error
+  }
+};
+
+export const getMediaAgeRating = async (id, explicitType, existingRating) => {
+  if (existingRating) {
+    const formatted = formatShortAgeRating(existingRating);
+    if (id) setCachedAgeRating(id, formatted);
+    return formatted;
+  }
+
+  if (!id) return 'N/A';
+  const key = String(id);
+
+  const cached = getCachedAgeRating(key);
+  if (cached) return cached;
+
+  if (inFlightAgeRequests.has(key)) {
+    return inFlightAgeRequests.get(key);
+  }
+
+  const promise = (async () => {
+    try {
+      const resolvedType = explicitType || mediaTypeCache.get(key) || 'movie';
+      const isTv = resolvedType === 'tv';
+
+      let fullRating = null;
+
+      if (isTv) {
+        const res = await request(`/tv/${id}/content_ratings`).catch(() => null);
+        if (res && Array.isArray(res.results) && res.results.length > 0) {
+          fullRating = extractAgeRating({ content_ratings: res }, true);
+        }
+      } else {
+        const res = await request(`/movie/${id}/release_dates`).catch(() => null);
+        if (res && Array.isArray(res.results) && res.results.length > 0) {
+          fullRating = extractAgeRating({ release_dates: res }, false);
+        }
+      }
+
+      // If nothing found and type was not explicitly known, try alternate endpoint
+      if (!fullRating && !explicitType) {
+        if (isTv) {
+          const res = await request(`/movie/${id}/release_dates`).catch(() => null);
+          if (res && Array.isArray(res.results) && res.results.length > 0) {
+            fullRating = extractAgeRating({ release_dates: res }, false);
+          }
+        } else {
+          const res = await request(`/tv/${id}/content_ratings`).catch(() => null);
+          if (res && Array.isArray(res.results) && res.results.length > 0) {
+            fullRating = extractAgeRating({ content_ratings: res }, true);
+          }
+        }
+      }
+
+      const shortRating = formatShortAgeRating(fullRating);
+      setCachedAgeRating(key, shortRating);
+      return shortRating;
+    } catch {
+      return 'N/A';
+    } finally {
+      inFlightAgeRequests.delete(key);
+    }
+  })();
+
+  inFlightAgeRequests.set(key, promise);
+  return promise;
+};

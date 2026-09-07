@@ -37,6 +37,14 @@ export const SAVED_SORT_OPTIONS = [
 
 export const SORT_OPTIONS = DEFAULT_SORT_OPTIONS;
 
+const areArraysEqual = (arr1, arr2) => {
+  if (arr1 === arr2) return true;
+  if (!arr1 || !arr2) return false;
+  if (arr1.length !== arr2.length) return false;
+  const set = new Set(arr1.map(String));
+  return arr2.every(item => set.has(String(item)));
+};
+
 export const FilterBar = ({
   type = 'all',
   onTypeChange,
@@ -45,6 +53,7 @@ export const FilterBar = ({
   selectedGenres = [],
   onToggleGenre,
   onClearGenres,
+  onGenresChange,
   sortBy = 'popularity.desc',
   onSortChange,
   onResetFilters,
@@ -59,6 +68,39 @@ export const FilterBar = ({
   const closeTimeoutRef = useRef(null);
   const [allGenres, setAllGenres] = useState([]);
   const containerRef = useRef(null);
+
+  const selectedAges = useMemo(() => {
+    if (!age || age === 'all') return [];
+    if (Array.isArray(age)) return age;
+    return age.split(',').map(s => s.trim()).filter(Boolean);
+  }, [age]);
+
+  const AGE_ORDER = useMemo(() => ['0+', '6+', '12+', '16+', '18+'], []);
+
+  // Staged states for dropdowns with a "Done" button (genres & age)
+  const [stagedGenres, setStagedGenres] = useState(selectedGenres);
+  const stagedGenresRef = useRef(selectedGenres);
+
+  const [stagedAges, setStagedAges] = useState(selectedAges);
+  const stagedAgesRef = useRef(selectedAges);
+
+  // Track whether cascade has already fired during the current open session of age dropdown
+  const hasCascadedInSessionRef = useRef(false);
+
+  // Sync staged state with props when dropdown is closed
+  useEffect(() => {
+    if (activeDropdown !== 'genres') {
+      setStagedGenres(selectedGenres);
+      stagedGenresRef.current = selectedGenres;
+    }
+  }, [selectedGenres, activeDropdown]);
+
+  useEffect(() => {
+    if (activeDropdown !== 'age') {
+      setStagedAges(selectedAges);
+      stagedAgesRef.current = selectedAges;
+    }
+  }, [selectedAges, activeDropdown]);
 
   // Clear timeout on unmount
   useEffect(() => {
@@ -82,24 +124,76 @@ export const FilterBar = ({
     };
   }, []);
 
-  const openMenu = name => {
-    if (closeTimeoutRef.current) {
-      clearTimeout(closeTimeoutRef.current);
-      closeTimeoutRef.current = null;
-    }
-    setIsClosing(false);
-    setActiveDropdown(name);
-  };
+  // Commit staged values to parents
+  const commitStagedValues = useCallback(
+    dropdownName => {
+      if (dropdownName === 'genres') {
+        const currentStaged = stagedGenresRef.current;
+        if (!areArraysEqual(currentStaged, selectedGenres)) {
+          if (onGenresChange) {
+            onGenresChange(currentStaged);
+          } else if (onToggleGenre) {
+            const toAdd = currentStaged.filter(g => !selectedGenres.includes(g));
+            const toRemove = selectedGenres.filter(g => !currentStaged.includes(g));
+            toAdd.forEach(g => onToggleGenre(g));
+            toRemove.forEach(g => onToggleGenre(g));
+          }
+        }
+      } else if (dropdownName === 'age') {
+        const currentStaged = stagedAgesRef.current;
+        if (!areArraysEqual(currentStaged, selectedAges)) {
+          if (onAgeChange) {
+            const nextVal = currentStaged.length > 0 ? currentStaged.join(',') : 'all';
+            onAgeChange(nextVal);
+          }
+        }
+      }
+    },
+    [selectedGenres, selectedAges, onGenresChange, onToggleGenre, onAgeChange]
+  );
+
+  const openMenu = useCallback(
+    name => {
+      if (closeTimeoutRef.current) {
+        clearTimeout(closeTimeoutRef.current);
+        closeTimeoutRef.current = null;
+      }
+
+      // If switching from another dropdown, commit that dropdown first
+      if (activeDropdown && activeDropdown !== name) {
+        commitStagedValues(activeDropdown);
+      }
+
+      // Initialize staged state for the newly opened dropdown
+      if (name === 'genres') {
+        setStagedGenres(selectedGenres);
+        stagedGenresRef.current = selectedGenres;
+      } else if (name === 'age') {
+        setStagedAges(selectedAges);
+        stagedAgesRef.current = selectedAges;
+        hasCascadedInSessionRef.current = false;
+      }
+
+      setIsClosing(false);
+      setActiveDropdown(name);
+    },
+    [activeDropdown, commitStagedValues, selectedGenres, selectedAges]
+  );
 
   const closeMenu = useCallback(() => {
     if (!activeDropdown || isClosing) return;
+
+    // Immediately commit changes of the dropdown that is closing
+    commitStagedValues(activeDropdown);
+    hasCascadedInSessionRef.current = false;
+
     setIsClosing(true);
     closeTimeoutRef.current = setTimeout(() => {
       setActiveDropdown(null);
       setIsClosing(false);
       closeTimeoutRef.current = null;
     }, 180);
-  }, [activeDropdown, isClosing]);
+  }, [activeDropdown, isClosing, commitStagedValues]);
 
   const toggleDropdown = name => {
     if (activeDropdown === name) {
@@ -113,7 +207,7 @@ export const FilterBar = ({
     }
   };
 
-  // Handle outside click to close dropdowns
+  // Handle outside click and Escape key to commit and close dropdowns
   useEffect(() => {
     if (!activeDropdown) return;
 
@@ -153,30 +247,54 @@ export const FilterBar = ({
     closeMenu();
   };
 
-  const selectedAges = useMemo(() => {
-    if (!age || age === 'all') return [];
-    if (Array.isArray(age)) return age;
-    return age.split(',').map(s => s.trim()).filter(Boolean);
-  }, [age]);
-
-  const handleToggleAge = ageId => {
+  const handleToggleStagedAge = ageId => {
     if (ageId === 'all') {
-      if (onAgeChange) onAgeChange('all');
+      setStagedAges([]);
+      stagedAgesRef.current = [];
+      hasCascadedInSessionRef.current = false;
       return;
     }
 
-    let nextAges;
-    if (selectedAges.includes(ageId)) {
-      nextAges = selectedAges.filter(id => id !== ageId);
+    if (stagedAges.includes(ageId)) {
+      // Unselect specifically this category
+      const nextAges = stagedAges.filter(id => id !== ageId);
+      setStagedAges(nextAges);
+      stagedAgesRef.current = nextAges;
     } else {
-      nextAges = AGE_OPTIONS.filter(
-        o => o.id !== 'all' && (selectedAges.includes(o.id) || o.id === ageId)
-      ).map(o => o.id);
+      // Selecting an age category
+      if (!hasCascadedInSessionRef.current) {
+        // First selection in this open session: cascade down!
+        const targetIdx = AGE_ORDER.indexOf(ageId);
+        const cascadingAges = targetIdx !== -1 ? AGE_ORDER.slice(0, targetIdx + 1) : [ageId];
+        const combined = new Set([...stagedAges, ...cascadingAges]);
+        const nextAges = AGE_ORDER.filter(id => combined.has(id));
+        setStagedAges(nextAges);
+        stagedAgesRef.current = nextAges;
+        hasCascadedInSessionRef.current = true;
+      } else {
+        // Second or subsequent selection in this same session: NO cascade!
+        const combined = new Set([...stagedAges, ageId]);
+        const nextAges = AGE_ORDER.filter(id => combined.has(id));
+        setStagedAges(nextAges);
+        stagedAgesRef.current = nextAges;
+      }
     }
+  };
 
-    if (onAgeChange) {
-      onAgeChange(nextAges.length > 0 ? nextAges.join(',') : 'all');
+  const handleToggleStagedGenre = genreId => {
+    let nextGenres;
+    if (stagedGenres.includes(genreId)) {
+      nextGenres = stagedGenres.filter(id => id !== genreId);
+    } else {
+      nextGenres = [...stagedGenres, genreId];
     }
+    setStagedGenres(nextGenres);
+    stagedGenresRef.current = nextGenres;
+  };
+
+  const handleClearStagedGenres = () => {
+    setStagedGenres([]);
+    stagedGenresRef.current = [];
   };
 
   const handleSelectSort = newSort => {
@@ -187,24 +305,36 @@ export const FilterBar = ({
   const currentTypeObj = TYPE_OPTIONS.find(o => o.id === type) || TYPE_OPTIONS[0];
   const currentSortObj = sortOptions.find(o => o.id === sortBy) || sortOptions[0] || DEFAULT_SORT_OPTIONS[0];
 
-  // Resolve genre button label
+  // Resolve genre button label (reflect staged list if open)
   const getGenresButtonLabel = () => {
-    if (selectedGenres.length === 0) return '🎭 Genres: All';
-    if (selectedGenres.length === 1) {
-      const found = allGenres.find(g => g.id === selectedGenres[0]);
+    const list = activeDropdown === 'genres' ? stagedGenres : selectedGenres;
+    if (list.length === 0) return '🎭 Genres: All';
+    if (list.length === 1) {
+      const found = allGenres.find(g => g.id === list[0]);
       if (found) return `🎭 ${found.name}`;
     }
-    return `🎭 Genres (${selectedGenres.length})`;
+    return `🎭 Genres (${list.length})`;
   };
 
-  // Resolve age button label
+  // Resolve age button label (reflect staged list if open)
   const getAgeButtonLabel = () => {
-    if (selectedAges.length === 0) return '🌐 Age: All';
-    if (selectedAges.length === 1) {
-      const found = AGE_OPTIONS.find(o => o.id === selectedAges[0]);
+    const list = activeDropdown === 'age' ? stagedAges : selectedAges;
+    if (list.length === 0) return '🌐 Age: All';
+    if (list.length === 1) {
+      const found = AGE_OPTIONS.find(o => o.id === list[0]);
       if (found) return `${found.icon} Age: ${found.label}`;
     }
-    return `🌐 Ages (${selectedAges.length})`;
+    const highestSelected = list[list.length - 1];
+    const highestIdx = AGE_ORDER.indexOf(highestSelected);
+    if (
+      highestIdx !== -1 &&
+      list.length === highestIdx + 1 &&
+      AGE_ORDER.slice(0, highestIdx + 1).every(id => list.includes(id))
+    ) {
+      const found = AGE_OPTIONS.find(o => o.id === highestSelected);
+      return `${found?.icon || '🌐'} Age: Up to ${highestSelected}`;
+    }
+    return `🌐 Ages (${list.length})`;
   };
 
   const isTypeOpen = activeDropdown === 'type' && !isClosing;
@@ -260,7 +390,9 @@ export const FilterBar = ({
           <button
             type="button"
             className={`${css.filterButton} ${
-              selectedGenres.length > 0 ? css.filterButtonActive : ''
+              (activeDropdown === 'genres' ? stagedGenres.length > 0 : selectedGenres.length > 0)
+                ? css.filterButtonActive
+                : ''
             } ${isGenresOpen ? css.filterButtonOpen : ''}`}
             onClick={() => toggleDropdown('genres')}
             aria-expanded={isGenresOpen}
@@ -276,7 +408,9 @@ export const FilterBar = ({
           <button
             type="button"
             className={`${css.filterButton} ${
-              selectedAges.length > 0 ? css.filterButtonActive : ''
+              (activeDropdown === 'age' ? stagedAges.length > 0 : selectedAges.length > 0)
+                ? css.filterButtonActive
+                : ''
             } ${isAgeOpen ? css.filterButtonOpen : ''}`}
             onClick={() => toggleDropdown('age')}
             aria-expanded={isAgeOpen}
@@ -291,8 +425,8 @@ export const FilterBar = ({
               {AGE_OPTIONS.map(opt => {
                 const isActive =
                   opt.id === 'all'
-                    ? selectedAges.length === 0
-                    : selectedAges.includes(opt.id);
+                    ? stagedAges.length === 0
+                    : stagedAges.includes(opt.id);
                 return (
                   <button
                     key={opt.id}
@@ -300,7 +434,7 @@ export const FilterBar = ({
                     className={`${css.dropdownItem} ${
                       isActive ? css.dropdownItemActive : ''
                     }`}
-                    onClick={() => handleToggleAge(opt.id)}
+                    onClick={() => handleToggleStagedAge(opt.id)}
                   >
                     <span className={css.dropdownItemLabel}>{opt.fullLabel}</span>
                     {isActive && <span className={css.activeCheck}>✓</span>}
@@ -398,19 +532,19 @@ export const FilterBar = ({
             <div className={css.genresTitleGroup}>
               <span className={css.genresTitle}>🎭 Select Genres</span>
               <span className={css.genresBadge}>
-                {selectedGenres.length === 0
+                {stagedGenres.length === 0
                   ? 'All genres'
-                  : `${selectedGenres.length} selected`}
+                  : `${stagedGenres.length} selected`}
               </span>
             </div>
             <div className={css.genresActions}>
-              {selectedGenres.length > 0 && (
+              {stagedGenres.length > 0 && (
                 <button
                   type="button"
                   className={css.clearGenresBtn}
                   onClick={e => {
                     e.stopPropagation();
-                    onClearGenres();
+                    handleClearStagedGenres();
                   }}
                   onMouseDown={e => e.stopPropagation()}
                 >
@@ -433,7 +567,7 @@ export const FilterBar = ({
 
           <div className={css.genresGrid}>
             {allGenres.map(genre => {
-              const isSelected = selectedGenres.includes(genre.id);
+              const isSelected = stagedGenres.includes(genre.id);
               const icon = getGenreIcon(genre.id, genre.name);
               return (
                 <button
@@ -442,7 +576,7 @@ export const FilterBar = ({
                   className={`${css.genrePill} ${isSelected ? css.genrePillSelected : ''}`}
                   onClick={e => {
                     e.stopPropagation();
-                    onToggleGenre(genre.id);
+                    handleToggleStagedGenre(genre.id);
                   }}
                   onMouseDown={e => e.stopPropagation()}
                 >
@@ -479,6 +613,7 @@ FilterBar.propTypes = {
   selectedGenres: PropTypes.arrayOf(PropTypes.number),
   onToggleGenre: PropTypes.func,
   onClearGenres: PropTypes.func,
+  onGenresChange: PropTypes.func,
   sortBy: PropTypes.string,
   onSortChange: PropTypes.func,
   onResetFilters: PropTypes.func,

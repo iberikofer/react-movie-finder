@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import Loader from '../components/Loader/Loader';
+import { clearPageSession } from '../utils/sessionStorage';
 import css from './Home.module.css';
 
 const TECH_STACK = [
@@ -221,7 +222,11 @@ export const Home = () => {
             Explore the latest trending films, search across TMDB's massive library, or organize your personal watchlist.
           </p>
           <div className={css.bottomCtaButtons}>
-            <Link to="/trending" className={css.primaryCta}>
+            <Link
+              to="/trending"
+              className={css.primaryCta}
+              onClick={() => clearPageSession('trending_session')}
+            >
               <span>🔥 Explore Trending Now</span>
             </Link>
             <Link to="/movies" className={css.secondaryCta}>

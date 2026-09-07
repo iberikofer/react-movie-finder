@@ -1,12 +1,31 @@
 import { useState, useRef, useEffect, Suspense } from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import { useSavedMovies } from '../../hooks/useSavedMovies';
-import { hasSavedPageScroll } from '../../utils/sessionStorage';
+import { hasSavedPageScroll, clearPageSession } from '../../utils/sessionStorage';
 import Loader from '../Loader/Loader';
 import css from './Header.module.css';
 
 export const Header = () => {
   const { savedCount } = useSavedMovies();
+  const [animState, setAnimState] = useState({ key: 0, type: null });
+  const prevSavedCountRef = useRef(savedCount);
+  const isInitialMountRef = useRef(true);
+
+  // Trigger bounce / dip micro-animation on badge when saving or removing an item
+  useEffect(() => {
+    if (isInitialMountRef.current) {
+      isInitialMountRef.current = false;
+      return;
+    }
+
+    if (savedCount > prevSavedCountRef.current) {
+      setAnimState(prev => ({ key: prev.key + 1, type: 'increase' }));
+    } else if (savedCount < prevSavedCountRef.current) {
+      setAnimState(prev => ({ key: prev.key + 1, type: 'decrease' }));
+    }
+    prevSavedCountRef.current = savedCount;
+  }, [savedCount]);
+
   // status: 'idle' | 'confirming' | 'deleted'
   const [status, setStatus] = useState('idle');
   const timerRef = useRef(null);
@@ -29,7 +48,23 @@ export const Header = () => {
     return () => clearTimeout(timer);
   }, []);
 
-  // Update sliding underline position when route or saved count changes
+  const isMovieDetails = /(?:^|\/react-movie-finder)\/movies\/[^/]+/.test(location.pathname);
+  const movieOrigin = isMovieDetails
+    ? (location.state?.source || sessionStorage.getItem('movie_origin_tab') || 'movies')
+    : null;
+
+  const isHomeActive = !isMovieDetails && location.pathname === '/';
+  const isSearchActive = isMovieDetails
+    ? movieOrigin === 'movies'
+    : (location.pathname.startsWith('/movies') && !isMovieDetails);
+  const isTrendingActive = isMovieDetails
+    ? movieOrigin === 'trending'
+    : location.pathname.startsWith('/trending');
+  const isSavedActive = isMovieDetails
+    ? movieOrigin === 'saved'
+    : location.pathname.startsWith('/saved');
+
+  // Update sliding underline position when route, origin, or saved count changes
   useEffect(() => {
     const updateIndicator = () => {
       if (!navRef.current) return;
@@ -57,7 +92,7 @@ export const Header = () => {
     return () => {
       window.removeEventListener('resize', updateIndicator);
     };
-  }, [location.pathname, savedCount]);
+  }, [location.pathname, location.state, savedCount, isMovieDetails, movieOrigin]);
 
   // Reset confirmation state & scroll to top when navigating to a different route
   const prevPathnameRef = useRef(location.pathname);
@@ -178,37 +213,46 @@ export const Header = () => {
             <NavLink
               to="/"
               end
-              className={({ isActive }) =>
-                `${css.navLink} ${isActive ? css.activeLink : ''}`
-              }
+              className={`${css.navLink} ${isHomeActive ? css.activeLink : ''}`}
             >
               Home
             </NavLink>
             <NavLink
               to="/movies"
-              className={({ isActive }) =>
-                `${css.navLink} ${isActive ? css.activeLink : ''}`
-              }
+              end
+              className={`${css.navLink} ${isSearchActive ? css.activeLink : ''}`}
             >
               Search
             </NavLink>
             <NavLink
               to="/trending"
-              className={({ isActive }) =>
-                `${css.navLink} ${isActive ? css.activeLink : ''}`
-              }
+              className={`${css.navLink} ${isTrendingActive ? css.activeLink : ''}`}
+              onClick={() => {
+                clearPageSession('trending_session');
+                window.dispatchEvent(new CustomEvent('trending_nav_click'));
+                window.scrollTo({ top: 0, behavior: 'instant' });
+              }}
             >
               Trending
             </NavLink>
             <NavLink
               to="/saved"
-              className={({ isActive }) =>
-                `${css.navLink} ${isActive ? css.activeLink : ''}`
-              }
+              className={`${css.navLink} ${isSavedActive ? css.activeLink : ''}`}
             >
               <span>Saved</span>
               {savedCount > 0 && (
-                <span className={css.savedBadge}>{savedCount}</span>
+                <span
+                  key={animState.key}
+                  className={`${css.savedBadge} ${
+                    animState.type === 'increase'
+                      ? css.savedBadgeBump
+                      : animState.type === 'decrease'
+                      ? css.savedBadgeShrink
+                      : ''
+                  }`}
+                >
+                  {savedCount}
+                </span>
               )}
             </NavLink>
             <span

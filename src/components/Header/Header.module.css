@@ -106,6 +106,65 @@
   min-width: 18px;
   border-radius: 9px;
   line-height: 1;
+  transform-origin: center center;
+  will-change: transform, box-shadow, background;
+}
+
+.savedBadgeBump {
+  animation: badgePop 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.savedBadgeShrink {
+  animation: badgeShrink 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes badgePop {
+  0% {
+    transform: scale(1);
+  }
+  35% {
+    transform: scale(1.22);
+    background: rgba(16, 185, 129, 0.4);
+    border-color: #34d399;
+    color: #ffffff;
+    box-shadow: 0 0 8px rgba(52, 211, 153, 0.5);
+  }
+  65% {
+    transform: scale(0.96);
+  }
+  85% {
+    transform: scale(1.03);
+  }
+  100% {
+    transform: scale(1);
+    background: rgba(16, 185, 129, 0.25);
+    border-color: rgba(16, 185, 129, 0.5);
+    color: #34d399;
+    box-shadow: none;
+  }
+}
+
+@keyframes badgeShrink {
+  0% {
+    transform: scale(1);
+  }
+  35% {
+    transform: scale(0.82);
+    background: rgba(244, 63, 94, 0.25);
+    border-color: rgba(244, 63, 94, 0.55);
+    color: #ffb3c0;
+    box-shadow: 0 0 8px rgba(244, 63, 94, 0.3);
+  }
+  70% {
+    transform: scale(1.04);
+  }
+  100% {
+    transform: scale(1);
+    background: rgba(16, 185, 129, 0.25);
+    border-color: rgba(16, 185, 129, 0.5);
+    color: #34d399;
+    box-shadow: none;
+  }
 }
 
 .headerActions {

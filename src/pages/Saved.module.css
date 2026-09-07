@@ -436,38 +436,44 @@
   position: relative;
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 10px;
   padding: 14px 28px;
-  background: linear-gradient(135deg, #0fa37f 0%, #064e3b 100%);
+  background: linear-gradient(135deg, #10b981 0%, #065f46 100%);
   color: #fef3c7;
   text-decoration: none;
   font-weight: 700;
   font-size: 1.05rem;
   border-radius: 12px;
-  border: 1px solid rgba(254, 243, 199, 0.3);
-  box-shadow: 0 6px 20px rgba(15, 163, 127, 0.35);
-  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-/* Anti-hover-jitter buffer: extends hit-box beyond translateY(-2px) */
-.primaryCta::before {
-  content: '';
-  position: absolute;
-  inset: -4px -4px -8px -4px;
-  border-radius: inherit;
-  pointer-events: auto;
+  border: 1px solid rgba(254, 243, 199, 0.35);
+  box-shadow: 0 6px 20px rgba(16, 185, 129, 0.35);
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+              border-color 0.25s ease,
+              background 0.25s ease;
+  user-select: none;
+  -webkit-user-select: none;
+  cursor: pointer;
+  will-change: transform, box-shadow;
 }
 
 .primaryCta:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 10px 28px rgba(15, 163, 127, 0.5), 0 0 16px rgba(15, 163, 127, 0.4);
-  background: linear-gradient(135deg, #10b981 0%, #0fa37f 100%);
+  transform: translateY(-2px) scale(1.02);
+  background: linear-gradient(135deg, #34d399 0%, #059669 100%);
+  border-color: rgba(254, 243, 199, 0.75);
+  box-shadow: 0 10px 28px rgba(16, 185, 129, 0.5), 0 0 20px rgba(52, 211, 153, 0.3);
+}
+
+.primaryCta:active {
+  transform: translateY(0) scale(0.98);
+  box-shadow: 0 4px 14px rgba(16, 185, 129, 0.4);
 }
 
 .secondaryCta {
   position: relative;
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 10px;
   padding: 14px 26px;
   background: rgba(42, 8, 12, 0.6);
@@ -479,23 +485,26 @@
   border: 1px solid var(--bg-card-border);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  transition: all 0.25s ease;
-}
-
-/* Anti-hover-jitter buffer: extends hit-box beyond translateY(-2px) */
-.secondaryCta::before {
-  content: '';
-  position: absolute;
-  inset: -4px -4px -8px -4px;
-  border-radius: inherit;
-  pointer-events: auto;
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+              background 0.25s ease,
+              border-color 0.25s ease,
+              box-shadow 0.25s ease,
+              color 0.25s ease;
+  user-select: none;
+  -webkit-user-select: none;
+  cursor: pointer;
 }
 
 .secondaryCta:hover {
   background: rgba(42, 8, 12, 0.85);
-  border-color: rgba(254, 243, 199, 0.4);
-  transform: translateY(-2px);
+  border-color: rgba(254, 243, 199, 0.45);
+  transform: translateY(-3px) scale(1.02);
   color: #fff;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+}
+
+.secondaryCta:active {
+  transform: translateY(-1px) scale(0.99);
 }
 
 @media (max-width: 1100px) {

@@ -5,6 +5,7 @@ export const MediaTypeBadge = ({
   item,
   isDetails = false,
   className = '',
+  onFilterType,
 }) => {
   const type =
     mediaType ||
@@ -13,12 +14,36 @@ export const MediaTypeBadge = ({
 
   const isTv = type === 'tv';
 
+  const handleClick = e => {
+    if (onFilterType) {
+      e.preventDefault();
+      e.stopPropagation();
+      onFilterType(isTv ? 'tv' : 'movie');
+    }
+  };
+
+  const titleText = onFilterType
+    ? isTv
+      ? 'Filter by TV Series (Click to apply)'
+      : 'Filter by Feature Movie (Click to apply)'
+    : isTv
+    ? 'TV Series'
+    : 'Feature Movie';
+
   return (
     <div
+      role={onFilterType ? 'button' : undefined}
+      tabIndex={onFilterType ? 0 : undefined}
       className={`${css.typeBadge} ${isTv ? css.tvBadge : css.movieBadge} ${
         isDetails ? css.detailsBadge : css.posterBadge
       } ${className}`.trim()}
-      title={isTv ? 'TV Series' : 'Feature Movie'}
+      title={titleText}
+      onClick={handleClick}
+      onKeyDown={e => {
+        if (onFilterType && (e.key === 'Enter' || e.key === ' ')) {
+          handleClick(e);
+        }
+      }}
     >
       <span className={css.typeIcon}>{isTv ? '📺' : '🎬'}</span>
       <span className={css.typeLabel}>{isTv ? 'Series' : 'Movie'}</span>

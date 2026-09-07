@@ -4,6 +4,7 @@ import { getSimilarMovies, setMediaType, getMediaType } from 'fetch';
 import MovieCardRatingBadge from '../CriticsScore/MovieCardRatingBadge';
 import Loader from '../Loader/Loader';
 import MediaTypeBadge from '../MediaTypeBadge/MediaTypeBadge';
+import AgeRatingBadge from '../AgeRatingBadge/AgeRatingBadge';
 import SaveMovieButton from '../SaveMovieButton/SaveMovieButton';
 import css from './SimilarMovies.module.css';
 
@@ -63,7 +64,11 @@ export const SimilarMovies = () => {
               <li key={movie.id} className={css.movieCard}>
                 <Link
                   to={`/movies/${movie.id}${movie.media_type === 'tv' ? '?type=tv' : ''}`}
-                  state={{ from: location, mediaType: movie.media_type }}
+                  state={{
+                    from: location,
+                    mediaType: movie.media_type,
+                    source: location.state?.source || sessionStorage.getItem('movie_origin_tab') || 'movies',
+                  }}
                   className={css.movieLink}
                   draggable="false"
                   onClick={e => {
@@ -95,6 +100,7 @@ export const SimilarMovies = () => {
                     />
                     <MovieCardRatingBadge movieId={movie.id} />
                     <MediaTypeBadge mediaType={movie.media_type || (isTv ? 'tv' : 'movie')} item={movie} />
+                    <AgeRatingBadge movie={{ ...movie, media_type: movie.media_type || (isTv ? 'tv' : 'movie') }} />
                     <SaveMovieButton movie={movie} />
                   </div>
                   <div className={css.titleWrapper}>
