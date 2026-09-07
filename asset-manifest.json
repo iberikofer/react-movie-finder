@@ -1,9 +1,9 @@
 {
   "files": {
-    "main.css": "/react-movie-finder/static/css/main.775437ec.css",
-    "main.js": "/react-movie-finder/static/js/main.6bacee28.js",
-    "static/css/582.5547cff2.chunk.css": "/react-movie-finder/static/css/582.5547cff2.chunk.css",
-    "static/js/582.ef7d333e.chunk.js": "/react-movie-finder/static/js/582.ef7d333e.chunk.js",
+    "main.css": "/react-movie-finder/static/css/main.3b32062a.css",
+    "main.js": "/react-movie-finder/static/js/main.cc814bc1.js",
+    "static/css/582.20597ab7.chunk.css": "/react-movie-finder/static/css/582.20597ab7.chunk.css",
+    "static/js/582.93bd19ed.chunk.js": "/react-movie-finder/static/js/582.93bd19ed.chunk.js",
     "static/css/524.b998c6f2.chunk.css": "/react-movie-finder/static/css/524.b998c6f2.chunk.css",
     "static/js/524.17b0ef72.chunk.js": "/react-movie-finder/static/js/524.17b0ef72.chunk.js",
     "static/css/620.a5ca4393.chunk.css": "/react-movie-finder/static/css/620.a5ca4393.chunk.css",
@@ -13,16 +13,16 @@
     "static/css/754.4be5be1c.chunk.css": "/react-movie-finder/static/css/754.4be5be1c.chunk.css",
     "static/js/754.9359400a.chunk.js": "/react-movie-finder/static/js/754.9359400a.chunk.js",
     "static/css/671.568c3901.chunk.css": "/react-movie-finder/static/css/671.568c3901.chunk.css",
-    "static/js/671.1811e307.chunk.js": "/react-movie-finder/static/js/671.1811e307.chunk.js",
-    "static/css/396.e634c421.chunk.css": "/react-movie-finder/static/css/396.e634c421.chunk.css",
+    "static/js/671.16882765.chunk.js": "/react-movie-finder/static/js/671.16882765.chunk.js",
+    "static/css/396.b545bb8d.chunk.css": "/react-movie-finder/static/css/396.b545bb8d.chunk.css",
     "static/js/396.f94c2654.chunk.js": "/react-movie-finder/static/js/396.f94c2654.chunk.js",
     "static/css/891.a9269cc6.chunk.css": "/react-movie-finder/static/css/891.a9269cc6.chunk.css",
     "static/js/891.239c56d5.chunk.js": "/react-movie-finder/static/js/891.239c56d5.chunk.js",
     "index.html": "/react-movie-finder/index.html",
-    "main.775437ec.css.map": "/react-movie-finder/static/css/main.775437ec.css.map",
-    "main.6bacee28.js.map": "/react-movie-finder/static/js/main.6bacee28.js.map",
-    "582.5547cff2.chunk.css.map": "/react-movie-finder/static/css/582.5547cff2.chunk.css.map",
-    "582.ef7d333e.chunk.js.map": "/react-movie-finder/static/js/582.ef7d333e.chunk.js.map",
+    "main.3b32062a.css.map": "/react-movie-finder/static/css/main.3b32062a.css.map",
+    "main.cc814bc1.js.map": "/react-movie-finder/static/js/main.cc814bc1.js.map",
+    "582.20597ab7.chunk.css.map": "/react-movie-finder/static/css/582.20597ab7.chunk.css.map",
+    "582.93bd19ed.chunk.js.map": "/react-movie-finder/static/js/582.93bd19ed.chunk.js.map",
     "524.b998c6f2.chunk.css.map": "/react-movie-finder/static/css/524.b998c6f2.chunk.css.map",
     "524.17b0ef72.chunk.js.map": "/react-movie-finder/static/js/524.17b0ef72.chunk.js.map",
     "620.a5ca4393.chunk.css.map": "/react-movie-finder/static/css/620.a5ca4393.chunk.css.map",
@@ -32,14 +32,14 @@
     "754.4be5be1c.chunk.css.map": "/react-movie-finder/static/css/754.4be5be1c.chunk.css.map",
     "754.9359400a.chunk.js.map": "/react-movie-finder/static/js/754.9359400a.chunk.js.map",
     "671.568c3901.chunk.css.map": "/react-movie-finder/static/css/671.568c3901.chunk.css.map",
-    "671.1811e307.chunk.js.map": "/react-movie-finder/static/js/671.1811e307.chunk.js.map",
-    "396.e634c421.chunk.css.map": "/react-movie-finder/static/css/396.e634c421.chunk.css.map",
+    "671.16882765.chunk.js.map": "/react-movie-finder/static/js/671.16882765.chunk.js.map",
+    "396.b545bb8d.chunk.css.map": "/react-movie-finder/static/css/396.b545bb8d.chunk.css.map",
     "396.f94c2654.chunk.js.map": "/react-movie-finder/static/js/396.f94c2654.chunk.js.map",
     "891.a9269cc6.chunk.css.map": "/react-movie-finder/static/css/891.a9269cc6.chunk.css.map",
     "891.239c56d5.chunk.js.map": "/react-movie-finder/static/js/891.239c56d5.chunk.js.map"
   },
   "entrypoints": [
-    "static/css/main.775437ec.css",
-    "static/js/main.6bacee28.js"
+    "static/css/main.3b32062a.css",
+    "static/js/main.cc814bc1.js"
   ]
 }
