@@ -3,6 +3,7 @@ import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import { useSavedMovies } from '../../hooks/useSavedMovies';
 import { hasSavedPageScroll, clearPageSession } from '../../utils/sessionStorage';
 import Loader from '../Loader/Loader';
+import PWAInstallPrompt from '../PWAInstallPrompt/PWAInstallPrompt';
 import css from './Header.module.css';
 
 interface AnimState {
@@ -268,6 +269,7 @@ export const Header: React.FC = () => {
           </nav>
 
           <div className={css.headerActions}>
+            <PWAInstallPrompt />
             <button
               ref={buttonRef}
               type="button"

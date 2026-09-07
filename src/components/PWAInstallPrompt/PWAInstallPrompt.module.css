@@ -1,0 +1,49 @@
+.pwaContainer {
+  display: flex;
+  align-items: center;
+}
+
+/* Offline Banner / Badge */
+.offlineBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  background: rgba(239, 68, 68, 0.15);
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  border-radius: 9999px;
+  color: #fca5a5;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  animation: pulseOffline 2s infinite ease-in-out;
+  backdrop-filter: blur(8px);
+}
+
+.offlineDot {
+  width: 7px;
+  height: 7px;
+  background-color: #ef4444;
+  border-radius: 50%;
+  display: inline-block;
+  box-shadow: 0 0 6px #ef4444;
+}
+
+@keyframes pulseOffline {
+  0%, 100% {
+    opacity: 0.9;
+    border-color: rgba(239, 68, 68, 0.4);
+  }
+  50% {
+    opacity: 1;
+    border-color: rgba(239, 68, 68, 0.8);
+    box-shadow: 0 0 10px rgba(239, 68, 68, 0.3);
+  }
+}
+
+@media (max-width: 640px) {
+  .offlineBadge {
+    font-size: 0.72rem;
+    padding: 4px 8px;
+  }
+}

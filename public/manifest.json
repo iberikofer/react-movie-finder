@@ -1,0 +1,32 @@
+{
+  "short_name": "MovieFinder",
+  "name": "Movie Finder - Movies & Shows",
+  "description": "Discover trending movies, search film titles, check ratings, cast, reviews, and manage your watchlist offline.",
+  "icons": [
+    {
+      "src": "logo192.png",
+      "type": "image/png",
+      "sizes": "192x192",
+      "purpose": "any"
+    },
+    {
+      "src": "logo512.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "any"
+    },
+    {
+      "src": "maskable_icon.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "maskable"
+    }
+  ],
+  "start_url": ".",
+  "scope": ".",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "theme_color": "#062c26",
+  "background_color": "#04221b",
+  "categories": ["entertainment", "movies", "video"]
+}

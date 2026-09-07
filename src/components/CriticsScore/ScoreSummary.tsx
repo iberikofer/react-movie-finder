@@ -67,7 +67,7 @@ export const ScoreSummary: React.FC<ScoreSummaryProps> = ({
               onClick={onReset}
               title="Reset rating for this movie"
             >
-              Reset Rating
+              🔄 Reset Rating
             </button>
           )}
         </>

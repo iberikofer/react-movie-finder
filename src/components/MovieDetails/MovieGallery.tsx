@@ -7,6 +7,7 @@ import css from './MovieGallery.module.css';
 
 // Speed of continuous drift in pixels per second
 const DRIFT_SPEED = 25;
+const POST_SCROLL_PAUSE_MS = 750;
 const GALLERY_CACHE_KEY = 'gallery_viewed_photos';
 
 const getViewedPhotosSet = (): Set<string> => {
@@ -122,9 +123,17 @@ export const MovieGallery: React.FC<MovieGalleryProps> = ({ movieId, movieTitle 
   const [images, setImages] = useState<ImageItem[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+  const [isClosing, setIsClosing] = useState<boolean>(false);
   const [slideDirection, setSlideDirection] = useState<'next' | 'prev' | 'none'>('none');
+  const closeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [loadedPhotos, setLoadedPhotos] = useState<Set<string>>(() => getViewedPhotosSet());
   const viewedPhotosSetRef = useRef<Set<string>>(loadedPhotos);
+
+  useEffect(() => {
+    return () => {
+      if (closeTimeoutRef.current) clearTimeout(closeTimeoutRef.current);
+    };
+  }, []);
 
   const touchStartXRef = useRef<number | null>(null);
   const touchStartYRef = useRef<number | null>(null);
@@ -137,6 +146,7 @@ export const MovieGallery: React.FC<MovieGalleryProps> = ({ movieId, movieTitle 
   const manualTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const scrollPosRef = useRef<number>(0);
   const targetScrollRef = useRef<number | null>(null);
+  const pauseUntilRef = useRef<number>(0);
 
   useEffect(() => {
     lightboxOpenRef.current = lightboxIndex !== null;
@@ -155,23 +165,31 @@ export const MovieGallery: React.FC<MovieGalleryProps> = ({ movieId, movieTitle 
   }, []);
 
   const showNextImage = useCallback(() => {
-    if (images.length <= 1) return;
+    if (isClosing || images.length <= 1) return;
     setSlideDirection('next');
     setLightboxIndex(prev => (prev === null ? 0 : (prev + 1) % images.length));
-  }, [images.length]);
+  }, [isClosing, images.length]);
 
   const showPrevImage = useCallback(() => {
-    if (images.length <= 1) return;
+    if (isClosing || images.length <= 1) return;
     setSlideDirection('prev');
     setLightboxIndex(prev => (prev === null ? 0 : (prev - 1 + images.length) % images.length));
-  }, [images.length]);
+  }, [isClosing, images.length]);
 
   const closeLightbox = useCallback(() => {
-    setLightboxIndex(null);
-    setSlideDirection('none');
-  }, []);
+    if (isClosing) return;
+    setIsClosing(true);
+    if (closeTimeoutRef.current) clearTimeout(closeTimeoutRef.current);
+    closeTimeoutRef.current = setTimeout(() => {
+      setLightboxIndex(null);
+      setIsClosing(false);
+      setSlideDirection('none');
+    }, 240);
+  }, [isClosing]);
 
   const openLightbox = useCallback((idx: number) => {
+    if (closeTimeoutRef.current) clearTimeout(closeTimeoutRef.current);
+    setIsClosing(false);
     setSlideDirection('none');
     setLightboxIndex(idx);
   }, []);
@@ -278,18 +296,25 @@ export const MovieGallery: React.FC<MovieGalleryProps> = ({ movieId, movieTitle 
     return set1Ref.current.getBoundingClientRect().width + 14;
   }, []);
 
-  const getCardPositions = useCallback(() => {
+  const getCardStep = useCallback((): number => {
+    const track = trackRef.current;
+    if (!track) return 284;
+    const firstCard = track.querySelector<HTMLDivElement>(`.${css.photoCard}`);
+    if (!firstCard) return 284;
+    const rect = firstCard.getBoundingClientRect();
+    return Math.round(rect.width) + 14;
+  }, []);
+
+  const getAllCardBounds = useCallback((): Array<{ left: number; right: number }> => {
     const track = trackRef.current;
     if (!track) return [];
     const trackRect = track.getBoundingClientRect();
-    const cardElements = Array.from(track.querySelectorAll<HTMLDivElement>(`.${css.photoCard}`));
-    return cardElements.map(card => {
-      const cardRect = card.getBoundingClientRect();
-      return {
-        element: card,
-        targetScrollForRight: track.scrollLeft + (cardRect.right - trackRect.right),
-        targetScrollForLeft: track.scrollLeft + (cardRect.left - trackRect.left),
-      };
+    const cards = Array.from(track.querySelectorAll<HTMLDivElement>(`.${css.photoCard}`));
+    return cards.map(card => {
+      const rect = card.getBoundingClientRect();
+      const left = track.scrollLeft + (rect.left - trackRect.left);
+      const right = left + rect.width;
+      return { left: Math.round(left), right: Math.round(right) };
     });
   }, []);
 
@@ -325,17 +350,22 @@ export const MovieGallery: React.FC<MovieGalleryProps> = ({ movieId, movieTitle 
         if (setWidth > 20) {
           if (track.scrollLeft >= setWidth * 2) {
             track.scrollLeft -= setWidth;
+            if (targetScrollRef.current !== null) {
+              targetScrollRef.current -= setWidth;
+            }
           } else if (track.scrollLeft <= setWidth * 0.5) {
             track.scrollLeft += setWidth;
+            if (targetScrollRef.current !== null) {
+              targetScrollRef.current += setWidth;
+            }
           }
         }
         scrollPosRef.current = track.scrollLeft;
 
         if (manualTimeoutRef.current) clearTimeout(manualTimeoutRef.current);
-        manualTimeoutRef.current = setTimeout(() => {
-          targetScrollRef.current = null;
-          isManualScrollingRef.current = false;
-        }, 800);
+        targetScrollRef.current = null;
+        isManualScrollingRef.current = false;
+        pauseUntilRef.current = performance.now() + POST_SCROLL_PAUSE_MS;
       }
     };
 
@@ -364,7 +394,8 @@ export const MovieGallery: React.FC<MovieGalleryProps> = ({ movieId, movieTitle 
         setWidth > 0 &&
         !isHoveredRef.current &&
         !lightboxOpenRef.current &&
-        !isManualScrollingRef.current
+        !isManualScrollingRef.current &&
+        currentTime >= pauseUntilRef.current
       ) {
         scrollPosRef.current += DRIFT_SPEED * elapsed;
 
@@ -395,30 +426,47 @@ export const MovieGallery: React.FC<MovieGalleryProps> = ({ movieId, movieTitle 
 
     if (track.scrollLeft >= setWidth * 2) {
       track.scrollLeft -= setWidth;
-      scrollPosRef.current = track.scrollLeft;
+      if (targetScrollRef.current !== null) {
+        targetScrollRef.current -= setWidth;
+      }
     }
 
-    const cardPositions = getCardPositions();
-    if (cardPositions.length === 0) return;
+    const viewportWidth = track.clientWidth;
+    const allBounds = getAllCardBounds();
+    const cardStep = getCardStep();
 
-    const basePos =
+    const currentBase =
       isManualScrollingRef.current && targetScrollRef.current !== null
         ? targetScrollRef.current
         : track.scrollLeft;
 
-    const upcomingCards = cardPositions
-      .filter(c => c.targetScrollForRight > basePos + 5)
-      .sort((a, b) => a.targetScrollForRight - b.targetScrollForRight);
-    if (upcomingCards.length === 0) return;
+    const currentRight = currentBase + viewportWidth;
 
-    const nextCard = upcomingCards.length > 1 ? upcomingCards[1] : upcomingCards[0];
+    let nextTarget: number;
+    if (allBounds.length > 0) {
+      const offscreenCards = allBounds
+        .filter(b => b.right > currentRight + 6)
+        .sort((a, b) => a.right - b.right);
 
-    const target = nextCard.targetScrollForRight;
-    targetScrollRef.current = target;
+      if (offscreenCards.length > 0) {
+        const first = offscreenCards[0];
+        const isPartiallyVisible = first.left < currentRight - 20;
+        const targetIdx = isPartiallyVisible ? 2 : 1;
+        const chosenCard =
+          offscreenCards[Math.min(targetIdx, offscreenCards.length - 1)];
+        nextTarget = chosenCard.right - viewportWidth;
+      } else {
+        nextTarget = currentBase + cardStep * 2;
+      }
+    } else {
+      nextTarget = currentBase + cardStep * 2;
+    }
+
+    targetScrollRef.current = nextTarget;
     isManualScrollingRef.current = true;
-    scrollPosRef.current = target;
+    scrollPosRef.current = nextTarget;
 
-    track.scrollTo({ left: target, behavior: 'smooth' });
+    track.scrollTo({ left: nextTarget, behavior: 'smooth' });
 
     if (manualTimeoutRef.current) clearTimeout(manualTimeoutRef.current);
     manualTimeoutRef.current = setTimeout(() => {
@@ -426,15 +474,16 @@ export const MovieGallery: React.FC<MovieGalleryProps> = ({ movieId, movieTitle 
       if (curTrack) {
         if (curTrack.scrollLeft >= setWidth * 2) {
           curTrack.scrollLeft -= setWidth;
-        } else if (curTrack.scrollLeft <= setWidth * 0.5) {
+        } else if (curTrack.scrollLeft < setWidth * 0.5) {
           curTrack.scrollLeft += setWidth;
         }
         scrollPosRef.current = curTrack.scrollLeft;
       }
       targetScrollRef.current = null;
       isManualScrollingRef.current = false;
-    }, 1200);
-  }, [getSingleSetWidth, getCardPositions]);
+      pauseUntilRef.current = performance.now() + POST_SCROLL_PAUSE_MS;
+    }, 550);
+  }, [getSingleSetWidth, getAllCardBounds, getCardStep]);
 
   const scrollPrev = useCallback(() => {
     const track = trackRef.current;
@@ -444,30 +493,46 @@ export const MovieGallery: React.FC<MovieGalleryProps> = ({ movieId, movieTitle 
 
     if (track.scrollLeft <= setWidth * 0.5) {
       track.scrollLeft += setWidth;
-      scrollPosRef.current = track.scrollLeft;
+      if (targetScrollRef.current !== null) {
+        targetScrollRef.current += setWidth;
+      }
     }
 
-    const cardPositions = getCardPositions();
-    if (cardPositions.length === 0) return;
+    const allBounds = getAllCardBounds();
+    const cardStep = getCardStep();
 
-    const basePos =
+    const currentBase =
       isManualScrollingRef.current && targetScrollRef.current !== null
         ? targetScrollRef.current
         : track.scrollLeft;
 
-    const previousCards = cardPositions
-      .filter(c => c.targetScrollForLeft < basePos - 5)
-      .sort((a, b) => b.targetScrollForLeft - a.targetScrollForLeft);
-    if (previousCards.length === 0) return;
+    const currentLeft = currentBase;
 
-    const prevCard = previousCards.length > 1 ? previousCards[1] : previousCards[0];
+    let prevTarget: number;
+    if (allBounds.length > 0) {
+      const offscreenCardsLeft = allBounds
+        .filter(b => b.left < currentLeft - 6)
+        .sort((a, b) => b.left - a.left);
 
-    const target = Math.max(0, prevCard.targetScrollForLeft);
-    targetScrollRef.current = target;
+      if (offscreenCardsLeft.length > 0) {
+        const first = offscreenCardsLeft[0];
+        const isPartiallyVisible = first.right > currentLeft + 20;
+        const targetIdx = isPartiallyVisible ? 2 : 1;
+        const chosenCard =
+          offscreenCardsLeft[Math.min(targetIdx, offscreenCardsLeft.length - 1)];
+        prevTarget = Math.max(0, chosenCard.left);
+      } else {
+        prevTarget = Math.max(0, currentBase - cardStep * 2);
+      }
+    } else {
+      prevTarget = Math.max(0, currentBase - cardStep * 2);
+    }
+
+    targetScrollRef.current = prevTarget;
     isManualScrollingRef.current = true;
-    scrollPosRef.current = target;
+    scrollPosRef.current = prevTarget;
 
-    track.scrollTo({ left: target, behavior: 'smooth' });
+    track.scrollTo({ left: prevTarget, behavior: 'smooth' });
 
     if (manualTimeoutRef.current) clearTimeout(manualTimeoutRef.current);
     manualTimeoutRef.current = setTimeout(() => {
@@ -475,15 +540,16 @@ export const MovieGallery: React.FC<MovieGalleryProps> = ({ movieId, movieTitle 
       if (curTrack) {
         if (curTrack.scrollLeft >= setWidth * 2) {
           curTrack.scrollLeft -= setWidth;
-        } else if (curTrack.scrollLeft <= setWidth * 0.5) {
+        } else if (curTrack.scrollLeft < setWidth * 0.5) {
           curTrack.scrollLeft += setWidth;
         }
         scrollPosRef.current = curTrack.scrollLeft;
       }
       targetScrollRef.current = null;
       isManualScrollingRef.current = false;
-    }, 1200);
-  }, [getSingleSetWidth, getCardPositions]);
+      pauseUntilRef.current = performance.now() + POST_SCROLL_PAUSE_MS;
+    }, 550);
+  }, [getSingleSetWidth, getAllCardBounds, getCardStep]);
 
   const handleScroll = useCallback(() => {
     if (isManualScrollingRef.current) return;
@@ -509,9 +575,9 @@ export const MovieGallery: React.FC<MovieGalleryProps> = ({ movieId, movieTitle 
       if (e.key === 'Escape') {
         closeLightbox();
       } else if (images.length > 1 && e.key === 'ArrowRight') {
-        showNextImage();
+        if (!isClosing) showNextImage();
       } else if (images.length > 1 && e.key === 'ArrowLeft') {
-        showPrevImage();
+        if (!isClosing) showPrevImage();
       }
     };
 
@@ -520,7 +586,7 @@ export const MovieGallery: React.FC<MovieGalleryProps> = ({ movieId, movieTitle 
       document.body.style.overflow = originalOverflow;
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [lightboxIndex, images.length, closeLightbox, showNextImage, showPrevImage]);
+  }, [lightboxIndex, isClosing, images.length, closeLightbox, showNextImage, showPrevImage]);
 
   if (isLoading) {
     return (
@@ -677,7 +743,7 @@ export const MovieGallery: React.FC<MovieGalleryProps> = ({ movieId, movieTitle 
 
         return createPortal(
           <div
-            className={css.lightboxOverlay}
+            className={`${css.lightboxOverlay} ${isClosing ? css.isClosing : ''}`}
             onClick={closeLightbox}
             role="dialog"
             aria-modal="true"
