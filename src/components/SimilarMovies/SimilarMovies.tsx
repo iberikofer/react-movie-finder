@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, Link, useLocation } from 'react-router-dom';
 import { getSimilarMovies, setMediaType, getMediaType } from 'fetch';
 import { MediaItem } from 'types';
+import { useLanguage } from '../../context/LanguageContext';
 import MovieCardRatingBadge from '../CriticsScore/MovieCardRatingBadge';
 import Loader from '../Loader/Loader';
 import MediaTypeBadge from '../MediaTypeBadge/MediaTypeBadge';
@@ -11,15 +12,24 @@ import css from './SimilarMovies.module.css';
 
 export const SimilarMovies: React.FC = () => {
   const { movieId } = useParams<{ movieId: string }>();
+  const { language, t } = useLanguage();
   const [movies, setMovies] = useState<MediaItem[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const location = useLocation();
   const isTv = movieId ? getMediaType(movieId) === 'tv' : false;
+  const moviesRef = useRef(movies);
+  moviesRef.current = movies;
+  const prevLangRef = useRef<string>(language);
 
   useEffect(() => {
     if (!movieId) return;
     let isMounted = true;
-    setIsLoading(true);
+    const isLangChange = prevLangRef.current !== language;
+    prevLangRef.current = language;
+
+    if (moviesRef.current.length === 0 || isLangChange) {
+      setIsLoading(true);
+    }
 
     const fetchSimilar = async () => {
       try {
@@ -41,23 +51,34 @@ export const SimilarMovies: React.FC = () => {
     return () => {
       isMounted = false;
     };
-  }, [movieId]);
+  }, [movieId, language]);
+
+  const getSimilarCountText = (count: number) => {
+    if (language === 'uk') {
+      const mod10 = count % 10;
+      const mod100 = count % 100;
+      if (mod10 === 1 && mod100 !== 11) return `${count} рекомендований тайтл`;
+      if (mod10 >= 2 && mod10 <= 4 && (mod100 < 10 || mod100 >= 20)) return `${count} рекомендовані тайтли`;
+      return `${count} рекомендованих тайтлів`;
+    }
+    return `${count} ${t('similar.recommended', 'recommended')} ${count === 1 ? 'title' : 'titles'}`;
+  };
 
   return (
-    <section className={css.similarSection} aria-label={isTv ? 'Similar shows' : 'Similar movies'}>
+    <section className={css.similarSection} aria-label={isTv ? t('movie.similarShows') : t('movie.similarMovies')}>
       <div className={css.headerRow}>
         <h2 className={css.sectionTitle}>
-          <span className={css.titleIcon}>🎯</span> {isTv ? 'Similar Shows' : 'Similar Movies'}
+          <span className={css.titleIcon}>🎯</span> {isTv ? t('movie.similarShows') : t('movie.similarMovies')}
         </h2>
         {movies.length > 0 && (
           <span className={css.countBadge}>
-            {movies.length} recommended {movies.length === 1 ? 'title' : 'titles'}
+            {getSimilarCountText(movies.length)}
           </span>
         )}
       </div>
 
       {isLoading ? (
-        <Loader caption="Finding similar movies & series..." />
+        <Loader caption={t('similar.loading')} />
       ) : movies.length > 0 ? (
         <ul className={css.movieGrid}>
           {movies.map(movie => {
@@ -117,7 +138,7 @@ export const SimilarMovies: React.FC = () => {
         <div className={css.emptyState}>
           <span className={css.emptyIcon}>🎬</span>
           <p className={css.emptyText}>
-            No similar recommendations found for this title.
+            {t('similar.empty')}
           </p>
         </div>
       )}

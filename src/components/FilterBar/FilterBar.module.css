@@ -36,7 +36,7 @@
 
 /* When standalone above movie grid (Trending page) */
 .standalone {
-  width: 840px;
+  width: 1272px;
   max-width: 100%;
   box-sizing: border-box;
   margin: 0 auto 36px auto;
@@ -58,18 +58,18 @@
 
 /* Buttons Row */
 .buttonsRow {
-  display: flex;
+  display: grid;
+  grid-template-columns: 25fr 27fr 15fr 33fr;
   align-items: center;
-  justify-content: space-between;
   gap: 10px;
   padding: 10px 14px;
   box-sizing: border-box;
+  width: 100%;
 }
 
 .dropdownWrapper {
   position: relative;
-  flex: 1 1 0;
-  width: 0;
+  width: 100%;
   min-width: 0;
 }
 
@@ -80,8 +80,9 @@
   align-items: center;
   justify-content: space-between;
   width: 100%;
+  min-width: 0;
   gap: 6px;
-  padding: 8px 10px;
+  padding: 8px 12px;
   background: rgba(42, 8, 12, 0.55);
   border: 1px solid rgba(254, 243, 199, 0.18);
   border-radius: 8px;
@@ -135,6 +136,7 @@
   text-overflow: ellipsis;
   white-space: nowrap;
   flex: 1;
+  min-width: 0;
   text-align: left;
 }
 
@@ -363,7 +365,7 @@
 /* When hovered: smoothly expands and drops down below the filter bar */
 .resetSlot:hover .resetButton,
 .resetButton:focus-visible {
-  width: 130px;
+  width: 172px;
   height: 28px;
   padding: 0 12px;
   transform: translateY(6px);
@@ -380,7 +382,7 @@
 
 .resetSlot:hover .resetText {
   opacity: 1;
-  max-width: 95px;
+  max-width: 135px;
 }
 
 .resetButton:active {
@@ -547,10 +549,12 @@
   color: #ffffff;
 }
 
-/* Genres Grid */
+/* Genres Grid - Centered items and rows */
 .genresGrid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(145px, 1fr));
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
   gap: 10px;
   max-height: 55vh;
   overflow-y: auto;
@@ -569,8 +573,11 @@
 .genrePill {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 8px;
-  padding: 8px 12px;
+  padding: 8px 14px;
+  width: 225px;
+  min-width: 220px;
   background: rgba(42, 8, 12, 0.55);
   border: 1px solid rgba(254, 243, 199, 0.16);
   border-radius: 10px;
@@ -579,7 +586,7 @@
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-  text-align: left;
+  text-align: center;
   box-sizing: border-box;
 }
 
@@ -653,29 +660,37 @@
   }
 
   .genresGrid {
-    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
     gap: 8px;
   }
 
+  .genrePill {
+    width: calc(50% - 6px);
+    min-width: 140px;
+    padding: 7px 10px;
+    font-size: 0.8rem;
+  }
+
   .buttonsRow {
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    padding: 8px 10px;
+  }
+
+  .filterButton {
+    padding: 7px 10px;
+    font-size: 0.8rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .buttonsRow {
+    grid-template-columns: 1fr;
     gap: 6px;
     padding: 6px 8px;
   }
 
-  .filterButton {
-    padding: 6px 8px;
-    font-size: 0.75rem;
-  }
-}
-
-@media (max-width: 600px) {
-  .buttonsRow {
-    flex-wrap: wrap;
-    gap: 8px;
-  }
-
-  .dropdownWrapper {
-    flex: 1 1 calc(50% - 6px);
-    width: auto;
+  .genrePill {
+    width: 100%;
+    min-width: 0;
   }
 }

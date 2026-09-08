@@ -1,5 +1,6 @@
 import React from 'react';
 import ClapperboardLoader from './ClapperboardLoader';
+import { useLanguage } from '../../context/LanguageContext';
 
 export interface LoaderProps {
   caption?: string;
@@ -9,14 +10,17 @@ export interface LoaderProps {
 }
 
 export const Loader: React.FC<LoaderProps> = ({
-  caption = 'Loading scene...',
+  caption,
   isCentered = false,
   label,
   title,
 }) => {
+  const { t } = useLanguage();
+  const displayCaption = caption !== undefined ? caption : t('loader.default', 'Loading scene...');
+
   return (
     <ClapperboardLoader
-      caption={caption}
+      caption={displayCaption}
       isCentered={isCentered}
       label={label || title}
     />

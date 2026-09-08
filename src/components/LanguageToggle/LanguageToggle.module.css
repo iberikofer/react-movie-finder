@@ -1,0 +1,102 @@
+.langToggleBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(16, 185, 129, 0.12);
+  border: 1px solid rgba(16, 185, 129, 0.35);
+  color: #34d399;
+  padding: 6px 13px;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  user-select: none;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  outline: none;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+}
+
+.langToggleBtn:hover {
+  background: rgba(16, 185, 129, 0.22);
+  border-color: #34d399;
+  color: #ffffff;
+  transform: translateY(-1.5px);
+  box-shadow: 0 4px 14px rgba(16, 185, 129, 0.35);
+}
+
+.langToggleBtn:active {
+  transform: translateY(0) scale(0.96);
+  transition-duration: 0.08s;
+}
+
+/* Ukrainian flag theme when button offers switch to UA */
+.uaTheme {
+  background:
+    linear-gradient(
+      180deg,
+      rgba(0, 91, 187, 0.48) 0%,
+      rgba(0, 91, 187, 0.42) 48%,
+      rgba(255, 213, 0, 0.46) 52%,
+      rgba(255, 213, 0, 0.52) 100%
+    ) padding-box,
+    linear-gradient(
+      180deg,
+      rgba(30, 130, 255, 0.65) 0%,
+      rgba(255, 215, 0, 0.65) 100%
+    ) border-box;
+  border: 1px solid transparent;
+  color: #ffffff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3), 0 0 10px rgba(0, 91, 187, 0.2);
+}
+
+.uaTheme:hover {
+  background:
+    linear-gradient(
+      180deg,
+      rgba(0, 91, 187, 0.62) 0%,
+      rgba(0, 91, 187, 0.54) 48%,
+      rgba(255, 213, 0, 0.58) 52%,
+      rgba(255, 213, 0, 0.66) 100%
+    ) padding-box,
+    linear-gradient(
+      180deg,
+      rgba(30, 144, 255, 0.9) 0%,
+      rgba(255, 215, 0, 0.9) 100%
+    ) border-box;
+  border: 1px solid transparent;
+  color: #ffffff;
+  transform: translateY(-1.5px);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4), 0 0 12px rgba(0, 91, 187, 0.3), 0 0 12px rgba(255, 213, 0, 0.2);
+}
+
+.globeIcon {
+  font-size: 0.98rem;
+  line-height: 1;
+  display: inline-block;
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.langToggleBtn:hover .globeIcon {
+  transform: scale(1.08);
+}
+
+.langToggleBtn:active .globeIcon {
+  transform: rotate(180deg) scale(0.92);
+  transition-duration: 0.15s;
+}
+
+.langLabel {
+  letter-spacing: 0.6px;
+  font-family: inherit;
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+@media (max-width: 600px) {
+  .langToggleBtn {
+    padding: 5px 10px;
+    font-size: 0.78rem;
+  }
+}

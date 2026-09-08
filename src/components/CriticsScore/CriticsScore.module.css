@@ -126,10 +126,51 @@
   line-height: 1;
 }
 
+.sourceLinkCritics {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 800;
+  font-size: 0.88rem;
+  letter-spacing: 0.5px;
+  color: #f43f5e;
+  text-decoration: none;
+  padding: 4px 10px;
+  border-radius: 6px;
+  background: rgba(244, 63, 94, 0.12);
+  border: 1px solid rgba(244, 63, 94, 0.35);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  user-select: none;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.sourceLinkCritics:hover {
+  background: rgba(244, 63, 94, 0.22);
+  border-color: #f43f5e;
+  color: #fda4af;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(244, 63, 94, 0.25);
+}
+
+.sourceLinkCritics:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 6px rgba(244, 63, 94, 0.2);
+}
+
+.sourceLinkTmdb:hover .externalArrow,
+.sourceLinkImdb:hover .externalArrow,
+.sourceLinkCritics:hover .externalArrow {
+  transform: translate(1px, -1px);
+  opacity: 1;
+}
+
 .externalArrow {
   font-size: 0.85rem;
   font-weight: 700;
   opacity: 0.85;
+  transition: transform 0.2s ease, opacity 0.2s ease;
+  display: inline-block;
 }
 
 .ratingDataGroup {

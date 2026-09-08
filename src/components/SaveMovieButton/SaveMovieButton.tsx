@@ -1,6 +1,7 @@
 import React from 'react';
 import { MediaItem } from 'types';
 import { useSavedMovies } from '../../hooks/useSavedMovies';
+import { useLanguage } from '../../context/LanguageContext';
 import css from './SaveMovieButton.module.css';
 
 interface BookmarkIconProps {
@@ -38,6 +39,7 @@ export const SaveMovieButton: React.FC<SaveMovieButtonProps> = ({
   className = '',
   onBeforeRemove,
 }) => {
+  const { t } = useLanguage();
   const { isSaved, toggleSave } = useSavedMovies();
   if (!movie || !movie.id) return null;
 
@@ -57,13 +59,17 @@ export const SaveMovieButton: React.FC<SaveMovieButtonProps> = ({
     ? `${css.detailsSaveBtn} ${saved ? css.detailsSaveBtnSaved : ''} ${className}`
     : `${css.cardSaveBtn} ${saved ? css.cardSaveBtnSaved : ''} ${className}`;
 
+  const label = saved
+    ? t('bookmark.remove', 'Remove from saved watchlist')
+    : t('bookmark.add', 'Add to saved watchlist');
+
   return (
     <button
       type="button"
       onClick={handleClick}
       className={buttonClass}
-      title={saved ? 'Remove from saved watchlist' : 'Add to saved watchlist'}
-      aria-label={saved ? 'Remove from saved watchlist' : 'Add to saved watchlist'}
+      title={label}
+      aria-label={label}
     >
       <BookmarkIcon filled={saved} size={isDetails ? 18 : 16} />
     </button>

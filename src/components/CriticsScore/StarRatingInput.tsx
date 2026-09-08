@@ -1,19 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import StarIcon from './StarIcon';
+import { useLanguage } from '../../context/LanguageContext';
 import css from './CriticsScore.module.css';
 
-const TOOLTIP_LABELS: Record<number, string> = {
-  0.5: 'Awful',
-  1: 'Awful',
-  1.5: 'Meh',
-  2: 'Meh',
-  2.5: 'Decent',
-  3: 'Decent',
-  3.5: 'Great',
-  4: 'Great',
-  4.5: 'Masterpiece',
-  5: 'Masterpiece',
-};
 
 interface BurstInfo {
   starIndex: number;
@@ -26,9 +15,18 @@ export interface StarRatingInputProps {
 }
 
 export const StarRatingInput: React.FC<StarRatingInputProps> = ({ onRate }) => {
+  const { t } = useLanguage();
   const [hoverValue, setHoverValue] = useState<number | null>(null);
   const [burstInfo, setBurstInfo] = useState<BurstInfo | null>(null);
   const burstTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  const getTooltipLabel = (val: number): string => {
+    if (val <= 1) return t('critics.awful', 'Awful');
+    if (val <= 2) return t('critics.meh', 'Meh');
+    if (val <= 3) return t('critics.decent', 'Decent');
+    if (val <= 4) return t('critics.great', 'Great');
+    return t('critics.masterpiece', 'Masterpiece');
+  };
 
   useEffect(() => {
     return () => {
@@ -55,7 +53,7 @@ export const StarRatingInput: React.FC<StarRatingInputProps> = ({ onRate }) => {
 
   return (
     <div className={`${css.ratingRow} ${css.yourRatingRow}`}>
-      <span className={css.sourceLabelYourRating}>Your Rating</span>
+      <span className={css.sourceLabelYourRating}>{t('critics.yourRating', 'Your Rating')}</span>
 
       <div
         className={css.starInputGroup}
@@ -84,9 +82,9 @@ export const StarRatingInput: React.FC<StarRatingInputProps> = ({ onRate }) => {
                 className={css.halfHitLeft}
                 onMouseEnter={() => setHoverValue(starIndex - 0.5)}
                 onClick={() => handleRate(starIndex - 0.5, starIndex)}
-                title={`${starIndex - 0.5} stars`}
+                title={`${starIndex - 0.5} ${t('critics.stars', 'stars')}`}
                 role="button"
-                aria-label={`Rate ${starIndex - 0.5} stars`}
+                aria-label={`${t('critics.rateStars', 'Rate')} ${starIndex - 0.5} ${t('critics.stars', 'stars')}`}
               />
 
               {/* Right half hit-box (1.0) */}
@@ -94,9 +92,9 @@ export const StarRatingInput: React.FC<StarRatingInputProps> = ({ onRate }) => {
                 className={css.halfHitRight}
                 onMouseEnter={() => setHoverValue(starIndex)}
                 onClick={() => handleRate(starIndex, starIndex)}
-                title={`${starIndex} stars`}
+                title={`${starIndex} ${t('critics.stars', 'stars')}`}
                 role="button"
-                aria-label={`Rate ${starIndex} stars`}
+                aria-label={`${t('critics.rateStars', 'Rate')} ${starIndex} ${t('critics.stars', 'stars')}`}
               />
 
               {/* Star Icon with animated wrapper */}
@@ -116,7 +114,7 @@ export const StarRatingInput: React.FC<StarRatingInputProps> = ({ onRate }) => {
               {/* Tooltip bubble positioned over active hovered star */}
               {isHoveredStar && hoverValue !== null && (
                 <div className={css.tooltip}>
-                  {TOOLTIP_LABELS[hoverValue]} ({hoverValue} ★)
+                  {getTooltipLabel(hoverValue)} ({hoverValue} ★)
                 </div>
               )}
 

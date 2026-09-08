@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { setMediaType, getMovieDetails, matchesAgeFilter } from 'fetch';
+import { setMediaType, getMovieDetails, matchesAgeFilter, isAlphabeticalTitle } from 'fetch';
 import { MediaItem } from 'types';
 import { useSavedMovies, getSavedMovies, SavedMediaItem } from '../hooks/useSavedMovies';
 import FilterBar, { SAVED_SORT_OPTIONS } from '../components/FilterBar/FilterBar';
@@ -10,6 +10,7 @@ import MovieCardRatingBadge from '../components/CriticsScore/MovieCardRatingBadg
 import SaveMovieButton from '../components/SaveMovieButton/SaveMovieButton';
 import Loader from '../components/Loader/Loader';
 import { clearPageSession } from '../utils/sessionStorage';
+import { useLanguage } from '../context/LanguageContext';
 import css from './Saved.module.css';
 
 let hasLoadedSavedOnce = false;
@@ -30,7 +31,9 @@ const matchesAgeRating = (ratingStr: string, filterAge: string | string[]): bool
 };
 
 export const Saved: React.FC = () => {
+  const { t, language } = useLanguage();
   const { savedMovies, clearAll, removeMovie } = useSavedMovies();
+  const [localizedTitles, setLocalizedTitles] = useState<Record<string | number, string>>({});
   const [isInitialLoading, setIsInitialLoading] = useState<boolean>(!hasLoadedSavedOnce);
   const [queryText, setQueryText] = useState<string>('');
   const [filterType, setFilterType] = useState<string>('all');
@@ -53,6 +56,41 @@ export const Saved: React.FC = () => {
       timers.clear();
     };
   }, []);
+
+  useEffect(() => {
+    if (!savedMovies || savedMovies.length === 0) return;
+    let isMounted = true;
+    const fetchLocalizedTitles = async () => {
+      const titles: Record<string | number, string> = {};
+      await Promise.allSettled(
+        savedMovies.map(async m => {
+          try {
+            const cacheKey = `title_${m.id}_${language}`;
+            const cached = sessionStorage.getItem(cacheKey);
+            if (cached) {
+              titles[m.id] = cached;
+              return;
+            }
+            const data = await getMovieDetails(m.id, m.media_type === 'tv' ? 'tv' : 'movie');
+            const locTitle = data?.title || data?.name;
+            if (locTitle) {
+              titles[m.id] = locTitle;
+              sessionStorage.setItem(cacheKey, locTitle);
+            }
+          } catch {
+            // ignore
+          }
+        })
+      );
+      if (isMounted) {
+        setLocalizedTitles(prev => ({ ...prev, ...titles }));
+      }
+    };
+    fetchLocalizedTitles();
+    return () => {
+      isMounted = false;
+    };
+  }, [savedMovies, language]);
 
   useEffect(() => {
     if (!hasLoadedSavedOnce) {
@@ -227,7 +265,7 @@ export const Saved: React.FC = () => {
     if (queryText.trim()) {
       const q = queryText.trim().toLowerCase();
       list = list.filter(m => {
-        const title = (m.title || m.name || '').toLowerCase();
+        const title = (localizedTitles[m.id] || m.title || m.name || '').toLowerCase();
         return title.includes(q);
       });
     }
@@ -247,7 +285,14 @@ export const Saved: React.FC = () => {
       });
     }
 
-    const sorted = [...list];
+    let sorted = [...list];
+    if (sortBy === 'original_title.asc' || sortBy === 'original_title.desc') {
+      sorted = sorted.filter(m => {
+        const title = localizedTitles[m.id] || m.title || m.name || '';
+        return isAlphabeticalTitle(title);
+      });
+    }
+
     if (sortBy === 'saved_at.desc') {
       sorted.sort((a, b) => {
         const timeA = a.savedAt || 0;
@@ -279,16 +324,22 @@ export const Saved: React.FC = () => {
       });
     } else if (sortBy === 'original_title.asc') {
       sorted.sort((a, b) => {
-        const nameA = (a.title || a.name || '').trim();
-        const nameB = (b.title || b.name || '').trim();
-        return nameA.localeCompare(nameB, undefined, { sensitivity: 'base' });
+        const nameA = (localizedTitles[a.id] || a.title || a.name || '').trim();
+        const nameB = (localizedTitles[b.id] || b.title || b.name || '').trim();
+        return nameA.localeCompare(nameB, language === 'uk' ? 'uk' : 'en', { sensitivity: 'base' });
+      });
+    } else if (sortBy === 'original_title.desc') {
+      sorted.sort((a, b) => {
+        const nameA = (localizedTitles[a.id] || a.title || a.name || '').trim();
+        const nameB = (localizedTitles[b.id] || b.title || b.name || '').trim();
+        return nameB.localeCompare(nameA, language === 'uk' ? 'uk' : 'en', { sensitivity: 'base' });
       });
     } else {
       sorted.sort((a, b) => (b.popularity || 0) - (a.popularity || 0));
     }
 
     return sorted;
-  }, [savedMovies, filterType, queryText, selectedGenres, filterAge, sortBy]);
+  }, [savedMovies, filterType, queryText, selectedGenres, filterAge, sortBy, localizedTitles, language]);
 
   const handleRemoveMovie = useCallback(
     (movie: MediaItem) => {
@@ -338,7 +389,7 @@ export const Saved: React.FC = () => {
   };
 
   if (isInitialLoading) {
-    return <Loader isCentered caption="Loading saved watchlist..." />;
+    return <Loader isCentered caption={t('saved.loading', 'Loading saved watchlist...')} />;
   }
 
   return (
@@ -351,13 +402,13 @@ export const Saved: React.FC = () => {
                 <span className={css.titleIcon} aria-hidden="true">
                   🔖
                 </span>
-                Saved Watchlist
+                {t('saved.title')}
                 <span className={css.countBadge}>
-                  {savedMovies.length} {savedMovies.length === 1 ? 'title' : 'titles'}
+                  {savedMovies.length} {savedMovies.length === 1 ? t('saved.titleOne') : t('saved.titles')}
                 </span>
               </h1>
               <p className={css.subtitle}>
-                Your personal collection of saved movies and series stored directly in your browser.
+                {t('saved.subtitle')}
               </p>
             </div>
 
@@ -370,13 +421,13 @@ export const Saved: React.FC = () => {
               onClick={handleClear}
               title={
                 clearStatus === 'confirming'
-                  ? 'Click again to permanently clear all saved titles'
-                  : 'Clear all saved titles from your watchlist'
+                  ? t('saved.confirmClear')
+                  : t('saved.clearWatchlist')
               }
             >
               {clearStatus === 'confirming'
-                ? '⚠️ Confirm Clear All'
-                : '🗑️ Clear Watchlist'}
+                ? `⚠️ ${t('saved.confirmClear')}`
+                : `🗑️ ${t('saved.clearWatchlist')}`}
             </button>
           </div>
         )}
@@ -390,8 +441,8 @@ export const Saved: React.FC = () => {
                     ref={inputRef}
                     className={css.searchInput}
                     type="search"
-                    placeholder="Search saved movies & series..."
-                    aria-label="Search saved movies & series"
+                    placeholder={t('saved.searchPlaceholder')}
+                    aria-label={t('saved.searchPlaceholder')}
                     value={queryText}
                     onChange={e => setQueryText(e.target.value)}
                     onFocus={() => setIsInputFocused(true)}
@@ -405,8 +456,8 @@ export const Saved: React.FC = () => {
                         setQueryText('');
                         if (inputRef.current) inputRef.current.focus();
                       }}
-                      aria-label="Clear search input"
-                      title="Clear search"
+                      aria-label={t('saved.clearSearch', 'Clear search')}
+                      title={t('saved.clearSearch', 'Clear search')}
                     >
                       ✕
                     </button>
@@ -439,7 +490,7 @@ export const Saved: React.FC = () => {
         {filteredMovies.length > 0 ? (
           <ul className={css.movieGrid}>
             {filteredMovies.map(movie => {
-              const title = movie.title || movie.name;
+              const title = localizedTitles[movie.id] || movie.title || movie.name;
               const isRemoving = removingIds.has(movie.id);
               return (
                 <li
@@ -517,13 +568,13 @@ export const Saved: React.FC = () => {
           >
             <h2 className={css.emptyTitle}>
               {savedMovies.length === 0
-                ? 'Your watchlist is empty'
-                : 'No saved titles match your filters'}
+                ? t('saved.emptyTitle')
+                : t('saved.noMatchTitle')}
             </h2>
             <p className={css.emptyText}>
               {savedMovies.length === 0
-                ? 'Explore trending movies and series or use the search bar to find titles you want to watch later.'
-                : 'Try adjusting your search query, format, genres, or age filters.'}
+                ? t('saved.emptyDesc')
+                : t('search.noResultsDesc')}
             </p>
             {savedMovies.length === 0 ? (
               <div className={css.emptyActions}>
@@ -532,10 +583,10 @@ export const Saved: React.FC = () => {
                   className={css.primaryCta}
                   onClick={() => clearPageSession('trending_session')}
                 >
-                  <span>🔥 Explore Trending Now</span>
+                  <span>{t('saved.exploreTrending')}</span>
                 </Link>
                 <Link to="/movies" className={css.secondaryCta}>
-                  <span>🔍 Search Film Titles</span>
+                  <span>{t('saved.searchFilmTitles')}</span>
                 </Link>
               </div>
             ) : (
@@ -544,7 +595,7 @@ export const Saved: React.FC = () => {
                 className={css.resetFiltersBtn}
                 onClick={handleResetAllFilters}
               >
-                🔄 Reset Filters
+                🔄 {t('saved.resetFilters')}
               </button>
             )}
           </div>

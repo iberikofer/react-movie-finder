@@ -12,7 +12,7 @@ import Movies from '../pages/Movies';
 const MovieDetails = lazy(() => import('./MovieDetails/MovieDetails'));
 const Cast = lazy(() => import('./Cast/Cast'));
 const Reviews = lazy(() => import('./Reviews/Reviews'));
-const Trailer = lazy(() => import('./Trailer/Trailer'));
+const Videos = lazy(() => import('./Videos/Videos'));
 const MovieInfo = lazy(() => import('./MovieInfo/MovieInfo'));
 const SimilarMovies = lazy(() => import('./SimilarMovies/SimilarMovies'));
 const RatingDistribution = lazy(() => import('./CriticsScore/RatingDistribution'));
@@ -35,7 +35,7 @@ export const App: React.FC = () => {
           <Route path="movies/:movieId" element={<MovieDetails />}>
             <Route path="rating" element={<RatingDistribution />} />
             <Route path="info" element={<MovieInfo />} />
-            <Route path="trailer" element={<Trailer />} />
+            <Route path="videos" element={<Videos />} />
             <Route path="cast" element={<Cast />} />
             <Route path="reviews" element={<Reviews />} />
             <Route path="similar" element={<SimilarMovies />} />

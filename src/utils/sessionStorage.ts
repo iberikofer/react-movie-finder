@@ -142,8 +142,19 @@ export const hasSavedPageScroll = (
   }
 };
 
-export const clearPageSession = (key: string): void => {
+export const clearPageSession = (key: string, filterKey?: string | null): void => {
   try {
+    if (filterKey) {
+      const root = parseRoot(key);
+      if (root.states[filterKey]) {
+        delete root.states[filterKey];
+        if (root.latestFilterKey === filterKey) {
+          root.latestFilterKey = '';
+        }
+        writeRoot(key, root);
+      }
+      return;
+    }
     sessionStorage.removeItem(key);
   } catch (err) {
     console.warn(`Failed to clear session for "${key}":`, err);

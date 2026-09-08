@@ -10,10 +10,27 @@ import {
   DiscoverParams,
   MediaTypeFilter,
 } from 'types';
+import { getActiveLangParam } from './context/LanguageContext';
 
 const BASE_URL = 'https://api.themoviedb.org/3';
 const DEFAULT_TOKEN =
   'eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiIyZWU3MDU4M2UzZTJjYzBmY2I4NjViMjQ0NTE1YWQ1MSIsInN1YiI6IjY0OTg2N2Y1OTU1YzY1MDBjN2FlZjJkYyIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.spmomChu1pxtxgfJXLkIEdZqVnZerBWxKn52_1eEjwg';
+
+const rawRequest = async <T = any>(endpoint: string): Promise<T> => {
+  const token = process.env.REACT_APP_TMDB_TOKEN || DEFAULT_TOKEN;
+  const options: RequestInit = {
+    method: 'GET',
+    headers: {
+      accept: 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+  };
+  const response = await fetch(`${BASE_URL}${endpoint}`, options);
+  if (!response.ok) {
+    throw new Error(`TMDB API error: ${response.status} ${response.statusText}`);
+  }
+  return response.json() as Promise<T>;
+};
 
 const request = async <T = any>(endpoint: string): Promise<T> => {
   const token = process.env.REACT_APP_TMDB_TOKEN || DEFAULT_TOKEN;
@@ -36,8 +53,9 @@ const request = async <T = any>(endpoint: string): Promise<T> => {
 };
 
 export const getMovies = (queryText: string, page: number = 1): Promise<TMDBResponse<MediaItem>> => {
+  const lang = getActiveLangParam();
   return request<TMDBResponse<MediaItem>>(
-    `/search/movie?query=${encodeURIComponent(queryText)}&include_adult=false&language=en-US&page=${page}`
+    `/search/movie?query=${encodeURIComponent(queryText)}&include_adult=false&language=${lang}&page=${page}`
   );
 };
 
@@ -47,22 +65,23 @@ export const searchMedia = async (
   type: MediaTypeFilter | string = 'all'
 ): Promise<TMDBResponse<MediaItem>> => {
   const enc = encodeURIComponent(queryText.trim());
+  const lang = getActiveLangParam();
   if (type === 'tv') {
     const data = await request<TMDBResponse<MediaItem>>(
-      `/search/tv?query=${enc}&include_adult=false&language=en-US&page=${page}`
+      `/search/tv?query=${enc}&include_adult=false&language=${lang}&page=${page}`
     );
     const results = (data?.results || []).map(item => ({ ...item, media_type: 'tv' as const }));
     return { ...data, results };
   }
   if (type === 'movie') {
     const data = await request<TMDBResponse<MediaItem>>(
-      `/search/movie?query=${enc}&include_adult=false&language=en-US&page=${page}`
+      `/search/movie?query=${enc}&include_adult=false&language=${lang}&page=${page}`
     );
     const results = (data?.results || []).map(item => ({ ...item, media_type: 'movie' as const }));
     return { ...data, results };
   }
   const data = await request<TMDBResponse<MediaItem>>(
-    `/search/multi?query=${enc}&include_adult=false&language=en-US&page=${page}`
+    `/search/multi?query=${enc}&include_adult=false&language=${lang}&page=${page}`
   );
   const results = (data?.results || []).filter(
     item => item.media_type === 'movie' || item.media_type === 'tv'
@@ -71,11 +90,13 @@ export const searchMedia = async (
 };
 
 export const getTrendingMovies = (page: number = 1): Promise<TMDBResponse<MediaItem>> => {
-  return request<TMDBResponse<MediaItem>>(`/trending/all/day?language=en-US&page=${page}`);
+  const lang = getActiveLangParam();
+  return request<TMDBResponse<MediaItem>>(`/trending/all/day?language=${lang}&page=${page}`);
 };
 
 export const getAllGenres = async (): Promise<Genre[]> => {
-  const STORAGE_KEY = 'tmdb_all_genres';
+  const lang = getActiveLangParam();
+  const STORAGE_KEY = `tmdb_all_genres_${lang}`;
   try {
     const cached = localStorage.getItem(STORAGE_KEY);
     if (cached) {
@@ -90,8 +111,8 @@ export const getAllGenres = async (): Promise<Genre[]> => {
 
   try {
     const [movieData, tvData] = await Promise.all([
-      request<{ genres?: Genre[] }>('/genre/movie/list?language=en-US').catch(() => ({ genres: [] })),
-      request<{ genres?: Genre[] }>('/genre/tv/list?language=en-US').catch(() => ({ genres: [] })),
+      request<{ genres?: Genre[] }>(`/genre/movie/list?language=${lang}`).catch(() => ({ genres: [] })),
+      request<{ genres?: Genre[] }>(`/genre/tv/list?language=${lang}`).catch(() => ({ genres: [] })),
     ]);
     const map = new Map<number, Genre>();
     (movieData.genres || []).forEach(g => map.set(g.id, g));
@@ -117,6 +138,67 @@ export const getMovieGenres = async (): Promise<Genre[]> => {
   return getAllGenres();
 };
 
+export const isAlphabeticalTitle = (title?: string): boolean => {
+  if (!title) return false;
+  const trimmed = title.trim();
+  if (!trimmed) return false;
+  return /^\p{L}/u.test(trimmed);
+};
+
+export const startsWithLetterOrNumber = (title?: string): boolean => {
+  return isAlphabeticalTitle(title);
+};
+
+const aStartPageCache = new Map<string, number>();
+
+export const getAlphabeticalStartPage = async (
+  endpoint: 'discover/movie' | 'discover/tv',
+  genreParam?: string,
+  certParam?: string
+): Promise<number> => {
+  const lang = getActiveLangParam();
+  const cacheKey = `${endpoint}|${genreParam || ''}|${certParam || ''}|${lang}`;
+  if (aStartPageCache.has(cacheKey)) {
+    return aStartPageCache.get(cacheKey)!;
+  }
+
+  let low = 1;
+  let high = 55;
+  let start = 1;
+  const sortParam = endpoint === 'discover/tv' ? 'original_name.asc' : 'original_title.asc';
+  let query = `sort_by=${sortParam}&vote_count.gte=20&language=${lang}`;
+  if (genreParam) query += `&with_genres=${genreParam}`;
+  if (certParam) query += `&certification_country=US&certification=${certParam}`;
+
+  while (low <= high) {
+    const mid = Math.floor((low + high) / 2);
+    try {
+      const data = await rawRequest<TMDBResponse<MediaItem>>(`/${endpoint}?${query}&page=${mid}`);
+      if (!data?.results || data.results.length === 0) {
+        high = mid - 1;
+        continue;
+      }
+      const firstItem = data.results[0];
+      const title = (firstItem.original_title || firstItem.original_name || firstItem.title || firstItem.name || '').trim();
+      const clean = title.replace(/^[^a-zA-Z0-9]+/, '');
+      const char = clean.charAt(0).toUpperCase();
+      if (char >= 'A' && char <= 'Z') {
+        start = mid;
+        high = mid - 1;
+      } else if (char < 'A' || !char) {
+        low = mid + 1;
+      } else {
+        high = mid - 1;
+      }
+    } catch {
+      break;
+    }
+  }
+
+  aStartPageCache.set(cacheKey, start);
+  return start;
+};
+
 export const discoverMedia = async ({
   type = 'all',
   genreIds = [],
@@ -128,20 +210,20 @@ export const discoverMedia = async ({
 
   const ageArray = Array.isArray(age)
     ? age
-    : typeof age === 'string' && age !== 'all'
-    ? age.split(',').map(s => s.trim()).filter(Boolean)
-    : [];
+    : age === 'all'
+    ? []
+    : age.split(',').map(s => s.trim()).filter(Boolean);
 
   const movieCertMap: Record<string, string> = {
     '0+': 'G',
     '6+': 'PG',
     '12+': 'PG-13',
-    '16+': 'R',
-    '18+': 'NC-17|R',
+    '16+': 'R|NC-17',
+    '18+': 'R|NC-17',
   };
 
   const tvCertMap: Record<string, string> = {
-    '0+': 'TV-Y',
+    '0+': 'TV-Y|TV-G',
     '6+': 'TV-PG',
     '12+': 'TV-14',
     '16+': 'TV-MA',
@@ -153,12 +235,38 @@ export const discoverMedia = async ({
     .filter(Boolean)
     .flatMap(c => c.split('|'));
   const uniqueMovieCerts = Array.from(new Set(movieCerts));
-  const tvCerts = Array.from(new Set(ageArray.map(a => tvCertMap[a]).filter(Boolean)));
+  const tvCerts = Array.from(new Set(ageArray.map(a => tvCertMap[a]).filter(Boolean).flatMap(c => c.split('|'))));
+
+  const lang = getActiveLangParam();
+
+  let movieOffset = 1;
+  let tvOffset = 1;
+
+  if (sortBy === 'original_title.asc') {
+    if (type === 'movie' || type === 'all') {
+      movieOffset = await getAlphabeticalStartPage(
+        'discover/movie',
+        genreParam,
+        uniqueMovieCerts.join('|')
+      );
+    }
+    if (type === 'tv' || type === 'all') {
+      tvOffset = await getAlphabeticalStartPage(
+        'discover/tv',
+        genreParam,
+        tvCerts.join('|')
+      );
+    }
+  }
 
   const fetchMovieDiscover = (p: number = page): Promise<TMDBResponse<MediaItem>> => {
-    let url = `/discover/movie?sort_by=${sortBy}&page=${p}&language=en-US`;
+    const actualPage = sortBy === 'original_title.asc' ? movieOffset + (p - 1) : p;
+    let url = `/discover/movie?sort_by=${sortBy}&page=${actualPage}&language=${lang}`;
     if (sortBy === 'vote_average.desc') {
       url += '&vote_count.gte=100';
+    }
+    if (sortBy === 'original_title.asc' || sortBy === 'original_title.desc') {
+      url += '&vote_count.gte=20';
     }
     if (genreParam) url += `&with_genres=${genreParam}`;
     if (uniqueMovieCerts.length > 0) {
@@ -170,9 +278,15 @@ export const discoverMedia = async ({
   const fetchTvDiscover = (p: number = page): Promise<TMDBResponse<MediaItem>> => {
     let tvSort = sortBy;
     if (sortBy === 'primary_release_date.desc') tvSort = 'first_air_date.desc';
-    let url = `/discover/tv?sort_by=${tvSort}&page=${p}&language=en-US`;
+    if (sortBy === 'original_title.asc') tvSort = 'original_name.asc';
+    if (sortBy === 'original_title.desc') tvSort = 'original_name.desc';
+    const actualPage = sortBy === 'original_title.asc' ? tvOffset + (p - 1) : p;
+    let url = `/discover/tv?sort_by=${tvSort}&page=${actualPage}&language=${lang}`;
     if (sortBy === 'vote_average.desc') {
       url += '&vote_count.gte=50';
+    }
+    if (sortBy === 'original_title.asc' || sortBy === 'original_title.desc') {
+      url += '&vote_count.gte=20';
     }
     if (genreParam) url += `&with_genres=${genreParam}`;
     if (tvCerts.length > 0) {
@@ -183,14 +297,26 @@ export const discoverMedia = async ({
 
   if (type === 'tv') {
     const data = await fetchTvDiscover();
-    const results = (data?.results || []).map(item => ({ ...item, media_type: 'tv' as const }));
-    return { ...data, results };
+    let results = (data?.results || []).map(item => ({ ...item, media_type: 'tv' as const }));
+    if (sortBy === 'original_title.asc' || sortBy === 'original_title.desc') {
+      results = results.filter(item => isAlphabeticalTitle(item.name || item.title));
+    }
+    const totalPages = sortBy === 'original_title.asc'
+      ? Math.max(1, (data?.total_pages || 1) - tvOffset + 1)
+      : (data?.total_pages || 1);
+    return { ...data, results, total_pages: totalPages };
   }
 
   if (type === 'movie') {
     const data = await fetchMovieDiscover();
-    const results = (data?.results || []).map(item => ({ ...item, media_type: 'movie' as const }));
-    return { ...data, results };
+    let results = (data?.results || []).map(item => ({ ...item, media_type: 'movie' as const }));
+    if (sortBy === 'original_title.asc' || sortBy === 'original_title.desc') {
+      results = results.filter(item => isAlphabeticalTitle(item.title || item.name));
+    }
+    const totalPages = sortBy === 'original_title.asc'
+      ? Math.max(1, (data?.total_pages || 1) - movieOffset + 1)
+      : (data?.total_pages || 1);
+    return { ...data, results, total_pages: totalPages };
   }
 
   // type === 'all'
@@ -202,7 +328,10 @@ export const discoverMedia = async ({
     const taggedMovies = (movieData?.results || []).map(m => ({ ...m, media_type: 'movie' as const }));
     const taggedTv = (tvData?.results || []).map(t => ({ ...t, media_type: 'tv' as const }));
 
-    const combined = [...taggedMovies, ...taggedTv];
+    let combined = [...taggedMovies, ...taggedTv];
+    if (sortBy === 'original_title.asc' || sortBy === 'original_title.desc') {
+      combined = combined.filter(item => isAlphabeticalTitle(item.title || item.name));
+    }
 
     if (sortBy === 'vote_average.desc') {
       combined.sort((a, b) => (b.vote_average || 0) - (a.vote_average || 0));
@@ -221,12 +350,25 @@ export const discoverMedia = async ({
         const nameB = (b.title || b.name || '').trim();
         return nameA.localeCompare(nameB, undefined, { sensitivity: 'base' });
       });
+    } else if (sortBy === 'original_title.desc') {
+      combined.sort((a, b) => {
+        const nameA = (a.title || a.name || '').trim();
+        const nameB = (b.title || b.name || '').trim();
+        return nameB.localeCompare(nameA, undefined, { sensitivity: 'base' });
+      });
     } else {
       // Default: popularity.desc
       combined.sort((a, b) => (b.popularity || 0) - (a.popularity || 0));
     }
 
-    const totalPages = Math.max(movieData?.total_pages || 1, tvData?.total_pages || 1);
+    const movieTotalPages = sortBy === 'original_title.asc'
+      ? Math.max(1, (movieData?.total_pages || 1) - movieOffset + 1)
+      : (movieData?.total_pages || 1);
+    const tvTotalPages = sortBy === 'original_title.asc'
+      ? Math.max(1, (tvData?.total_pages || 1) - tvOffset + 1)
+      : (tvData?.total_pages || 1);
+    const totalPages = Math.max(movieTotalPages, tvTotalPages);
+
     return {
       page,
       results: combined,
@@ -414,10 +556,11 @@ export const getMovieDetails = async (
   explicitType?: 'movie' | 'tv'
 ): Promise<MovieDetails> => {
   const resolvedType = explicitType || mediaTypeCache.get(String(movieId));
+  const lang = getActiveLangParam();
 
   if (resolvedType === 'tv') {
     const tvData = await request<any>(
-      `/tv/${movieId}?language=en-US&append_to_response=content_ratings,external_ids,watch/providers`
+      `/tv/${movieId}?language=${lang}&append_to_response=content_ratings,external_ids,watch/providers`
     );
     mediaTypeCache.set(String(movieId), 'tv');
     return {
@@ -433,7 +576,7 @@ export const getMovieDetails = async (
 
   if (resolvedType === 'movie') {
     const movieData = await request<any>(
-      `/movie/${movieId}?language=en-US&append_to_response=release_dates,external_ids,watch/providers`
+      `/movie/${movieId}?language=${lang}&append_to_response=release_dates,external_ids,watch/providers`
     );
     mediaTypeCache.set(String(movieId), 'movie');
     return {
@@ -449,10 +592,10 @@ export const getMovieDetails = async (
   // If type is unknown, query both movie and tv in parallel
   const [movieRes, tvRes] = await Promise.allSettled([
     request<any>(
-      `/movie/${movieId}?language=en-US&append_to_response=release_dates,external_ids,watch/providers`
+      `/movie/${movieId}?language=${lang}&append_to_response=release_dates,external_ids,watch/providers`
     ),
     request<any>(
-      `/tv/${movieId}?language=en-US&append_to_response=content_ratings,external_ids,watch/providers`
+      `/tv/${movieId}?language=${lang}&append_to_response=content_ratings,external_ids,watch/providers`
     ),
   ]);
 
@@ -526,10 +669,11 @@ export const getMovieCredits = async (
   explicitType?: 'movie' | 'tv'
 ): Promise<{ id: number; cast: CastMember[]; crew?: any[] }> => {
   const type = explicitType || mediaTypeCache.get(String(movieId));
+  const lang = getActiveLangParam();
   const primary =
-    type === 'tv' ? `/tv/${movieId}/credits?language=en-US` : `/movie/${movieId}/credits?language=en-US`;
+    type === 'tv' ? `/tv/${movieId}/credits?language=${lang}` : `/movie/${movieId}/credits?language=${lang}`;
   const fallback =
-    type === 'tv' ? `/movie/${movieId}/credits?language=en-US` : `/tv/${movieId}/credits?language=en-US`;
+    type === 'tv' ? `/movie/${movieId}/credits?language=${lang}` : `/tv/${movieId}/credits?language=${lang}`;
 
   try {
     return await request<{ id: number; cast: CastMember[]; crew?: any[] }>(primary);
@@ -547,20 +691,35 @@ export const getMovieReviews = async (
   explicitType?: 'movie' | 'tv'
 ): Promise<TMDBResponse<Review>> => {
   const type = explicitType || mediaTypeCache.get(String(movieId));
+  const lang = getActiveLangParam();
   const primary =
     type === 'tv'
-      ? `/tv/${movieId}/reviews?language=en-US&page=1`
-      : `/movie/${movieId}/reviews?language=en-US&page=1`;
+      ? `/tv/${movieId}/reviews?language=${lang}&page=1`
+      : `/movie/${movieId}/reviews?language=${lang}&page=1`;
   const fallback =
     type === 'tv'
-      ? `/movie/${movieId}/reviews?language=en-US&page=1`
-      : `/tv/${movieId}/reviews?language=en-US&page=1`;
+      ? `/movie/${movieId}/reviews?language=${lang}&page=1`
+      : `/tv/${movieId}/reviews?language=${lang}&page=1`;
 
   try {
-    return await request<TMDBResponse<Review>>(primary);
+    const res = await request<TMDBResponse<Review>>(primary);
+    if ((!res.results || res.results.length === 0) && lang !== 'en-US') {
+      const enRes = await request<TMDBResponse<Review>>(
+        type === 'tv' ? `/tv/${movieId}/reviews?language=en-US&page=1` : `/movie/${movieId}/reviews?language=en-US&page=1`
+      ).catch(() => null);
+      if (enRes && enRes.results && enRes.results.length > 0) return enRes;
+    }
+    return res;
   } catch (movieErr) {
     try {
-      return await request<TMDBResponse<Review>>(fallback);
+      const res = await request<TMDBResponse<Review>>(fallback);
+      if ((!res.results || res.results.length === 0) && lang !== 'en-US') {
+        const enRes = await request<TMDBResponse<Review>>(
+          type === 'tv' ? `/tv/${movieId}/reviews?language=en-US&page=1` : `/movie/${movieId}/reviews?language=en-US&page=1`
+        ).catch(() => null);
+        if (enRes && enRes.results && enRes.results.length > 0) return enRes;
+      }
+      return res;
     } catch (tvErr) {
       throw movieErr;
     }
@@ -572,10 +731,13 @@ export const getMovieVideos = async (
   explicitType?: 'movie' | 'tv'
 ): Promise<{ id: number; results: VideoTrailer[] }> => {
   const type = explicitType || mediaTypeCache.get(String(movieId));
+  const lang = getActiveLangParam();
+  const langShort = lang.startsWith('uk') ? 'uk' : 'en';
+  const query = `language=${lang}&include_video_language=${langShort},en`;
   const primary =
-    type === 'tv' ? `/tv/${movieId}/videos?language=en-US` : `/movie/${movieId}/videos?language=en-US`;
+    type === 'tv' ? `/tv/${movieId}/videos?${query}` : `/movie/${movieId}/videos?${query}`;
   const fallback =
-    type === 'tv' ? `/movie/${movieId}/videos?language=en-US` : `/tv/${movieId}/videos?language=en-US`;
+    type === 'tv' ? `/movie/${movieId}/videos?${query}` : `/tv/${movieId}/videos?${query}`;
 
   try {
     const data = await request<{ id: number; results: VideoTrailer[] }>(primary);
@@ -601,6 +763,7 @@ export const getSimilarMovies = async (
   explicitType?: 'movie' | 'tv'
 ): Promise<TMDBResponse<MediaItem>> => {
   const type = explicitType || mediaTypeCache.get(String(movieId));
+  const lang = getActiveLangParam();
   const normalizeResults = (data: any): TMDBResponse<MediaItem> => ({
     ...data,
     results: (data.results || []).map((item: any) => ({
@@ -615,19 +778,19 @@ export const getSimilarMovies = async (
   const fallbackBase = type === 'tv' ? `/movie/${movieId}` : `/tv/${movieId}`;
 
   try {
-    const recData = await request<any>(`${base}/recommendations?language=en-US&page=1`);
+    const recData = await request<any>(`${base}/recommendations?language=${lang}&page=1`);
     if (recData.results && recData.results.length > 0) {
       return normalizeResults(recData);
     }
-    const simData = await request<any>(`${base}/similar?language=en-US&page=1`);
+    const simData = await request<any>(`${base}/similar?language=${lang}&page=1`);
     return normalizeResults(simData);
   } catch (primaryErr) {
     try {
-      const recData = await request<any>(`${fallbackBase}/recommendations?language=en-US&page=1`);
+      const recData = await request<any>(`${fallbackBase}/recommendations?language=${lang}&page=1`);
       if (recData.results && recData.results.length > 0) {
         return normalizeResults(recData);
       }
-      const simData = await request<any>(`${fallbackBase}/similar?language=en-US&page=1`);
+      const simData = await request<any>(`${fallbackBase}/similar?language=${lang}&page=1`);
       return normalizeResults(simData);
     } catch (fallbackErr) {
       throw primaryErr;

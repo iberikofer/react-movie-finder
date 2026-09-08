@@ -1,5 +1,6 @@
 import React from 'react';
 import { MediaItem } from 'types';
+import { useLanguage } from '../../context/LanguageContext';
 import css from './MediaTypeBadge.module.css';
 
 export interface MediaTypeBadgeProps {
@@ -17,6 +18,7 @@ export const MediaTypeBadge: React.FC<MediaTypeBadgeProps> = ({
   className = '',
   onFilterType,
 }) => {
+  const { t } = useLanguage();
   const type =
     mediaType ||
     item?.media_type ||
@@ -34,11 +36,11 @@ export const MediaTypeBadge: React.FC<MediaTypeBadgeProps> = ({
 
   const titleText = onFilterType
     ? isTv
-      ? 'Filter by TV Series (Click to apply)'
-      : 'Filter by Feature Movie (Click to apply)'
+      ? t('badge.filterSeries')
+      : t('badge.filterMovie')
     : isTv
-    ? 'TV Series'
-    : 'Feature Movie';
+    ? t('badge.tooltipSeries')
+    : t('badge.tooltipMovie');
 
   return (
     <div
@@ -56,7 +58,7 @@ export const MediaTypeBadge: React.FC<MediaTypeBadgeProps> = ({
       }}
     >
       <span className={css.typeIcon}>{isTv ? '📺' : '🎬'}</span>
-      <span className={css.typeLabel}>{isTv ? 'Series' : 'Movie'}</span>
+      <span className={css.typeLabel}>{isTv ? t('badge.series') : t('badge.movie')}</span>
     </div>
   );
 };

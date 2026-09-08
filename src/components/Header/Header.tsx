@@ -1,9 +1,11 @@
-import React, { useState, useRef, useEffect, Suspense } from 'react';
+import React, { useState, useRef, useEffect, useLayoutEffect, Suspense } from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import { useSavedMovies } from '../../hooks/useSavedMovies';
 import { hasSavedPageScroll, clearPageSession } from '../../utils/sessionStorage';
 import Loader from '../Loader/Loader';
 import PWAInstallPrompt from '../PWAInstallPrompt/PWAInstallPrompt';
+import LanguageToggle from '../LanguageToggle/LanguageToggle';
+import { useLanguage } from '../../context/LanguageContext';
 import css from './Header.module.css';
 
 interface AnimState {
@@ -19,19 +21,14 @@ interface IndicatorStyle {
 
 export const Header: React.FC = () => {
   const { savedCount } = useSavedMovies();
+  const { t, language } = useLanguage();
   const [animState, setAnimState] = useState<AnimState>({ key: 0, type: null });
   const prevSavedCountRef = useRef<number>(savedCount);
-  const isInitialMountRef = useRef<boolean>(true);
 
   useEffect(() => {
-    if (isInitialMountRef.current) {
-      isInitialMountRef.current = false;
-      return;
-    }
-
-    if (savedCount > prevSavedCountRef.current) {
+    if (prevSavedCountRef.current < savedCount) {
       setAnimState(prev => ({ key: prev.key + 1, type: 'increase' }));
-    } else if (savedCount < prevSavedCountRef.current) {
+    } else if (prevSavedCountRef.current > savedCount) {
       setAnimState(prev => ({ key: prev.key + 1, type: 'decrease' }));
     }
     prevSavedCountRef.current = savedCount;
@@ -73,7 +70,21 @@ export const Header: React.FC = () => {
     ? movieOrigin === 'saved'
     : location.pathname.startsWith('/saved');
 
-  useEffect(() => {
+  const prevLangRef = useRef<string>(language);
+  const [isLangSwitching, setIsLangSwitching] = useState<boolean>(false);
+
+  useLayoutEffect(() => {
+    if (prevLangRef.current !== language) {
+      prevLangRef.current = language;
+      setIsLangSwitching(true);
+      const raf = requestAnimationFrame(() => {
+        setIsLangSwitching(false);
+      });
+      return () => cancelAnimationFrame(raf);
+    }
+  }, [language]);
+
+  useLayoutEffect(() => {
     const updateIndicator = () => {
       if (!navRef.current) return;
       const activeEl = navRef.current.querySelector<HTMLElement>(`.${css.activeLink}`);
@@ -100,7 +111,7 @@ export const Header: React.FC = () => {
     return () => {
       window.removeEventListener('resize', updateIndicator);
     };
-  }, [location.pathname, location.state, savedCount, isMovieDetails, movieOrigin]);
+  }, [location.pathname, location.state, savedCount, isMovieDetails, movieOrigin, language]);
 
   const prevPathnameRef = useRef(location.pathname);
   useEffect(() => {
@@ -208,21 +219,21 @@ export const Header: React.FC = () => {
           <nav
             className={css.navigation}
             ref={navRef}
-            aria-label="Main navigation"
+            aria-label={t('header.navAria', 'Main navigation')}
           >
             <NavLink
               to="/"
               end
               className={`${css.navLink} ${isHomeActive ? css.activeLink : ''}`}
             >
-              Home
+              {t('nav.home')}
             </NavLink>
             <NavLink
               to="/movies"
               end
               className={`${css.navLink} ${isSearchActive ? css.activeLink : ''}`}
             >
-              Search
+              {t('nav.search')}
             </NavLink>
             <NavLink
               to="/trending"
@@ -233,13 +244,13 @@ export const Header: React.FC = () => {
                 window.scrollTo({ top: 0, behavior: 'auto' });
               }}
             >
-              Trending
+              {t('nav.trending')}
             </NavLink>
             <NavLink
               to="/saved"
               className={`${css.navLink} ${isSavedActive ? css.activeLink : ''}`}
             >
-              <span>Saved</span>
+              <span>{t('nav.saved')}</span>
               {savedCount > 0 && (
                 <span
                   key={animState.key}
@@ -257,12 +268,13 @@ export const Header: React.FC = () => {
             </NavLink>
             <span
               className={`${css.navIndicator} ${
-                hasTransition ? css.navIndicatorTransition : ''
+                hasTransition && !isLangSwitching ? css.navIndicatorTransition : ''
               }`}
               style={{
                 left: `${indicatorStyle.left}px`,
                 width: `${indicatorStyle.width}px`,
                 opacity: indicatorStyle.opacity,
+                transition: hasTransition && !isLangSwitching ? undefined : 'left 0s, width 0s',
               }}
               aria-hidden="true"
             />
@@ -270,6 +282,7 @@ export const Header: React.FC = () => {
 
           <div className={css.headerActions}>
             <PWAInstallPrompt />
+            <LanguageToggle />
             <button
               ref={buttonRef}
               type="button"
@@ -278,35 +291,35 @@ export const Header: React.FC = () => {
                 status === 'confirming' ? css.clearAllBtnConfirm : ''
               } ${status === 'deleted' ? css.clearAllBtnDeleted : ''}`}
               onClick={handleClearAll}
-              title={
+              aria-label={
                 status === 'confirming'
-                  ? 'Click again to confirm clearing all ratings'
+                  ? t('header.confirmClearAll')
                   : status === 'deleted'
-                  ? 'All ratings have been deleted'
-                  : 'Clear all critics ratings across all movies'
+                  ? t('header.ratingsDeleted')
+                  : t('header.clearAllRatings')
               }
             >
-              <span aria-hidden="true">
+              <span className={css.trashIcon} aria-hidden="true">
                 {status === 'confirming'
                   ? '⚠️'
                   : status === 'deleted'
                   ? '✅'
                   : '🗑️'}
               </span>
-              <span className={css.clearBtnText}>
+              <div className={css.clearTooltip} role="tooltip">
                 {status === 'confirming'
-                  ? 'Confirm Clearing ALL Ratings'
+                  ? t('header.confirmClearAll')
                   : status === 'deleted'
-                  ? 'All ratings deleted'
-                  : 'Clear ALL Ratings'}
-              </span>
+                  ? t('header.ratingsDeleted')
+                  : t('header.clearAllRatings')}
+              </div>
             </button>
           </div>
         </div>
       </header>
 
       <main className={css.mainContent}>
-        <Suspense fallback={<Loader isCentered caption="Loading scene..." />}>
+        <Suspense fallback={<Loader isCentered caption={t('common.loading', 'Loading...')} />}>
           <div className={css.contentFadeIn}>
             <Outlet />
           </div>

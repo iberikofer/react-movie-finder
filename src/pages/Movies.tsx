@@ -6,6 +6,7 @@ import {
   setMediaType,
   getMediaAgeRating,
   matchesAgeFilter,
+  isAlphabeticalTitle,
 } from 'fetch';
 import { MediaItem, PageSessionData } from 'types';
 import MovieCardRatingBadge from '../components/CriticsScore/MovieCardRatingBadge';
@@ -18,12 +19,15 @@ import {
   savePageSession,
   getPageSession,
   updatePageScroll,
+  clearPageSession,
 } from '../utils/sessionStorage';
+import { useLanguage } from '../context/LanguageContext';
 import css from './Movies.module.css';
 
 let hasLoadedSearchOnce = false;
 
 export const Movies: React.FC = () => {
+  const { t, language } = useLanguage();
   const [searchParams, setSearchParams] = useSearchParams();
   const location = useLocation();
   const inputRef = useRef<HTMLInputElement | null>(null);
@@ -43,7 +47,7 @@ export const Movies: React.FC = () => {
   const filterAge = searchParams.get('age') || 'all';
   const sortBy = searchParams.get('sort') || 'popularity.desc';
 
-  const filterKey = `${queryText.trim().toLowerCase()}|${rawGenres}|${filterType}|${filterAge}|${sortBy}`;
+  const filterKey = `${queryText.trim().toLowerCase()}|${rawGenres}|${filterType}|${filterAge}|${sortBy}|${language}`;
 
   const restoredSessionRef = useRef<PageSessionData<MediaItem> | null>(null);
   if (!restoredSessionRef.current) {
@@ -53,7 +57,16 @@ export const Movies: React.FC = () => {
       Array.isArray(saved.movies) &&
       saved.movies.length > 0
     ) {
-      restoredSessionRef.current = saved;
+      if (sortBy === 'original_title.asc' || sortBy === 'original_title.desc') {
+        const cleaned = saved.movies.filter(m => isAlphabeticalTitle(m.title || m.name));
+        if (cleaned.length === saved.movies.length && cleaned.length > 0) {
+          restoredSessionRef.current = saved;
+        } else {
+          clearPageSession('movies_session', filterKey);
+        }
+      } else {
+        restoredSessionRef.current = saved;
+      }
     }
   }
 
@@ -78,6 +91,9 @@ export const Movies: React.FC = () => {
   );
   const isRestoringScrollRef = useRef<boolean>(false);
   const lastUserScrollYRef = useRef<number>(0);
+  const prevLangRef = useRef<string>(language);
+  const moviesRef = useRef(movies);
+  moviesRef.current = movies;
 
   const hasActiveFilters =
     filterType !== 'all' ||
@@ -301,19 +317,73 @@ export const Movies: React.FC = () => {
       Array.isArray(saved.movies) &&
       saved.movies.length > 0
     ) {
-      setMovies(saved.movies);
-      setPage(saved.page || 1);
-      setTotalPages(saved.totalPages || 1);
-      setIsLoading(false);
-      setIsPendingDebounce(false);
-      lastLoadedFilterKeyRef.current = filterKey;
-      restoreScrollTo(saved.scrollY || 0);
-      return;
+      let isCurrent = true;
+      setIsLoading(true);
+      const startTime = Date.now();
+
+      if (sortBy === 'original_title.asc' || sortBy === 'original_title.desc') {
+        const cleaned = saved.movies.filter(m => isAlphabeticalTitle(m.title || m.name));
+        if (cleaned.length !== saved.movies.length || cleaned.length === 0) {
+          clearPageSession('movies_session', filterKey);
+        } else {
+          const applySaved = async () => {
+            const elapsed = Date.now() - startTime;
+            if (elapsed < 500) {
+              await new Promise(resolve => setTimeout(resolve, 500 - elapsed));
+            }
+            if (!isCurrent) return;
+            setMovies(cleaned);
+            setPage(saved.page || 1);
+            setTotalPages(saved.totalPages || 1);
+            setIsLoading(false);
+            setIsPendingDebounce(false);
+            lastLoadedFilterKeyRef.current = filterKey;
+            if ((saved.scrollY || 0) > 0) {
+              restoreScrollTo(saved.scrollY || 0);
+            }
+          };
+          applySaved();
+          return () => {
+            isCurrent = false;
+          };
+        }
+      } else {
+        const applySaved = async () => {
+          const elapsed = Date.now() - startTime;
+          if (elapsed < 500) {
+            await new Promise(resolve => setTimeout(resolve, 500 - elapsed));
+          }
+          if (!isCurrent) return;
+          setMovies(saved.movies || []);
+          setPage(saved.page || 1);
+          setTotalPages(saved.totalPages || 1);
+          setIsLoading(false);
+          setIsPendingDebounce(false);
+          lastLoadedFilterKeyRef.current = filterKey;
+          if ((saved.scrollY || 0) > 0) {
+            restoreScrollTo(saved.scrollY || 0);
+          }
+        };
+        applySaved();
+        return () => {
+          isCurrent = false;
+        };
+      }
     }
 
     if (!queryText.trim()) {
       setIsPendingDebounce(false);
       if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
+      return;
+    }
+
+    const isLangChange = prevLangRef.current !== language;
+    prevLangRef.current = language;
+
+    if (isLangChange) {
+      setIsPendingDebounce(false);
+      if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
+      executeSearch(queryText);
       return;
     }
 
@@ -327,7 +397,7 @@ export const Movies: React.FC = () => {
     return () => {
       if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
     };
-  }, [queryText, executeSearch, filterKey, restoreScrollTo]);
+  }, [queryText, executeSearch, filterKey, restoreScrollTo, language, sortBy]);
 
   // Discovery mode effect when search query is empty
   useEffect(() => {
@@ -339,6 +409,9 @@ export const Movies: React.FC = () => {
       return;
     }
 
+    let isCurrent = true;
+    const startTime = Date.now();
+
     // Check if we have cached data for this filter state (from prior discovery or navigation)
     const saved = getPageSession<MediaItem>('movies_session', filterKey);
     if (
@@ -346,13 +419,26 @@ export const Movies: React.FC = () => {
       Array.isArray(saved.movies) &&
       saved.movies.length > 0
     ) {
-      setMovies(saved.movies);
-      setPage(saved.page || 1);
-      setTotalPages(saved.totalPages || 1);
-      setIsLoading(false);
-      lastLoadedFilterKeyRef.current = filterKey;
-      restoreScrollTo(saved.scrollY || 0);
-      return;
+      setIsLoading(true);
+      const applySaved = async () => {
+        const elapsed = Date.now() - startTime;
+        if (elapsed < 500) {
+          await new Promise(resolve => setTimeout(resolve, 500 - elapsed));
+        }
+        if (!isCurrent) return;
+        setMovies(saved.movies || []);
+        setPage(saved.page || 1);
+        setTotalPages(saved.totalPages || 1);
+        setIsLoading(false);
+        lastLoadedFilterKeyRef.current = filterKey;
+        if ((saved.scrollY || 0) > 0) {
+          restoreScrollTo(saved.scrollY || 0);
+        }
+      };
+      applySaved();
+      return () => {
+        isCurrent = false;
+      };
     }
 
     if (!hasActiveFilters) {
@@ -363,7 +449,6 @@ export const Movies: React.FC = () => {
       return;
     }
 
-    let isCurrent = true;
     setIsLoading(true);
 
     const loadFilteredMedia = async () => {
@@ -662,6 +747,9 @@ export const Movies: React.FC = () => {
       if (filterAge !== 'all') {
         list = list.filter(m => matchesAgeFilter(m.age_rating, filterAge));
       }
+      if (sortBy === 'original_title.asc' || sortBy === 'original_title.desc') {
+        list = list.filter(m => isAlphabeticalTitle(m.title || m.name));
+      }
       if (sortBy === 'vote_average.desc') {
         list = [...list].sort((a, b) => (b.vote_average || 0) - (a.vote_average || 0));
       } else if (sortBy === 'primary_release_date.desc') {
@@ -678,6 +766,12 @@ export const Movies: React.FC = () => {
           const nameA = (a.title || a.name || '').trim();
           const nameB = (b.title || b.name || '').trim();
           return nameA.localeCompare(nameB, undefined, { sensitivity: 'base' });
+        });
+      } else if (sortBy === 'original_title.desc') {
+        list = [...list].sort((a, b) => {
+          const nameA = (a.title || a.name || '').trim();
+          const nameB = (b.title || b.name || '').trim();
+          return nameB.localeCompare(nameA, undefined, { sensitivity: 'base' });
         });
       } else {
         list = [...list].sort((a, b) => (b.popularity || 0) - (a.popularity || 0));
@@ -700,7 +794,7 @@ export const Movies: React.FC = () => {
   }, [movies, queryText, selectedGenres, filterType, filterAge, sortBy, page, totalPages]);
 
   if (isInitialLoading) {
-    return <Loader isCentered caption="Loading search..." />;
+    return <Loader isCentered caption={t('search.loading', 'Loading search...')} />;
   }
 
   return (
@@ -710,7 +804,7 @@ export const Movies: React.FC = () => {
           <span className={css.titleIcon} aria-hidden="true">
             🔎
           </span>
-          Search movies & shows by title
+          {t('search.title')}
         </h1>
       </div>
 
@@ -722,8 +816,8 @@ export const Movies: React.FC = () => {
                 ref={inputRef}
                 className={css.searchInput}
                 type="search"
-                placeholder="e.g. Batman Ninja"
-                aria-label="Search movies & shows by title"
+                placeholder={t('search.placeholder')}
+                aria-label={t('search.title')}
                 value={queryText}
                 onChange={handleInputChange}
                 onFocus={() => setIsInputFocused(true)}
@@ -735,8 +829,8 @@ export const Movies: React.FC = () => {
                   type="button"
                   className={css.clearBtn}
                   onClick={handleClear}
-                  aria-label="Clear search input"
-                  title="Clear search"
+                  aria-label={t('search.clearSearchInput', 'Clear search input')}
+                  title={t('search.clearSearch', 'Clear search')}
                 >
                   ✕
                 </button>
@@ -765,11 +859,12 @@ export const Movies: React.FC = () => {
             <div className={css.debounceStatus}>
               <span className={css.debounceIcon}>⏳</span>
               <span className={css.debounceText}>
-                Searching in 1.5s... or press{' '}
-                <kbd className={css.enterKey}>Enter ⏎</kbd> to search now
+                {t('search.debounceNotice', 'Searching in 1.5s... or press')}{' '}
+                <kbd className={css.enterKey}>Enter ⏎</kbd>{' '}
+                {t('search.debounceNoticeEnd', 'to search now')}
               </span>
               <button type="submit" className={css.instantSearchBtn}>
-                Search now
+                {t('search.searchNow', 'Search now')}
               </button>
             </div>
           )}
@@ -780,8 +875,8 @@ export const Movies: React.FC = () => {
         <Loader
           caption={
             queryText
-              ? `Searching for "${queryText}"...`
-              : 'Loading titles matching filters...'
+              ? t('search.searchingFor', 'Searching for "{query}"...').replace('{query}', queryText)
+              : t('search.filteringTitles', 'Loading titles matching filters...')
           }
         />
       ) : displayedMovies.length > 0 ? (
@@ -852,11 +947,11 @@ export const Movies: React.FC = () => {
                 {isLoadingMore ? (
                   <>
                     <span className={css.spinnerIcon}>⏳</span>
-                    <span>Loading more titles...</span>
+                    <span>{t('search.searching')}</span>
                   </>
                 ) : (
                   <>
-                    <span>Load More Titles</span>
+                    <span>{t('search.loadMore')}</span>
                     <span className={css.loadMoreArrow}>↓</span>
                   </>
                 )}
@@ -867,9 +962,7 @@ export const Movies: React.FC = () => {
       ) : (
         (queryText || hasActiveFilters) && (
           <p className={css.noResults}>
-            {queryText
-              ? `No titles found matching the selected filters for "${queryText}"`
-              : 'No titles found matching the selected filters'}
+            {t('search.noResultsDesc')}
           </p>
         )
       )}

@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { getMovieRatingSummary } from '../../hooks/useMovieRating';
+import { useLanguage } from '../../context/LanguageContext';
 
 export interface MovieCardRatingBadgeProps {
   movieId?: string | number;
 }
 
 export const MovieCardRatingBadge: React.FC<MovieCardRatingBadgeProps> = ({ movieId }) => {
+  const { t } = useLanguage();
   const [summary, setSummary] = useState(() => getMovieRatingSummary(movieId));
 
   useEffect(() => {
@@ -60,7 +62,7 @@ export const MovieCardRatingBadge: React.FC<MovieCardRatingBadgeProps> = ({ movi
         zIndex: 5,
         letterSpacing: '0.3px',
       }}
-      title={`Critics Score: ${summary.averageRating}/5 (${summary.totalVotes} votes)`}
+      title={`${t('critics.cardTooltip', 'Critics Score')}: ${summary.averageRating}/5 (${summary.totalVotes} ${summary.totalVotes === 1 ? t('critics.voteOne', 'vote') : t('critics.votes', 'votes')})`}
     >
       <span style={{ color }}>★</span>
       <span>{summary.averageRating}</span>

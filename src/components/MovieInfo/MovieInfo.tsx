@@ -1,7 +1,8 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { getMovieDetails, getMovieWatchProviders } from 'fetch';
 import { MovieDetails } from 'types';
+import { useLanguage } from '../../context/LanguageContext';
 import Loader from '../Loader/Loader';
 import css from './MovieInfo.module.css';
 
@@ -19,8 +20,8 @@ interface CountryWatchProviders {
   buy?: WatchProviderItem[];
 }
 
-const formatCurrency = (amount?: number): string => {
-  if (!amount || amount <= 0) return 'Not disclosed';
+const formatCurrency = (amount: number | undefined, notDisclosedText: string): string => {
+  if (!amount || amount <= 0) return notDisclosedText;
   return new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency: 'USD',
@@ -28,20 +29,25 @@ const formatCurrency = (amount?: number): string => {
   }).format(amount);
 };
 
-const formatRuntime = (minutes?: number): string => {
-  if (!minutes || minutes <= 0) return 'Unknown';
+const formatRuntime = (minutes: number | undefined, lang: string, unknownText: string): string => {
+  if (!minutes || minutes <= 0) return unknownText;
   const hours = Math.floor(minutes / 60);
   const remainingMinutes = minutes % 60;
+  if (lang === 'uk') {
+    if (hours === 0) return `${remainingMinutes} хв`;
+    if (remainingMinutes === 0) return `${hours} год`;
+    return `${hours} год ${remainingMinutes} хв`;
+  }
   if (hours === 0) return `${remainingMinutes}m`;
   if (remainingMinutes === 0) return `${hours}h`;
   return `${hours}h ${remainingMinutes}m`;
 };
 
-const formatDate = (dateStr?: string): string => {
-  if (!dateStr) return 'Unknown';
+const formatDate = (dateStr: string | undefined, lang: string, unknownText: string): string => {
+  if (!dateStr) return unknownText;
   try {
     const date = new Date(dateStr);
-    return new Intl.DateTimeFormat('en-US', {
+    return new Intl.DateTimeFormat(lang === 'uk' ? 'uk-UA' : 'en-US', {
       year: 'numeric',
       month: 'long',
       day: 'numeric',
@@ -51,10 +57,10 @@ const formatDate = (dateStr?: string): string => {
   }
 };
 
-const POPULAR_LANGUAGES: Record<string, string> = {
+const POPULAR_LANGUAGES_EN: Record<string, string> = {
   en: 'English',
   uk: 'Ukrainian',
-  ja: 'Japan (Japanese)',
+  ja: 'Japanese',
   ko: 'Korean',
   fr: 'French',
   de: 'German',
@@ -77,14 +83,41 @@ const POPULAR_LANGUAGES: Record<string, string> = {
   ru: 'russian',
 };
 
-const formatLanguageName = (code: string = ''): string => {
-  if (!code) return 'Unknown';
+const POPULAR_LANGUAGES_UK: Record<string, string> = {
+  en: 'Англійська',
+  uk: 'Українська',
+  ja: 'Японська',
+  ko: 'Корейська',
+  fr: 'Французька',
+  de: 'Німецька',
+  es: 'Іспанська',
+  it: 'Італійська',
+  zh: 'Китайська',
+  pl: 'Польська',
+  pt: 'Португальська',
+  sv: 'Шведська',
+  no: 'Норвезька',
+  da: 'Данська',
+  fi: 'Фінська',
+  nl: 'Нідерландська',
+  tr: 'Турецька',
+  hi: 'Гінді',
+  cs: 'Чеська',
+  el: 'Грецька',
+  he: 'Іврит',
+  ar: 'Арабська',
+  ru: 'російська',
+};
+
+const formatLanguageName = (code: string = '', lang: string, unknownText: string): string => {
+  if (!code) return unknownText;
   const lower = code.toLowerCase();
-  if (lower === 'ru') return 'russian';
-  if (POPULAR_LANGUAGES[lower]) return POPULAR_LANGUAGES[lower];
+  if (lower === 'ru') return lang === 'uk' ? 'російська' : 'russian';
+  if (lang === 'uk' && POPULAR_LANGUAGES_UK[lower]) return POPULAR_LANGUAGES_UK[lower];
+  if (lang !== 'uk' && POPULAR_LANGUAGES_EN[lower]) return POPULAR_LANGUAGES_EN[lower];
   try {
-    const name = new Intl.DisplayNames(['en'], { type: 'language' }).of(lower);
-    if (lower === 'ru') return 'russian';
+    const name = new Intl.DisplayNames([lang === 'uk' ? 'uk' : 'en'], { type: 'language' }).of(lower);
+    if (lower === 'ru') return lang === 'uk' ? 'російська' : 'russian';
     return name || code.toUpperCase();
   } catch {
     return code.toUpperCase();
@@ -119,15 +152,24 @@ const getProviderHomeUrl = (name: string = ''): string => {
 
 export const MovieInfo: React.FC = () => {
   const { movieId } = useParams<{ movieId: string }>();
+  const { language, t } = useLanguage();
   const [movie, setMovie] = useState<MovieDetails | null>(null);
   const [providersData, setProvidersData] = useState<{ results?: Record<string, CountryWatchProviders> } | null>(null);
   const [selectedCountry, setSelectedCountry] = useState<string>('');
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const movieRef = useRef(movie);
+  movieRef.current = movie;
+  const prevLangRef = useRef<string>(language);
 
   useEffect(() => {
     if (!movieId) return;
     let isMounted = true;
-    setIsLoading(true);
+    const isLangChange = prevLangRef.current !== language;
+    prevLangRef.current = language;
+
+    if (!movieRef.current || isLangChange) {
+      setIsLoading(true);
+    }
 
     const fetchData = async () => {
       try {
@@ -172,11 +214,11 @@ export const MovieInfo: React.FC = () => {
     return () => {
       isMounted = false;
     };
-  }, [movieId]);
+  }, [movieId, language]);
 
   const countryOptions = useMemo(() => {
     if (!providersData?.results) return [];
-    const regionNames = new Intl.DisplayNames(['en'], { type: 'region' });
+    const regionNames = new Intl.DisplayNames([language === 'uk' ? 'uk' : 'en'], { type: 'region' });
 
     return Object.keys(providersData.results)
       .map(code => {
@@ -189,10 +231,43 @@ export const MovieInfo: React.FC = () => {
         return { code, name };
       })
       .sort((a, b) => a.name.localeCompare(b.name));
-  }, [providersData]);
+  }, [providersData, language]);
+
+  const getLocalizedStatus = (statusStr?: string) => {
+    if (!statusStr) return t('status.released');
+    const s = statusStr.toLowerCase();
+    if (s.includes('returning')) return t('status.returningSeries');
+    if (s.includes('ended')) return t('status.ended');
+    if (s.includes('released')) return t('status.released');
+    if (s.includes('in production')) return t('status.inProduction');
+    if (s.includes('post production')) return t('status.postProduction');
+    if (s.includes('planned')) return t('status.planned');
+    if (s.includes('canceled')) return t('status.canceled');
+    if (s.includes('pilot')) return t('status.pilot');
+    return statusStr;
+  };
+
+  const formatSeasonsLabel = (seasons: number, episodes: number) => {
+    if (language === 'uk') {
+      let seasonsWord = 'сезонів';
+      const mod10 = seasons % 10;
+      const mod100 = seasons % 100;
+      if (mod10 === 1 && mod100 !== 11) seasonsWord = 'сезон';
+      else if (mod10 >= 2 && mod10 <= 4 && (mod100 < 10 || mod100 >= 20)) seasonsWord = 'сезони';
+
+      let episodesWord = 'серій';
+      const epMod10 = episodes % 10;
+      const epMod100 = episodes % 100;
+      if (epMod10 === 1 && epMod100 !== 11) episodesWord = 'серія';
+      else if (epMod10 >= 2 && epMod10 <= 4 && (epMod100 < 10 || epMod100 >= 20)) episodesWord = 'серії';
+
+      return `${seasons} ${seasonsWord} • ${episodes} ${episodesWord}`;
+    }
+    return `${seasons} ${seasons === 1 ? 'Season' : 'Seasons'} • ${episodes} Episodes`;
+  };
 
   if (isLoading) {
-    return <Loader caption="Loading movie facts & streaming providers..." />;
+    return <Loader caption={t('movieInfo.loading')} />;
   }
 
   if (!movie) {
@@ -200,7 +275,7 @@ export const MovieInfo: React.FC = () => {
       <div className={css.infoSection}>
         <div className={css.emptyState}>
           <span className={css.emptyIcon}>ℹ️</span>
-          <p className={css.emptyText}>Movie information is currently unavailable.</p>
+          <p className={css.emptyText}>{t('movieInfo.unavailable')}</p>
         </div>
       </div>
     );
@@ -209,9 +284,9 @@ export const MovieInfo: React.FC = () => {
   const isTvShow = Boolean(movie.number_of_seasons || movie.first_air_date);
   const runtimeDisplay = isTvShow
     ? movie.episode_run_time && (movie.episode_run_time as number[]).length > 0
-      ? `${formatRuntime((movie.episode_run_time as number[])[0])} / ep`
-      : 'Varies by episode'
-    : formatRuntime(movie.runtime);
+      ? `${formatRuntime((movie.episode_run_time as number[])[0], language, t('movieInfo.unknown'))} / ep`
+      : t('movieInfo.variesByEpisode')
+    : formatRuntime(movie.runtime, language, t('movieInfo.unknown'));
 
   const budget = movie.budget || 0;
   const revenue = movie.revenue || 0;
@@ -228,68 +303,68 @@ export const MovieInfo: React.FC = () => {
     streamProviders.length > 0 || rentProviders.length > 0 || buyProviders.length > 0;
 
   return (
-    <section className={css.infoSection} aria-label="Movie facts and watch providers">
+    <section className={css.infoSection} aria-label={isTvShow ? t('movieInfo.aboutSeriesTitle') : t('movieInfo.aboutMovieTitle')}>
       <div className={css.headerRow}>
         <h2 className={css.sectionTitle}>
           <span className={css.titleIcon}>ℹ️</span>{' '}
-          {isTvShow ? 'Show Info & Where to Watch' : 'Movie Info & Where to Watch'}
+          {isTvShow ? t('movieInfo.aboutSeriesTitle') : t('movieInfo.aboutMovieTitle')}
         </h2>
       </div>
 
       <div className={css.blockSubheader}>
         <span className={css.subIcon}>⚡</span>
-        <h3 className={css.subTitle}>Quick Facts</h3>
+        <h3 className={css.subTitle}>{t('movieInfo.quickFacts')}</h3>
       </div>
 
       <div className={css.factsGrid}>
         {Boolean(movie.tagline && movie.tagline.trim()) && (
           <div className={`${css.factCard} ${css.taglineCard}`}>
-            <span className={css.factLabel}>💬 Tagline</span>
+            <span className={css.factLabel}>💬 {t('movieInfo.tagline')}</span>
             <span className={css.taglineValue}>"{movie.tagline?.trim()}"</span>
           </div>
         )}
 
         <div className={css.factCard}>
-          <span className={css.factLabel}>🔞 Age Restriction</span>
+          <span className={css.factLabel}>🔞 {t('movieInfo.ageRestriction')}</span>
           <span className={css.factValue}>
-            {movie.age_rating ? movie.age_rating : 'Age rating currently unavailable'}
+            {movie.age_rating ? movie.age_rating : t('movieInfo.ageUnavailable')}
           </span>
         </div>
 
         <div className={css.factCard}>
-          <span className={css.factLabel}>⏱️ Runtime</span>
+          <span className={css.factLabel}>⏱️ {t('movieInfo.runtime')}</span>
           <span className={css.factValue}>{runtimeDisplay}</span>
         </div>
 
         <div className={css.factCard}>
-          <span className={css.factLabel}>💰 Budget</span>
+          <span className={css.factLabel}>💰 {t('movieInfo.budget')}</span>
           <span className={css.factValue}>
-            {isTvShow ? 'TV Series budget' : formatCurrency(budget)}
+            {isTvShow ? t('movieInfo.tvBudget') : formatCurrency(budget, t('movieInfo.notDisclosed'))}
           </span>
         </div>
 
         <div className={css.factCard}>
-          <span className={css.factLabel}>🎟️ Box Office Revenue</span>
+          <span className={css.factLabel}>🎟️ {t('movieInfo.boxOffice')}</span>
           <span className={css.factValue}>
-            {isTvShow ? 'Broadcast / Streaming' : formatCurrency(revenue)}
+            {isTvShow ? t('movieInfo.tvRevenue') : formatCurrency(revenue, t('movieInfo.notDisclosed'))}
           </span>
         </div>
 
         <div className={css.factCard}>
-          <span className={css.factLabel}>📌 Status</span>
-          <span className={css.statusBadge}>{movie.status || 'Released'}</span>
+          <span className={css.factLabel}>📌 {t('movieInfo.status')}</span>
+          <span className={css.statusBadge}>{getLocalizedStatus(movie.status)}</span>
         </div>
 
         <div className={css.factCard}>
-          <span className={css.factLabel}>📅 Release Date</span>
+          <span className={css.factLabel}>📅 {t('movieInfo.releaseDate')}</span>
           <span className={css.factValue}>
-            {formatDate(movie.release_date || movie.first_air_date)}
+            {formatDate(movie.release_date || movie.first_air_date, language, t('movieInfo.unknown'))}
           </span>
         </div>
 
         {hasFinancials && roi !== null && (
           <div className={css.factCard}>
-            <span className={css.factLabel}>📈 Profitability & ROI</span>
+            <span className={css.factLabel}>📈 {t('movieInfo.profitability')}</span>
             <div className={css.roiWrapper}>
               <span
                 className={`${css.roiBadge} ${
@@ -299,7 +374,7 @@ export const MovieInfo: React.FC = () => {
                 {profit >= 0 ? `+${roi}% ROI` : `${roi}% ROI`}
               </span>
               <span className={css.profitValue}>
-                ({profit >= 0 ? `+${formatCurrency(profit)}` : `-${formatCurrency(Math.abs(profit))}`})
+                ({profit >= 0 ? `+${formatCurrency(profit, t('movieInfo.notDisclosed'))}` : `-${formatCurrency(Math.abs(profit), t('movieInfo.notDisclosed'))}`})
               </span>
             </div>
           </div>
@@ -308,16 +383,15 @@ export const MovieInfo: React.FC = () => {
         {isTvShow && (
           <>
             <div className={css.factCard}>
-              <span className={css.factLabel}>📺 Seasons & Episodes</span>
+              <span className={css.factLabel}>📺 {t('movieInfo.seasonsAndEpisodes')}</span>
               <span className={css.factValue}>
-                {movie.number_of_seasons} {movie.number_of_seasons === 1 ? 'Season' : 'Seasons'} •{' '}
-                {movie.number_of_episodes} Episodes
+                {formatSeasonsLabel(movie.number_of_seasons || 0, movie.number_of_episodes || 0)}
               </span>
             </div>
 
             {movie.networks && (movie.networks as any[]).length > 0 && (
               <div className={`${css.factCard} ${css.wideCard}`}>
-                <span className={css.factLabel}>📡 Original Networks</span>
+                <span className={css.factLabel}>📡 {t('movieInfo.networks')}</span>
                 <div className={css.companiesRow}>
                   {(movie.networks as any[]).map((net: any) => (
                     <div key={net.id} className={css.companyItem}>
@@ -341,7 +415,7 @@ export const MovieInfo: React.FC = () => {
 
         {movie.production_companies && movie.production_companies.length > 0 && (
           <div className={`${css.factCard} ${css.wideCard}`}>
-            <span className={css.factLabel}>🏢 Production Companies</span>
+            <span className={css.factLabel}>🏢 {t('movieInfo.companies')}</span>
             <div className={css.companiesRow}>
               {movie.production_companies.map(comp => (
                 <div key={comp.id} className={css.companyItem}>
@@ -364,7 +438,7 @@ export const MovieInfo: React.FC = () => {
 
         {movie.production_countries && movie.production_countries.length > 0 && (
           <div className={css.factCard}>
-            <span className={css.factLabel}>🌍 Production Countries</span>
+            <span className={css.factLabel}>🌍 {t('movieInfo.countries')}</span>
             <span className={css.factValue}>
               {movie.production_countries.map(c => c.name).join(', ')}
             </span>
@@ -373,9 +447,9 @@ export const MovieInfo: React.FC = () => {
 
         {movie.original_language && (
           <div className={css.factCard}>
-            <span className={css.factLabel}>🗣️ Original Language</span>
+            <span className={css.factLabel}>🗣️ {t('movieInfo.language')}</span>
             <span className={css.factValue}>
-              {formatLanguageName(movie.original_language)}{' '}
+              {formatLanguageName(movie.original_language, language, t('movieInfo.unknown'))}{' '}
               <span className={css.langCodeBadge}>
                 ({movie.original_language.toLowerCase() === 'ru' ? 'ru' : movie.original_language.toUpperCase()})
               </span>
@@ -388,26 +462,33 @@ export const MovieInfo: React.FC = () => {
         <div className={css.watchHeaderRow}>
           <div className={css.blockSubheader}>
             <span className={css.subIcon}>🎬</span>
-            <h3 className={css.subTitle}>Where to Watch</h3>
+            <h3 className={css.subTitle}>{t('movieInfo.whereToWatch')}</h3>
           </div>
 
           {countryOptions.length > 0 && (
-            <div className={css.countrySelectorWrapper}>
-              <label htmlFor="countrySelect" className={css.selectorLabel}>
-                Region:
-              </label>
-              <select
-                id="countrySelect"
-                value={selectedCountry}
-                onChange={e => setSelectedCountry(e.target.value)}
-                className={css.countrySelect}
-              >
-                {countryOptions.map(c => (
-                  <option key={c.code} value={c.code}>
-                    {c.name} ({c.code})
-                  </option>
-                ))}
-              </select>
+            <div className={css.countrySelectorCol}>
+              <div className={css.countrySelectorWrapper}>
+                <label htmlFor="countrySelect" className={css.selectorLabel}>
+                  {t('movieInfo.region')}
+                </label>
+                <select
+                  id="countrySelect"
+                  value={selectedCountry}
+                  onChange={e => setSelectedCountry(e.target.value)}
+                  className={css.countrySelect}
+                >
+                  {countryOptions.map(c => (
+                    <option key={c.code} value={c.code}>
+                      {c.name} ({c.code})
+                    </option>
+                  ))}
+                </select>
+              </div>
+              {language === 'uk' && (
+                <span className={css.uaRegionNotice}>
+                  {t('movieInfo.uaRegionNote')}
+                </span>
+              )}
             </div>
           )}
         </div>
@@ -417,7 +498,7 @@ export const MovieInfo: React.FC = () => {
             {streamProviders.length > 0 && (
               <div className={css.categoryBlock}>
                 <h4 className={css.categoryTitle}>
-                  <span className={css.categoryIcon}>📺</span> Stream (Subscription)
+                  <span className={css.categoryIcon}>📺</span> {t('movieInfo.stream')}
                 </h4>
                 <div className={css.providerList}>
                   {streamProviders.map(prov => (
@@ -427,7 +508,7 @@ export const MovieInfo: React.FC = () => {
                       target="_blank"
                       rel="noopener noreferrer"
                       className={css.providerCard}
-                      title={`Open ${prov.provider_name} official website (opens in new tab)`}
+                      title={t('movieInfo.openProviderWebsite', 'Open {provider} official website (opens in new tab)').replace('{provider}', prov.provider_name)}
                     >
                       <img
                         src={`https://image.tmdb.org/t/p/w92${prov.logo_path}`}
@@ -445,7 +526,7 @@ export const MovieInfo: React.FC = () => {
             {rentProviders.length > 0 && (
               <div className={css.categoryBlock}>
                 <h4 className={css.categoryTitle}>
-                  <span className={css.categoryIcon}>🎟️</span> Rent
+                  <span className={css.categoryIcon}>🎟️</span> {t('movieInfo.rent')}
                 </h4>
                 <div className={css.providerList}>
                   {rentProviders.map(prov => (
@@ -455,7 +536,7 @@ export const MovieInfo: React.FC = () => {
                       target="_blank"
                       rel="noopener noreferrer"
                       className={css.providerCard}
-                      title={`Open ${prov.provider_name} official website (opens in new tab)`}
+                      title={t('movieInfo.openProviderWebsite', 'Open {provider} official website (opens in new tab)').replace('{provider}', prov.provider_name)}
                     >
                       <img
                         src={`https://image.tmdb.org/t/p/w92${prov.logo_path}`}
@@ -473,7 +554,7 @@ export const MovieInfo: React.FC = () => {
             {buyProviders.length > 0 && (
               <div className={css.categoryBlock}>
                 <h4 className={css.categoryTitle}>
-                  <span className={css.categoryIcon}>💳</span> Buy
+                  <span className={css.categoryIcon}>💳</span> {t('movieInfo.buy')}
                 </h4>
                 <div className={css.providerList}>
                   {buyProviders.map(prov => (
@@ -483,7 +564,7 @@ export const MovieInfo: React.FC = () => {
                       target="_blank"
                       rel="noopener noreferrer"
                       className={css.providerCard}
-                      title={`Open ${prov.provider_name} official website (opens in new tab)`}
+                      title={t('movieInfo.openProviderWebsite', 'Open {provider} official website (opens in new tab)').replace('{provider}', prov.provider_name)}
                     >
                       <img
                         src={`https://image.tmdb.org/t/p/w92${prov.logo_path}`}
@@ -506,7 +587,7 @@ export const MovieInfo: React.FC = () => {
                   rel="noopener noreferrer"
                   className={css.justWatchLink}
                 >
-                  View streaming options on JustWatch / TMDB ↗
+                  {t('movieInfo.viewOnJustWatch')} ↗
                 </a>
               </div>
             )}
@@ -515,8 +596,7 @@ export const MovieInfo: React.FC = () => {
           <div className={css.noProvidersNotice}>
             <span className={css.noProvidersIcon}>📡</span>
             <p className={css.noProvidersText}>
-              No streaming or rental providers are listed for {selectedCountry || 'this region'}.
-              Try selecting another country from the dropdown above.
+              {t('movieInfo.noProviders')}
             </p>
           </div>
         )}

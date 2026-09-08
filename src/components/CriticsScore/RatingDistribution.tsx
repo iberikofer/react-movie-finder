@@ -1,11 +1,13 @@
 import React from 'react';
 import { useParams } from 'react-router-dom';
 import useMovieRating from '../../hooks/useMovieRating';
+import { useLanguage } from '../../context/LanguageContext';
 import StarIcon from './StarIcon';
 import css from './CriticsScore.module.css';
 
 export const RatingDistribution: React.FC = () => {
   const { movieId } = useParams<{ movieId: string }>();
+  const { language, t } = useLanguage();
   const {
     averageRating,
     formattedAverage,
@@ -19,11 +21,29 @@ export const RatingDistribution: React.FC = () => {
 
   const hasVotes = totalVotes > 0;
 
+  const formatVotesLabel = (count: number) => {
+    if (language === 'uk') {
+      const mod10 = count % 10;
+      const mod100 = count % 100;
+      if (mod10 === 1 && mod100 !== 11) return `${count} оцінка`;
+      if (mod10 >= 2 && mod10 <= 4 && (mod100 < 10 || mod100 >= 20)) return `${count} оцінки`;
+      return `${count} оцінок`;
+    }
+    return `${count} ${count === 1 ? 'total rating' : 'total ratings'}`;
+  };
+
+  const getBadgeText = (badge: string) => {
+    const b = badge.toLowerCase();
+    if (b.includes('excellent')) return t('movie.satisfactionExcellent');
+    if (b.includes('average')) return t('movie.satisfactionAverage');
+    return t('movie.satisfactionLow');
+  };
+
   return (
     <div className={css.distributionContainer}>
       <div className={css.headerRow}>
         <h2 className={css.sectionTitle}>
-          <span className={css.titleIcon}>★</span> Critics Rating
+          <span className={css.titleIcon}>★</span> {t('movie.criticsRating')}
         </h2>
       </div>
 
@@ -53,9 +73,7 @@ export const RatingDistribution: React.FC = () => {
               );
             })}
           </div>
-          <span className={css.totalVotesLabel}>
-            {totalVotes} {totalVotes === 1 ? 'total rating' : 'total ratings'}
-          </span>
+          <span className={css.totalVotesLabel}>{formatVotesLabel(totalVotes)}</span>
         </div>
       </div>
 
@@ -90,12 +108,12 @@ export const RatingDistribution: React.FC = () => {
 
           <div className={css.satisfactionCard}>
             <div className={css.satisfactionHeader}>
-              <h3 className={css.satisfactionTitle}>Satisfaction Score</h3>
+              <h3 className={css.satisfactionTitle}>{t('movie.satisfactionScore')}</h3>
               <span
                 className={css.satisfactionBadge}
                 style={{ backgroundColor: satisfactionColor }}
               >
-                {satisfactionBadge}
+                {getBadgeText(satisfactionBadge)}
               </span>
             </div>
 
@@ -121,10 +139,10 @@ export const RatingDistribution: React.FC = () => {
       ) : (
         <div style={{ textAlign: 'center', padding: '20px', color: 'var(--color-text-muted)' }}>
           <p style={{ margin: 0, fontSize: '1.05rem' }}>
-            No community ratings yet for this film.
+            {t('movie.emptyRatingTitle')}
           </p>
           <p style={{ marginTop: '8px', fontSize: '0.9rem', fontStyle: 'italic' }}>
-            Rate this movie above to start the Critics Score distribution!
+            {t('movie.emptyRatingDesc')}
           </p>
         </div>
       )}

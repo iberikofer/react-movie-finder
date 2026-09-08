@@ -1,5 +1,7 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import StarIcon from './StarIcon';
+import { useLanguage } from '../../context/LanguageContext';
 import css from './CriticsScore.module.css';
 
 export interface ScoreSummaryProps {
@@ -9,6 +11,7 @@ export interface ScoreSummaryProps {
   starColor?: string;
   onReset?: () => void;
   isRow?: boolean;
+  ratingLink?: string;
 }
 
 export const ScoreSummary: React.FC<ScoreSummaryProps> = ({
@@ -18,14 +21,39 @@ export const ScoreSummary: React.FC<ScoreSummaryProps> = ({
   starColor = 'var(--color-star-empty)',
   onReset,
   isRow = false,
+  ratingLink,
 }) => {
+  const { t } = useLanguage();
   const hasVotes = totalVotes > 0;
+
+  const handleScrollToSubnav = () => {
+    const scroll = () => {
+      const subnavEl = document.getElementById('movie-subnav');
+      if (subnavEl) {
+        subnavEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    };
+    scroll();
+    setTimeout(scroll, 80);
+  };
 
   return (
     <div className={isRow ? css.summaryRow : css.summaryContainer}>
-      <span className={isRow ? css.sourceLabelCritics : css.summaryLabel}>
-        Critics
-      </span>
+      {ratingLink ? (
+        <Link
+          to={ratingLink}
+          className={isRow ? css.sourceLinkCritics : css.summaryLabel}
+          onClick={handleScrollToSubnav}
+          title={t('movie.viewCriticsRating', 'View Critics Rating breakdown ↗')}
+        >
+          {t('movie.criticsRating', 'Critics Rating')}{' '}
+          <span className={css.externalArrow}>↗</span>
+        </Link>
+      ) : (
+        <span className={isRow ? css.sourceLabelCritics : css.summaryLabel}>
+          {t('movie.criticsRating', 'Critics Rating')}
+        </span>
+      )}
 
       <div className={css.starsRow}>
         {[1, 2, 3, 4, 5].map(starIndex => {
@@ -58,21 +86,21 @@ export const ScoreSummary: React.FC<ScoreSummaryProps> = ({
         <>
           <span className={css.numericScore}>{formattedAverage}/5</span>
           <span className={css.voteCount}>
-            ({totalVotes} {totalVotes === 1 ? 'rating' : 'ratings'})
+            ({totalVotes} {totalVotes === 1 ? t('movie.ratingOne', 'rating') : t('movie.ratings', 'ratings')})
           </span>
           {onReset && (
             <button
               type="button"
               className={css.resetBtn}
               onClick={onReset}
-              title="Reset rating for this movie"
+              title={t('movie.resetRating', 'Reset rating for this movie')}
             >
-              🔄 Reset Rating
+              🔄 {t('movie.resetRating', 'Reset Rating')}
             </button>
           )}
         </>
       ) : (
-        <span className={css.emptyInvite}>Be the first to rate!</span>
+        <span className={css.emptyInvite}>{t('movie.firstToRate', 'Be the first to rate!')}</span>
       )}
     </div>
   );

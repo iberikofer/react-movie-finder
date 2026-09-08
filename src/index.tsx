@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 import { App } from 'components/App';
 import * as serviceWorkerRegistration from './serviceWorkerRegistration';
+import { LanguageProvider } from 'context/LanguageContext';
 import './index.css';
 
 // Ensure ambient iridescent gradient background is strictly synchronized with wall-clock epoch
@@ -22,15 +23,17 @@ if (!rootElement) {
 const root = ReactDOM.createRoot(rootElement as HTMLElement);
 root.render(
   <React.StrictMode>
-    <BrowserRouter
-      basename="/react-movie-finder"
-      future={{
-        v7_startTransition: true,
-        v7_relativeSplatPath: true,
-      }}
-    >
-      <App />
-    </BrowserRouter>
+    <LanguageProvider>
+      <BrowserRouter
+        basename="/react-movie-finder"
+        future={{
+          v7_startTransition: true,
+          v7_relativeSplatPath: true,
+        }}
+      >
+        <App />
+      </BrowserRouter>
+    </LanguageProvider>
   </React.StrictMode>
 );
 

@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { getMovieReviews } from 'fetch';
 import { Review } from 'types';
+import { useLanguage } from '../../context/LanguageContext';
 import Loader from '../Loader/Loader';
 import css from './Reviews.module.css';
 
@@ -40,13 +41,18 @@ const getSoftAccentColor = (index: number, movieId: string = ''): string => {
 
 export const Reviews: React.FC = () => {
   const { movieId } = useParams<{ movieId: string }>();
+  const { language, t } = useLanguage();
   const [reviews, setReviews] = useState<Review[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const reviewsRef = useRef(reviews);
+  reviewsRef.current = reviews;
 
   useEffect(() => {
     if (!movieId) return;
     let isMounted = true;
-    setIsLoading(true);
+    if (reviewsRef.current.length === 0) {
+      setIsLoading(true);
+    }
 
     const fetchReviews = async () => {
       try {
@@ -67,22 +73,22 @@ export const Reviews: React.FC = () => {
     return () => {
       isMounted = false;
     };
-  }, [movieId]);
+  }, [movieId, language]);
 
   return (
-    <section className={css.reviewsContainer}>
+    <section className={css.reviewsContainer} aria-label={t('movie.communityReviews')}>
       <div className={css.headerRow}>
         <h2 className={css.sectionTitle}>
-          <span className={css.titleIcon}>💬</span> Community Reviews
+          <span className={css.titleIcon}>💬</span> {t('movie.communityReviews')}
         </h2>
       </div>
       {isLoading ? (
-        <Loader caption="Loading reviews..." />
+        <Loader caption={t('reviews.loading')} />
       ) : reviews.length > 0 ? (
         <ul className={css.reviewList}>
           {reviews.map((review, index) => {
             const date = review.created_at
-              ? new Date(review.created_at).toLocaleDateString()
+              ? new Date(review.created_at).toLocaleDateString(language === 'uk' ? 'uk-UA' : 'en-US')
               : null;
             const accent = getSoftAccentColor(index, movieId);
             return (
@@ -92,7 +98,7 @@ export const Reviews: React.FC = () => {
                 style={{ borderLeftColor: accent }}
               >
                 <span className={css.author} style={{ color: accent }}>
-                  Author: {review.author}
+                  {t('reviews.author')} {review.author}
                 </span>
                 <p className={css.content}>{review.content}</p>
                 {date && <p className={css.date}>{date}</p>}
@@ -102,7 +108,7 @@ export const Reviews: React.FC = () => {
         </ul>
       ) : (
         <p style={{ textAlign: 'center', color: 'var(--color-text-muted)', padding: '20px' }}>
-          No reviews available for this movie yet.
+          {t('reviews.noReviews')}
         </p>
       )}
     </section>

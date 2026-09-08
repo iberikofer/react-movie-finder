@@ -6,6 +6,7 @@ import {
   setMediaType,
   getMediaAgeRating,
   matchesAgeFilter,
+  isAlphabeticalTitle,
 } from 'fetch';
 import { MediaItem, PageSessionData } from 'types';
 import MovieCardRatingBadge from '../components/CriticsScore/MovieCardRatingBadge';
@@ -20,9 +21,11 @@ import {
   updatePageScroll,
   clearPageSession,
 } from '../utils/sessionStorage';
+import { useLanguage } from '../context/LanguageContext';
 import css from './Trending.module.css';
 
 export const Trending: React.FC = () => {
+  const { t, language } = useLanguage();
   const [searchParams, setSearchParams] = useSearchParams();
 
   const rawGenres = searchParams.get('genres') || searchParams.get('genre') || '';
@@ -44,7 +47,7 @@ export const Trending: React.FC = () => {
     selectedGenres.length > 0 ||
     sortBy !== 'popularity.desc';
 
-  const filterKey = `${rawGenres}|${filterType}|${filterAge}|${sortBy}`;
+  const filterKey = `${rawGenres}|${filterType}|${filterAge}|${sortBy}|${language}`;
 
   const restoredSessionRef = useRef<PageSessionData<MediaItem> | null>(null);
   if (!restoredSessionRef.current) {
@@ -54,7 +57,16 @@ export const Trending: React.FC = () => {
       Array.isArray(saved.moviesArr) &&
       saved.moviesArr.length > 0
     ) {
-      restoredSessionRef.current = saved;
+      if (sortBy === 'original_title.asc' || sortBy === 'original_title.desc') {
+        const cleaned = saved.moviesArr.filter(m => isAlphabeticalTitle(m.title || m.name));
+        if (cleaned.length === saved.moviesArr.length && cleaned.length > 0) {
+          restoredSessionRef.current = saved;
+        } else {
+          clearPageSession('trending_session', filterKey);
+        }
+      } else {
+        restoredSessionRef.current = saved;
+      }
     }
   }
 
@@ -78,6 +90,8 @@ export const Trending: React.FC = () => {
   const isRestoringScrollRef = useRef<boolean>(false);
   const lastUserScrollYRef = useRef<number>(0);
   const [refreshTrigger, setRefreshTrigger] = useState<number>(0);
+  const moviesArrRef = useRef(moviesArr);
+  moviesArrRef.current = moviesArr;
 
   useEffect(() => {
     const handleTrendingNavClick = () => {
@@ -232,23 +246,63 @@ export const Trending: React.FC = () => {
       return;
     }
 
+    let isCurrent = true;
+    setIsLoading(true);
+    const startTime = Date.now();
+
     const saved = getPageSession<MediaItem>('trending_session', filterKey);
     if (
       saved &&
       Array.isArray(saved.moviesArr) &&
       saved.moviesArr.length > 0
     ) {
-      setMoviesArr(saved.moviesArr);
-      setPage(saved.page || 1);
-      setTotalPages(saved.totalPages || 1);
-      setIsLoading(false);
-      lastLoadedFilterKeyRef.current = filterKey;
-      restoreScrollTo(saved.scrollY || 0);
-      return;
+      if (sortBy === 'original_title.asc' || sortBy === 'original_title.desc') {
+        const cleaned = saved.moviesArr.filter(m => isAlphabeticalTitle(m.title || m.name));
+        if (cleaned.length !== saved.moviesArr.length || cleaned.length === 0) {
+          clearPageSession('trending_session', filterKey);
+        } else {
+          const applySaved = async () => {
+            const elapsed = Date.now() - startTime;
+            if (elapsed < 500) {
+              await new Promise(resolve => setTimeout(resolve, 500 - elapsed));
+            }
+            if (!isCurrent) return;
+            setMoviesArr(cleaned);
+            setPage(saved.page || 1);
+            setTotalPages(saved.totalPages || 1);
+            setIsLoading(false);
+            lastLoadedFilterKeyRef.current = filterKey;
+            if ((saved.scrollY || 0) > 0) {
+              restoreScrollTo(saved.scrollY || 0);
+            }
+          };
+          applySaved();
+          return () => {
+            isCurrent = false;
+          };
+        }
+      } else {
+        const applySaved = async () => {
+          const elapsed = Date.now() - startTime;
+          if (elapsed < 500) {
+            await new Promise(resolve => setTimeout(resolve, 500 - elapsed));
+          }
+          if (!isCurrent) return;
+          setMoviesArr(saved.moviesArr || []);
+          setPage(saved.page || 1);
+          setTotalPages(saved.totalPages || 1);
+          setIsLoading(false);
+          lastLoadedFilterKeyRef.current = filterKey;
+          if ((saved.scrollY || 0) > 0) {
+            restoreScrollTo(saved.scrollY || 0);
+          }
+        };
+        applySaved();
+        return () => {
+          isCurrent = false;
+        };
+      }
     }
-
-    let isCurrent = true;
-    setIsLoading(true);
 
     const loadMovies = async () => {
       const startTime = Date.now();
@@ -269,7 +323,10 @@ export const Trending: React.FC = () => {
               });
 
           if (!isCurrent) return;
-          const newResults = (data?.results || []).filter(movie => movie.title || movie.name);
+          let newResults = (data?.results || []).filter(movie => movie.title || movie.name);
+          if (sortBy === 'original_title.asc' || sortBy === 'original_title.desc') {
+            newResults = newResults.filter(m => isAlphabeticalTitle(m.title || m.name));
+          }
           newResults.forEach(item => {
             if (item.media_type === 'movie' || item.media_type === 'tv') {
               setMediaType(item.id, item.media_type);
@@ -309,7 +366,10 @@ export const Trending: React.FC = () => {
               })
             );
 
-            const matched = enriched.filter(item => matchesAgeFilter(item.age_rating, filterAge));
+            let matched = enriched.filter(item => matchesAgeFilter(item.age_rating, filterAge));
+            if (sortBy === 'original_title.asc' || sortBy === 'original_title.desc') {
+              matched = matched.filter(item => isAlphabeticalTitle(item.title || item.name));
+            }
             const existingKeys = new Set(items.map(m => `${m.media_type || 'movie'}-${m.id}`));
             matched.forEach(item => {
               const key = `${item.media_type || 'movie'}-${item.id}`;
@@ -380,7 +440,10 @@ export const Trending: React.FC = () => {
               page: nextPage,
             });
 
-        const newResults = (data?.results || []).filter(movie => movie.title || movie.name);
+        let newResults = (data?.results || []).filter(movie => movie.title || movie.name);
+        if (sortBy === 'original_title.asc' || sortBy === 'original_title.desc') {
+          newResults = newResults.filter(m => isAlphabeticalTitle(m.title || m.name));
+        }
         newResults.forEach(item => {
           if (item.media_type === 'movie' || item.media_type === 'tv') {
             setMediaType(item.id, item.media_type);
@@ -438,7 +501,10 @@ export const Trending: React.FC = () => {
             })
           );
 
-          const matched = enriched.filter(item => matchesAgeFilter(item.age_rating, filterAge));
+          let matched = enriched.filter(item => matchesAgeFilter(item.age_rating, filterAge));
+          if (sortBy === 'original_title.asc' || sortBy === 'original_title.desc') {
+            matched = matched.filter(item => isAlphabeticalTitle(item.title || item.name));
+          }
           const existingKeys = new Set([
             ...moviesArr.map(m => `${m.media_type || 'movie'}-${m.id}`),
             ...newItems.map(m => `${m.media_type || 'movie'}-${m.id}`),
@@ -481,19 +547,23 @@ export const Trending: React.FC = () => {
   };
 
   const displayedMovies = useMemo(() => {
+    let list = moviesArr;
+    if (sortBy === 'original_title.asc' || sortBy === 'original_title.desc') {
+      list = list.filter(m => isAlphabeticalTitle(m.title || m.name));
+    }
     const GRID_COLUMNS = 5;
     const hasMore = page < totalPages;
     if (hasMore) {
-      const fullCount = Math.floor(moviesArr.length / GRID_COLUMNS) * GRID_COLUMNS;
+      const fullCount = Math.floor(list.length / GRID_COLUMNS) * GRID_COLUMNS;
       if (fullCount > 0) {
-        return moviesArr.slice(0, fullCount);
+        return list.slice(0, fullCount);
       }
     }
-    return moviesArr;
-  }, [moviesArr, page, totalPages]);
+    return list;
+  }, [moviesArr, page, totalPages, sortBy]);
 
   if (isLoading && moviesArr.length === 0) {
-    return <Loader isCentered caption="Loading trending titles..." />;
+    return <Loader isCentered caption={t('trending.loading', 'Loading trending titles...')} />;
   }
 
   return (
@@ -503,10 +573,10 @@ export const Trending: React.FC = () => {
           <span className={css.titleIcon} aria-hidden="true">
             🔥
           </span>
-          Trending Today
+          {t('trending.title')}
         </h1>
         <p className={css.sectionDesc}>
-          Explore what millions of film/series enthusiasts are watching right now, powered by real-time TMDB data and community reviews.
+          {t('trending.subtitle')}
         </p>
       </div>
 
@@ -527,7 +597,7 @@ export const Trending: React.FC = () => {
       />
 
       {isLoading ? (
-        <Loader caption="Filtering trending titles..." />
+        <Loader caption={t('trending.filtering', 'Filtering trending titles...')} />
       ) : displayedMovies.length > 0 ? (
         <>
           <ul className={css.movieGrid}>
@@ -596,11 +666,11 @@ export const Trending: React.FC = () => {
                 {isLoadingMore ? (
                   <>
                     <span className={css.spinnerIcon}>⏳</span>
-                    <span>Loading more titles...</span>
+                    <span>{t('search.searching')}</span>
                   </>
                 ) : (
                   <>
-                    <span>Load More Titles</span>
+                    <span>{t('trending.loadMore')}</span>
                     <span className={css.loadMoreArrow}>↓</span>
                   </>
                 )}
@@ -609,7 +679,7 @@ export const Trending: React.FC = () => {
           )}
         </>
       ) : (
-        <p className={css.noResults}>No trending titles found matching the selected filters.</p>
+        <p className={css.noResults}>{t('search.noResults')}</p>
       )}
     </div>
   );

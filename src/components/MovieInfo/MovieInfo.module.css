@@ -218,10 +218,27 @@
   margin-bottom: 22px;
 }
 
+.countrySelectorCol {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 5px;
+}
+
 .countrySelectorWrapper {
   display: flex;
   align-items: center;
   gap: 10px;
+}
+
+.uaRegionNotice {
+  font-size: 0.78rem;
+  color: var(--color-text-muted);
+  opacity: 0.85;
+  font-style: italic;
+  text-align: right;
+  line-height: 1.35;
+  user-select: none;
 }
 
 .selectorLabel {
@@ -443,5 +460,14 @@
   .watchHeaderRow {
     flex-direction: column;
     align-items: flex-start;
+  }
+
+  .countrySelectorCol {
+    align-items: flex-start;
+    width: 100%;
+  }
+
+  .uaRegionNotice {
+    text-align: left;
   }
 }

@@ -1,0 +1,251 @@
+.videosSection {
+  margin: 0;
+  padding: 28px 32px 36px 32px;
+  background: rgba(42, 8, 12, 0.55);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--bg-card-border);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  animation: tabContentIn 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.headerRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid rgba(254, 243, 199, 0.1);
+}
+
+.sectionTitle {
+  font-size: 1.45rem;
+  font-weight: 800;
+  color: var(--color-text);
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  letter-spacing: -0.2px;
+}
+
+.titleIcon {
+  color: #ff334b;
+  font-size: 1.15rem;
+  filter: drop-shadow(0 0 8px rgba(255, 51, 75, 0.4));
+}
+
+/* Video Wrapper with padding from all edges */
+.videoWrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  padding: 12px 0 6px 0;
+}
+
+.responsivePlayerBox {
+  position: relative;
+  width: 100%;
+  max-width: 960px;
+  aspect-ratio: 16 / 9;
+  background: radial-gradient(circle at center, #1c080d 0%, #080203 100%);
+  border: 1px solid rgba(254, 243, 199, 0.16);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6), 0 0 24px rgba(255, 51, 75, 0.12);
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.videoFrame {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border: none;
+  opacity: 0;
+  transform: scale(0.99);
+  transition: opacity 0.35s cubic-bezier(0.16, 1, 0.3, 1), transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  z-index: 1;
+}
+
+.videoFrameLoaded {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.playerLoaderOverlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(14, 4, 7, 0.94);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  z-index: 10;
+  opacity: 1;
+  visibility: visible;
+  pointer-events: none;
+  transition: opacity 0.35s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.35s ease;
+}
+
+.playerLoaderOverlayHidden {
+  opacity: 0;
+  visibility: hidden;
+}
+
+.playerSpinner {
+  width: 44px;
+  height: 44px;
+  border: 3px solid rgba(254, 243, 199, 0.2);
+  border-top-color: #ff334b;
+  border-radius: 50%;
+  animation: playerSpin 0.75s linear infinite;
+  box-shadow: 0 0 18px rgba(255, 51, 75, 0.5);
+}
+
+@keyframes playerSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.videoCaption {
+  margin: 0 0 16px 0;
+  color: #fef3c7;
+  font-size: 1.15rem;
+  font-weight: 700;
+  text-align: center;
+  max-width: 860px;
+  line-height: 1.4;
+  letter-spacing: -0.2px;
+  animation: captionFadeIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes captionFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Empty State */
+.emptyState {
+  text-align: center;
+  padding: 48px 20px;
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px dashed rgba(254, 243, 199, 0.18);
+  border-radius: 10px;
+}
+
+.emptyIcon {
+  font-size: 2.8rem;
+  display: block;
+  margin-bottom: 12px;
+  opacity: 0.8;
+}
+
+.emptyText {
+  color: var(--color-text-muted);
+  font-size: 1.05rem;
+  margin: 0;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .trailerSection {
+    padding: 20px 16px 28px 16px;
+  }
+
+  .sectionTitle {
+    font-size: 1.25rem;
+  }
+
+  .videoWrapper {
+    padding: 6px 0;
+  }
+
+  .videoCaption {
+    font-size: 1rem;
+    margin-bottom: 12px;
+  }
+
+  .selectorBar {
+    margin-top: 24px;
+  }
+}
+
+/* Video Selector Pills */
+.selectorBar {
+  width: 100%;
+  max-width: 960px;
+  margin-top: 36px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.selectorLabel {
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--color-text-muted);
+}
+
+.chipsList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.chipBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  background: rgba(254, 243, 199, 0.05);
+  border: 1px solid rgba(254, 243, 199, 0.14);
+  border-radius: 9999px;
+  color: var(--color-text-muted);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  max-width: 280px;
+  text-align: left;
+}
+
+.chipBtn:hover {
+  background: rgba(254, 243, 199, 0.12);
+  color: var(--color-text);
+  border-color: rgba(254, 243, 199, 0.28);
+}
+
+.chipBtnActive {
+  background: rgba(16, 185, 129, 0.22) !important;
+  border-color: #10b981 !important;
+  color: #34d399 !important;
+  box-shadow: 0 0 12px rgba(16, 185, 129, 0.3);
+  cursor: default;
+}
+
+.chipIcon {
+  font-size: 0.9rem;
+  flex-shrink: 0;
+}
+
+.chipTitle {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

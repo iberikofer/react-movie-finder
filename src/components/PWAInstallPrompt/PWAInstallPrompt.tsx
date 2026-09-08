@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
+import { useLanguage } from '../../context/LanguageContext';
 import css from './PWAInstallPrompt.module.css';
 
 export const PWAInstallPrompt: React.FC = () => {
+  const { t } = useLanguage();
   const [isOnline, setIsOnline] = useState<boolean>(() => {
     if (typeof navigator === 'undefined') return true;
     return navigator.onLine;
@@ -30,10 +32,10 @@ export const PWAInstallPrompt: React.FC = () => {
         className={css.offlineBadge}
         role="status"
         aria-live="polite"
-        title="Offline mode: viewing cached watchlist and movies"
+        title={t('pwa.offlineTooltip', 'Offline mode: viewing cached watchlist and movies')}
       >
         <span className={css.offlineDot} aria-hidden="true" />
-        <span>Offline Mode</span>
+        <span>{t('pwa.offlineMode', 'Offline Mode')}</span>
       </div>
     </div>
   );

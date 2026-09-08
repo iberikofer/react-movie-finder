@@ -8,11 +8,14 @@ import Loader from '../Loader/Loader';
 import MediaTypeBadge from '../MediaTypeBadge/MediaTypeBadge';
 import SaveMovieButton from '../SaveMovieButton/SaveMovieButton';
 import MovieGallery from './MovieGallery';
+import { useLanguage } from '../../context/LanguageContext';
 import css from './MovieDetails.module.css';
 
 export const MovieDetails: React.FC = () => {
+  const { t, language } = useLanguage();
   const [selectedMovie, setSelectedMovie] = useState<MovieDetailsType | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isTranslating, setIsTranslating] = useState<boolean>(false);
   const [hasError, setHasError] = useState<boolean>(false);
   const { movieId } = useParams<{ movieId: string }>();
   const location = useLocation();
@@ -20,6 +23,7 @@ export const MovieDetails: React.FC = () => {
   const explicitType = (searchParams.get('type') || location.state?.mediaType) as 'movie' | 'tv' | undefined;
   const backLinkHref = location.state?.from ?? '/';
   const fetchedMovieIdRef = useRef<string | null>(null);
+  const fetchedLangRef = useRef<string>(language);
 
   const originSource =
     location.state?.source ||
@@ -36,31 +40,59 @@ export const MovieDetails: React.FC = () => {
     }
   }, [originSource]);
 
-  const fetchDetails = useCallback(async (targetMovieId?: string, typeHint?: 'movie' | 'tv') => {
-    if (!targetMovieId) return;
-    setIsLoading(true);
-    setHasError(false);
+  const selectedMovieRef = useRef<MovieDetailsType | null>(null);
+  selectedMovieRef.current = selectedMovie;
 
-    try {
-      const data = await getMovieDetails(targetMovieId, typeHint);
-      setSelectedMovie(data);
-      fetchedMovieIdRef.current = String(targetMovieId);
-      if (data?.media_type && (data.media_type === 'movie' || data.media_type === 'tv')) {
-        setMediaType(targetMovieId, data.media_type);
+  const fetchDetails = useCallback(
+    async (targetMovieId?: string, typeHint?: 'movie' | 'tv', isLanguageSwitch: boolean = false) => {
+      if (!targetMovieId) return;
+      if (isLanguageSwitch && selectedMovieRef.current) {
+        setIsTranslating(true);
+      } else if (!selectedMovieRef.current || fetchedMovieIdRef.current !== String(targetMovieId)) {
+        setIsLoading(true);
       }
-    } catch (error) {
-      console.error('Failed to load movie details:', error);
-      setHasError(true);
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
+      setHasError(false);
+      const startTime = Date.now();
+
+      try {
+        const data = await getMovieDetails(targetMovieId, typeHint);
+
+        // If translating, ensure smooth minimum duration (~420ms) so animation doesn't flash
+        if (isLanguageSwitch) {
+          const elapsed = Date.now() - startTime;
+          if (elapsed < 420) {
+            await new Promise(resolve => setTimeout(resolve, 420 - elapsed));
+          }
+        }
+
+        setSelectedMovie(data);
+        fetchedMovieIdRef.current = String(targetMovieId);
+        if (data?.media_type && (data.media_type === 'movie' || data.media_type === 'tv')) {
+          setMediaType(targetMovieId, data.media_type);
+        }
+      } catch (error) {
+        console.error('Failed to load movie details:', error);
+        setHasError(true);
+      } finally {
+        setIsLoading(false);
+        setIsTranslating(false);
+      }
+    },
+    []
+  );
 
   useEffect(() => {
-    if (movieId && fetchedMovieIdRef.current !== String(movieId)) {
-      fetchDetails(movieId, explicitType);
+    if (movieId) {
+      const isIdChanged = fetchedMovieIdRef.current !== String(movieId);
+      const isLangChanged = fetchedLangRef.current !== language;
+
+      if (isIdChanged || isLangChanged) {
+        fetchedLangRef.current = language;
+        const isLanguageSwitch = !isIdChanged && isLangChanged && Boolean(selectedMovieRef.current);
+        fetchDetails(movieId, explicitType, isLanguageSwitch);
+      }
     }
-  }, [movieId, explicitType, fetchDetails]);
+  }, [movieId, explicitType, fetchDetails, language]);
 
   const displayTitle = selectedMovie?.title || selectedMovie?.name || '';
   const isTv =
@@ -71,11 +103,17 @@ export const MovieDetails: React.FC = () => {
   return (
     <div className={css.pageWrapper}>
       <Link to={backLinkHref} className={css.backBtn}>
-        ☚ Go back
+        ☚ {t('movie.goBack')}
       </Link>
 
       {isLoading ? (
-        <Loader caption={isTv ? 'Loading show details...' : 'Loading movie details...'} />
+        <Loader
+          caption={
+            isTv
+              ? t('movie.loadingShow', 'Loading show details...')
+              : t('movie.loadingMovie', 'Loading movie details...')
+          }
+        />
       ) : hasError ? (
         <div className={css.errorSectionContainer}>
           <div className={css.blurredBlock} aria-hidden="true">
@@ -91,20 +129,20 @@ export const MovieDetails: React.FC = () => {
               </div>
 
               <div className={css.infoContent}>
-                <h1 className={css.movieTitle}>Movie Title Unavailable</h1>
+                <h1 className={css.movieTitle}>{t('movie.unavailableTitle', 'Movie Title Unavailable')}</h1>
 
-                <h2>Overview</h2>
+                <h2>{t('movie.overview')}</h2>
                 <p className={css.overviewText}>
-                  This movie information is temporarily unavailable. We were unable to retrieve the synopsis, cast, and review data for this title from the server at this time. Please check back later or explore other trending movies.
+                  {t('movie.errorDesc')}
                 </p>
 
-                <h2>Genres</h2>
+                <h2>{t('movie.genres')}</h2>
                 <div className={css.genres}>
-                  <span className={css.genreTag}>Unavailable</span>
+                  <span className={css.genreTag}>{t('movie.unavailable', 'Unavailable')}</span>
                 </div>
 
                 <div className={css.ratingsSkeleton} style={{ marginTop: '22px' }}>
-                  <h2 style={{ fontSize: '1.35rem', fontWeight: 700, margin: '0 0 16px 0' }}>Ratings</h2>
+                  <h2 style={{ fontSize: '1.35rem', fontWeight: 700, margin: '0 0 16px 0' }}>{t('movie.criticsRating')}</h2>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                     <p className={css.score} style={{ margin: 0 }}>
                       <span className={css.tmdbBadge}>TMDB:</span>{' '}
@@ -115,13 +153,13 @@ export const MovieDetails: React.FC = () => {
                       <span className={css.tmdbValue}>N/A</span>
                     </p>
                     <p className={css.score} style={{ margin: 0 }}>
-                      <span className={css.tmdbBadge}>Critics:</span>{' '}
+                      <span className={css.tmdbBadge}>{t('movie.criticsRating')}:</span>{' '}
                       <span style={{ color: 'var(--color-text-muted)' }}>
-                        ★★★★★ Be the first to rate!
+                        ★★★★★ {t('movie.firstToRate')}
                       </span>
                     </p>
                     <p className={css.score} style={{ margin: 0 }}>
-                      <span className={css.tmdbBadge} style={{ color: '#34d399' }}>Your Rating:</span>{' '}
+                      <span className={css.tmdbBadge} style={{ color: '#34d399' }}>{t('critics.yourRating', 'Your Rating:')}</span>{' '}
                       <span style={{ color: 'var(--color-text-muted)' }}>
                         ★★★★★
                       </span>
@@ -141,27 +179,27 @@ export const MovieDetails: React.FC = () => {
             <nav className={css.subnavGrid}>
               <div className={css.navTile}>
                 <span className={css.navTileIcon}>★</span>
-                <span className={css.navTileLabel}>Critics Rating</span>
+                <span className={css.navTileLabel}>{t('movie.criticsRating')}</span>
               </div>
               <div className={css.navTile}>
                 <span className={css.navTileIcon}>ℹ️</span>
-                <span className={css.navTileLabel}>{isTv ? 'Show Info' : 'Movie Info'}</span>
+                <span className={css.navTileLabel}>{isTv ? t('movie.showInfo') : t('movie.movieInfo')}</span>
               </div>
               <div className={css.navTile}>
                 <span className={css.navTileIcon}>▶</span>
-                <span className={css.navTileLabel}>Official Trailer</span>
+                <span className={css.navTileLabel}>{t('movie.officialTrailer')}</span>
               </div>
               <div className={css.navTile}>
                 <span className={css.navTileIcon}>👥</span>
-                <span className={css.navTileLabel}>Cast & Crew</span>
+                <span className={css.navTileLabel}>{t('movie.castAndCrew')}</span>
               </div>
               <div className={css.navTile}>
                 <span className={css.navTileIcon}>💬</span>
-                <span className={css.navTileLabel}>Community Reviews</span>
+                <span className={css.navTileLabel}>{t('movie.communityReviews')}</span>
               </div>
               <div className={css.navTile}>
                 <span className={css.navTileIcon}>🎯</span>
-                <span className={css.navTileLabel}>{isTv ? 'Similar Shows' : 'Similar Movies'}</span>
+                <span className={css.navTileLabel}>{isTv ? t('movie.similarShows') : t('movie.similarMovies')}</span>
               </div>
             </nav>
           </div>
@@ -169,15 +207,15 @@ export const MovieDetails: React.FC = () => {
           <div className={css.errorOverlay}>
             <div className={css.errorCard}>
               <div className={css.errorIconWrapper}>
-                <span className={css.errorIcon} role="img" aria-label="Warning">
+                <span className={css.errorIcon} role="img" aria-label={t('common.warning', 'Warning')}>
                   🎬⚠️
                 </span>
               </div>
               <h2 className={css.errorMessage}>
-                This movie information is temporarily unavailable
+                {t('movie.errorTitle')}
               </h2>
               <p className={css.errorDetails}>
-                The server could not retrieve details for this title at this time. Please check back later or explore other movies.
+                {t('movie.errorDesc')}
               </p>
               <div className={css.errorButtonRow}>
                 <button
@@ -185,10 +223,10 @@ export const MovieDetails: React.FC = () => {
                   onClick={() => movieId && fetchDetails(movieId, explicitType)}
                   className={css.errorRetryBtn}
                 >
-                  ↻ Try Again
+                  ↻ {t('movie.tryAgain')}
                 </button>
                 <Link to={backLinkHref} className={css.errorGoBackBtn}>
-                  ☚ Go back
+                  ☚ {t('movie.goBack')}
                 </Link>
               </div>
             </div>
@@ -198,6 +236,20 @@ export const MovieDetails: React.FC = () => {
         <>
           <div className={css.movieCardBlock}>
             <article className={css.detailsContainer}>
+              {/* Blur & themed loader overlay during language translation */}
+              <div
+                className={`${css.translatingOverlay} ${
+                  isTranslating ? css.translatingActive : css.translatingHidden
+                }`}
+                aria-hidden={!isTranslating}
+                aria-live="polite"
+              >
+                <Loader
+                  label={t('movie.translatingSlate', 'TRANSLATE')}
+                  caption={t('movie.translating', 'Translating movie details...')}
+                />
+              </div>
+
               <div className={css.sidebar}>
                 <div className={css.posterWrapper}>
                   <img
@@ -245,23 +297,23 @@ export const MovieDetails: React.FC = () => {
                           ? css.ageRatingTeen
                           : css.ageRatingGeneral
                       }`}
-                      title="Age Restriction (Europe | USA)"
+                      title={t('movie.ageRestrictionTitle', 'Age Restriction (Europe | USA)')}
                     >
                       {selectedMovie.age_rating}
                     </span>
                   ) : (
                     <span className={css.ageRatingUnavailableBadge}>
-                      Age rating currently unavailable
+                      {t('movie.ageUnavailable', 'Age rating currently unavailable')}
                     </span>
                   )}
                 </div>
 
-                <h2>Overview</h2>
+                <h2>{t('movie.overview')}</h2>
                 <p className={css.overviewText}>
-                  {selectedMovie.overview || 'No overview available.'}
+                  {selectedMovie.overview || t('movie.noOverview')}
                 </p>
 
-                <h2>Genres</h2>
+                <h2>{t('movie.genres')}</h2>
                 <div className={css.genres}>
                   {selectedMovie.genres && selectedMovie.genres.length > 0 ? (
                     selectedMovie.genres.map(genre => (
@@ -270,7 +322,7 @@ export const MovieDetails: React.FC = () => {
                         to={`/movies?genres=${genre.id}`}
                         state={{ from: location }}
                         className={css.genreTag}
-                        title={`Browse ${genre.name} movies on Search`}
+                        title={t('movie.browseGenre', `Browse ${genre.name} on Search`).replace('{genre}', genre.name)}
                       >
                         <span className={css.genreIcon} aria-hidden="true">
                           {getGenreIcon(genre.id, genre.name)}
@@ -279,7 +331,7 @@ export const MovieDetails: React.FC = () => {
                       </Link>
                     ))
                   ) : (
-                    <span>No genres specified</span>
+                    <span>{t('movie.noGenres')}</span>
                   )}
                 </div>
 
@@ -303,10 +355,10 @@ export const MovieDetails: React.FC = () => {
                     <span className={css.russianWarningIcon}>⚠️🚫</span>
                     <div className={css.russianWarningContent}>
                       <strong className={css.russianWarningTitle}>
-                        Warning: russian-produced content!
+                        {t('movie.warningRuTitle')}
                       </strong>
                       <p className={css.russianWarningText}>
-                        This title was produced in the terrorist state of russia. Do not support sponsors of war and terrorism — boycott russian media.
+                        {t('movie.warningRuText')}
                       </p>
                     </div>
                   </div>
@@ -316,7 +368,7 @@ export const MovieDetails: React.FC = () => {
 
             <MovieGallery movieId={movieId!} movieTitle={displayTitle} />
 
-            <nav className={css.subnavGrid} aria-label="Movie sections">
+            <nav id="movie-subnav" className={css.subnavGrid} aria-label={t('movie.sectionsAria', 'Movie sections')}>
               <NavLink
                 to="rating"
                 preventScrollReset={true}
@@ -330,7 +382,7 @@ export const MovieDetails: React.FC = () => {
                 }
               >
                 <span className={css.navTileIcon}>★</span>
-                <span className={css.navTileLabel}>Critics Rating</span>
+                <span className={css.navTileLabel}>{t('movie.criticsRating')}</span>
               </NavLink>
 
               <NavLink
@@ -346,23 +398,30 @@ export const MovieDetails: React.FC = () => {
                 }
               >
                 <span className={css.navTileIcon}>ℹ️</span>
-                <span className={css.navTileLabel}>{isTv ? 'Show Info' : 'Movie Info'}</span>
+                <span className={css.navTileLabel}>{isTv ? t('movie.showInfo') : t('movie.movieInfo')}</span>
               </NavLink>
 
               <NavLink
-                to="trailer"
+                to="videos"
                 preventScrollReset={true}
                 state={{
                   from: backLinkHref,
                   mediaType: selectedMovie?.media_type || explicitType,
                   source: originSource,
                 }}
+                onClick={() => {
+                  if (movieId) {
+                    sessionStorage.removeItem(`video_selected_key_${movieId}`);
+                    sessionStorage.removeItem(`trailer_selected_key_${movieId}`);
+                    window.dispatchEvent(new CustomEvent('videos_tab_click', { detail: { movieId } }));
+                  }
+                }}
                 className={({ isActive }) =>
                   `${css.navTile} ${isActive ? css.navTileActive : ''}`
                 }
               >
                 <span className={css.navTileIcon}>▶</span>
-                <span className={css.navTileLabel}>Official Trailer</span>
+                <span className={css.navTileLabel}>{t('movie.officialTrailer')}</span>
               </NavLink>
 
               <NavLink
@@ -378,7 +437,7 @@ export const MovieDetails: React.FC = () => {
                 }
               >
                 <span className={css.navTileIcon}>👥</span>
-                <span className={css.navTileLabel}>Cast & Crew</span>
+                <span className={css.navTileLabel}>{t('movie.castAndCrew')}</span>
               </NavLink>
 
               <NavLink
@@ -394,7 +453,7 @@ export const MovieDetails: React.FC = () => {
                 }
               >
                 <span className={css.navTileIcon}>💬</span>
-                <span className={css.navTileLabel}>Community Reviews</span>
+                <span className={css.navTileLabel}>{t('movie.communityReviews')}</span>
               </NavLink>
 
               <NavLink
@@ -410,13 +469,13 @@ export const MovieDetails: React.FC = () => {
                 }
               >
                 <span className={css.navTileIcon}>🎯</span>
-                <span className={css.navTileLabel}>{isTv ? 'Similar Shows' : 'Similar Movies'}</span>
+                <span className={css.navTileLabel}>{isTv ? t('movie.similarShows') : t('movie.similarMovies')}</span>
               </NavLink>
             </nav>
           </div>
 
           <div className={css.outletWrapper}>
-            <Suspense fallback={<Loader caption="Loading section..." />}>
+            <Suspense fallback={<Loader caption={t('movie.loadingSection', 'Loading section...')} />}>
               <Outlet />
             </Suspense>
           </div>

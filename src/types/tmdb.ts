@@ -96,6 +96,8 @@ export interface VideoTrailer {
   type: string;
   official?: boolean;
   published_at?: string;
+  iso_639_1?: string;
+  iso_3166_1?: string;
 }
 
 export interface ImageItem {

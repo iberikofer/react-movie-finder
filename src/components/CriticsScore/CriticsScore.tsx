@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { getImdbData, ImdbData } from 'fetch';
 import { MediaItem } from 'types';
 import useMovieRating from '../../hooks/useMovieRating';
+import { useLanguage } from '../../context/LanguageContext';
 import ScoreSummary from './ScoreSummary';
 import StarRatingInput from './StarRatingInput';
 import css from './CriticsScore.module.css';
@@ -12,6 +13,7 @@ export interface CriticsScoreProps {
 }
 
 export const CriticsScore: React.FC<CriticsScoreProps> = ({ movieId, movie }) => {
+  const { t, language } = useLanguage();
   const {
     averageRating,
     formattedAverage,
@@ -62,9 +64,23 @@ export const CriticsScore: React.FC<CriticsScoreProps> = ({ movieId, movie }) =>
     ? `https://www.imdb.com/find?q=${encodeURIComponent(movie.title || movie.name || '')}`
     : '';
 
+  const formatImdbVotes = (votesStr: string): string => {
+    if (language === 'uk') {
+      const num = parseInt(votesStr.replace(/,/g, '').replace(/\s/g, ''), 10);
+      if (!isNaN(num)) {
+        const mod10 = num % 10;
+        const mod100 = num % 100;
+        if (mod10 === 1 && mod100 !== 11) return `${votesStr} ${t('critics.voteOne', 'голос')}`;
+        if (mod10 >= 2 && mod10 <= 4 && (mod100 < 10 || mod100 >= 20)) return `${votesStr} ${t('critics.votesFew', 'голоси')}`;
+        return `${votesStr} ${t('critics.votes', 'голосів')}`;
+      }
+    }
+    return `${votesStr} ${votesStr === '1' ? 'vote' : 'votes'}`;
+  };
+
   return (
-    <section className={css.ratingsSection} aria-label="Movie ratings">
-      <h2 className={css.ratingsHeading}>Ratings</h2>
+    <section className={css.ratingsSection} aria-label={t('critics.movieRatingsAria', 'Movie ratings')}>
+      <h2 className={css.ratingsHeading}>{t('critics.ratings', 'Ratings')}</h2>
 
       <div className={css.ratingsCard}>
         {/* 1. TMDB */}
@@ -75,7 +91,7 @@ export const CriticsScore: React.FC<CriticsScoreProps> = ({ movieId, movie }) =>
               target="_blank"
               rel="noopener noreferrer"
               className={css.sourceLinkTmdb}
-              title="View title on JustWatch / TMDB ↗"
+              title={t('critics.viewJustWatch', 'View title on JustWatch / TMDB ↗')}
             >
               TMDB <span className={css.externalArrow}>↗</span>
             </a>
@@ -91,7 +107,7 @@ export const CriticsScore: React.FC<CriticsScoreProps> = ({ movieId, movie }) =>
                 {movie?.vote_count !== undefined && movie.vote_count > 0 && (
                   <span className={css.voteCount}>
                     ({movie.vote_count.toLocaleString()}{' '}
-                    {movie.vote_count === 1 ? 'vote' : 'votes'})
+                    {movie.vote_count === 1 ? t('critics.voteOne', 'vote') : t('critics.votes', 'votes')})
                   </span>
                 )}
               </>
@@ -109,7 +125,7 @@ export const CriticsScore: React.FC<CriticsScoreProps> = ({ movieId, movie }) =>
               target="_blank"
               rel="noopener noreferrer"
               className={css.sourceLinkImdb}
-              title="View title on IMDb ↗"
+              title={t('critics.viewImdb', 'View title on IMDb ↗')}
             >
               IMDb <span className={css.externalArrow}>↗</span>
             </a>
@@ -118,7 +134,9 @@ export const CriticsScore: React.FC<CriticsScoreProps> = ({ movieId, movie }) =>
           )}
           <div className={css.ratingDataGroup}>
             {isLoadingImdb ? (
-              <span className={css.loadingText}>Loading IMDb...</span>
+              <span className={css.loadingText}>
+                {t('critics.loadingImdb', 'Loading IMDb...')}
+              </span>
             ) : imdbData?.rating ? (
               <>
                 <span className={css.imdbScoreBadge}>
@@ -127,8 +145,7 @@ export const CriticsScore: React.FC<CriticsScoreProps> = ({ movieId, movie }) =>
                 </span>
                 {imdbData.votes && (
                   <span className={css.voteCount}>
-                    ({imdbData.votes}{' '}
-                    {imdbData.votes === '1' ? 'vote' : 'votes'})
+                    ({formatImdbVotes(imdbData.votes)})
                   </span>
                 )}
               </>
@@ -147,6 +164,7 @@ export const CriticsScore: React.FC<CriticsScoreProps> = ({ movieId, movie }) =>
             starColor={starColor}
             onReset={resetRating}
             isRow
+            ratingLink={movieId ? `/movies/${movieId}/rating` : 'rating'}
           />
         </div>
 

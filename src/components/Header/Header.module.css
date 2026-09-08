@@ -177,51 +177,139 @@
   position: relative;
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  background: rgba(244, 63, 94, 0.14);
-  border: 1px solid rgba(244, 63, 94, 0.4);
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  background: rgba(244, 63, 94, 0.12);
+  border: 1px solid rgba(244, 63, 94, 0.35);
   color: #ff9dae;
-  padding: 8px 16px;
   border-radius: 10px;
-  font-size: 0.88rem;
-  font-weight: 700;
   cursor: pointer;
   transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   user-select: none;
   -webkit-user-select: none;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  outline: none;
+  flex-shrink: 0;
 }
 
-/* Anti-hover-jitter buffer: extends hit-box beyond translateY(-1px) */
+/* Anti-hover-jitter buffer: extends hit-box beyond translateY(-1.5px) */
 .clearAllBtn::before {
   content: '';
   position: absolute;
-  inset: -4px -2px -6px -2px;
+  inset: -4px -4px -6px -4px;
   border-radius: inherit;
   pointer-events: auto;
 }
 
 .clearAllBtn:hover {
-  background: rgba(244, 63, 94, 0.25);
+  background: rgba(244, 63, 94, 0.22);
   border-color: rgba(244, 63, 94, 0.65);
   color: #ffffff;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 14px rgba(244, 63, 94, 0.25);
+  transform: translateY(-1.5px);
+  box-shadow: 0 4px 14px rgba(244, 63, 94, 0.3);
+}
+
+.clearAllBtn:active {
+  transform: translateY(0) scale(0.95);
+  transition-duration: 0.08s;
+}
+
+.trashIcon {
+  display: inline-block;
+  font-size: 1.1rem;
+  line-height: 1;
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.clearAllBtn:hover .trashIcon {
+  transform: scale(1.1);
 }
 
 .clearAllBtnConfirm {
-  background: rgba(244, 63, 94, 0.3) !important;
-  border-color: rgba(244, 63, 94, 0.8) !important;
+  background: rgba(244, 63, 94, 0.28) !important;
+  border-color: rgba(244, 63, 94, 0.85) !important;
   color: #ffb3c0 !important;
   animation: pulseWarning 1s infinite alternate;
 }
 
 .clearAllBtnDeleted {
-  background: rgba(16, 185, 129, 0.25) !important;
+  background: rgba(16, 185, 129, 0.22) !important;
   border-color: #10b981 !important;
   color: #6ee7b7 !important;
   cursor: not-allowed !important;
   box-shadow: 0 0 14px rgba(16, 185, 129, 0.4) !important;
+}
+
+/* Instant Hover Popup / Tooltip */
+.clearTooltip {
+  --tooltip-bg: rgba(44, 16, 24, 0.97);
+  --tooltip-border: rgba(254, 243, 199, 0.35);
+  --tooltip-color: #fef3c7;
+
+  position: absolute;
+  top: calc(100% + 9px);
+  right: 0;
+  background: var(--tooltip-bg);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--tooltip-border);
+  border-radius: 8px;
+  padding: 7px 14px;
+  color: var(--tooltip-color);
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+  white-space: nowrap;
+  pointer-events: none;
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.65),
+              0 2px 6px rgba(0, 0, 0, 0.4),
+              inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-4px);
+  transition: opacity 0.15s ease, transform 0.15s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.15s;
+  z-index: 1000;
+}
+
+.clearTooltip::after {
+  content: '';
+  position: absolute;
+  top: -5px;
+  right: 13px;
+  width: 8px;
+  height: 8px;
+  background: var(--tooltip-bg);
+  border-top: 1px solid var(--tooltip-border);
+  border-left: 1px solid var(--tooltip-border);
+  transform: rotate(45deg);
+}
+
+.clearAllBtn:hover .clearTooltip,
+.clearAllBtn:focus-visible .clearTooltip,
+.clearAllBtnConfirm .clearTooltip,
+.clearAllBtnDeleted .clearTooltip {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+.clearAllBtnConfirm .clearTooltip {
+  --tooltip-bg: rgba(56, 26, 12, 0.98);
+  --tooltip-border: #f59e0b;
+  --tooltip-color: #fef08a;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.75),
+              0 0 16px rgba(245, 158, 11, 0.28),
+              inset 0 1px 0 rgba(254, 240, 138, 0.35);
+}
+
+.clearAllBtnDeleted .clearTooltip {
+  --tooltip-bg: rgba(6, 46, 38, 0.98);
+  --tooltip-border: #10b981;
+  --tooltip-color: #6ee7b7;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.75),
+              0 0 16px rgba(16, 185, 129, 0.28),
+              inset 0 1px 0 rgba(110, 231, 183, 0.3);
 }
 
 @keyframes pulseWarning {
@@ -270,11 +358,13 @@
     font-size: 0.95rem;
   }
 
-  .clearBtnText {
-    display: none;
+  .clearAllBtn {
+    width: 32px;
+    height: 32px;
   }
 
-  .clearAllBtn {
-    padding: 7px 10px;
+  .clearTooltip {
+    font-size: 0.76rem;
+    padding: 5px 10px;
   }
 }

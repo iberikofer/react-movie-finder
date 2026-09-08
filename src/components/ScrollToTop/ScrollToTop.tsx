@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
+import { useLanguage } from '../../context/LanguageContext';
 import css from './ScrollToTop.module.css';
 
 export const ScrollToTop: React.FC = () => {
+  const { t } = useLanguage();
   const [isVisible, setIsVisible] = useState<boolean>(false);
 
   useEffect(() => {
@@ -28,7 +30,8 @@ export const ScrollToTop: React.FC = () => {
           className={css.scrollBtn}
           onClick={scrollToTop}
           type="button"
-          aria-label="Scroll to top"
+          title={t('common.scrollToTop', 'Scroll to top')}
+          aria-label={t('common.scrollToTop', 'Scroll to top')}
         >
           ↑
         </button>

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { getMovieGenres } from 'fetch';
 import { Genre } from 'types';
+import { useLanguage } from '../../context/LanguageContext';
 import css from './GenreFilter.module.css';
 
 export const GENRE_ICONS: Record<string | number, string> = {
@@ -121,6 +122,7 @@ export const GenreFilter: React.FC<GenreFilterProps> = ({
   onToggleGenre,
   allLabel = 'All',
 }) => {
+  const { t } = useLanguage();
   const [genres, setGenres] = useState<GenreOption[]>(() => getInitialGenres(allLabel));
 
   useEffect(() => {
@@ -168,7 +170,7 @@ export const GenreFilter: React.FC<GenreFilterProps> = ({
   };
 
   return (
-    <div className={css.genreFilterWrapper} role="toolbar" aria-label="Filter movies by genre">
+    <div className={css.genreFilterWrapper} role="toolbar" aria-label={t('filter.ariaGenreToolbar', 'Filter movies by genre')}>
       <div className={css.pillsTrack}>
         {genres.map(genre => {
           const isSelected =
@@ -187,10 +189,10 @@ export const GenreFilter: React.FC<GenreFilterProps> = ({
               aria-pressed={isSelected}
               title={
                 genre.id === 'all'
-                  ? 'Reset all genre filters'
+                  ? t('filter.resetAllGenresTitle', 'Reset all genre filters')
                   : isSelected
-                  ? `Remove ${genre.name} filter`
-                  : `Add ${genre.name} to filter`
+                  ? t('filter.removeGenreTitle', `Remove ${genre.name} filter`).replace('{genre}', genre.name)
+                  : t('filter.addGenreTitle', `Add ${genre.name} to filter`).replace('{genre}', genre.name)
               }
             >
               <span className={css.pillIcon}>{icon}</span>

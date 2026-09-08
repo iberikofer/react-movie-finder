@@ -5,6 +5,7 @@ import {
   getCachedAgeRating,
   getMediaAgeRating,
 } from '../../fetch';
+import { useLanguage } from '../../context/LanguageContext';
 import css from './AgeRatingBadge.module.css';
 
 export interface AgeRatingBadgeProps {
@@ -13,6 +14,7 @@ export interface AgeRatingBadgeProps {
 }
 
 export const AgeRatingBadge: React.FC<AgeRatingBadgeProps> = ({ movie, onFilterAge }) => {
+  const { t } = useLanguage();
   const movieId = movie?.id;
   const mediaType = movie?.media_type === 'tv' ? 'tv' : 'movie';
   const existingRating = movie?.age_rating;
@@ -92,10 +94,10 @@ export const AgeRatingBadge: React.FC<AgeRatingBadgeProps> = ({ movie, onFilterA
 
   const tooltipTitle =
     rating === 'N/A'
-      ? 'Age rating unavailable (N/A — Not Available)'
+      ? t('age.unavailable', 'Age rating unavailable (N/A — Not Available)')
       : isClickable
-      ? `Filter by ${rating} (Click to apply)`
-      : `Age rating: ${rating}`;
+      ? `${t('age.filterBy', 'Filter by')} ${rating} ${t('age.clickToApply', '(Click to apply)')}`
+      : `${t('age.rating', 'Age rating:')} ${rating}`;
 
   return (
     <div
