@@ -15,11 +15,13 @@ export const SimilarMovies: React.FC = () => {
   const { language, t } = useLanguage();
   const [movies, setMovies] = useState<MediaItem[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isTranslating, setIsTranslating] = useState<boolean>(false);
   const location = useLocation();
   const isTv = movieId ? getMediaType(movieId) === 'tv' : false;
   const moviesRef = useRef(movies);
   moviesRef.current = movies;
   const prevLangRef = useRef<string>(language);
+  const hasDataRef = useRef<boolean>(false);
 
   useEffect(() => {
     if (!movieId) return;
@@ -27,23 +29,38 @@ export const SimilarMovies: React.FC = () => {
     const isLangChange = prevLangRef.current !== language;
     prevLangRef.current = language;
 
-    if (moviesRef.current.length === 0 || isLangChange) {
+    if (!hasDataRef.current || (isLangChange && !hasDataRef.current)) {
       setIsLoading(true);
+    } else if (isLangChange && hasDataRef.current) {
+      setIsTranslating(true);
     }
 
     const fetchSimilar = async () => {
+      const startTime = Date.now();
       try {
         const data = await getSimilarMovies(movieId);
+        
+        if (isLangChange && hasDataRef.current) {
+          const elapsed = Date.now() - startTime;
+          if (elapsed < 420) {
+            await new Promise(resolve => setTimeout(resolve, 420 - elapsed));
+          }
+        }
+
         if (!isMounted) return;
         const validMovies = (data?.results || []).filter(
           item => (item.title || item.name) && item.id !== Number(movieId)
         );
         setMovies(validMovies);
+        hasDataRef.current = true;
       } catch (error) {
         console.error('Failed to load similar movies:', error);
         if (isMounted) setMovies([]);
       } finally {
-        if (isMounted) setIsLoading(false);
+        if (isMounted) {
+          setIsLoading(false);
+          setIsTranslating(false);
+        }
       }
     };
 
@@ -65,21 +82,35 @@ export const SimilarMovies: React.FC = () => {
   };
 
   return (
-    <section className={css.similarSection} aria-label={isTv ? t('movie.similarShows') : t('movie.similarMovies')}>
-      <div className={css.headerRow}>
-        <h2 className={css.sectionTitle}>
-          <span className={css.titleIcon}>🎯</span> {isTv ? t('movie.similarShows') : t('movie.similarMovies')}
-        </h2>
-        {movies.length > 0 && (
-          <span className={css.countBadge}>
-            {getSimilarCountText(movies.length)}
-          </span>
-        )}
+    <div style={{ position: 'relative' }}>
+      {/* Translating overlay */}
+      <div
+        className={`${css.translatingOverlay} ${
+          isTranslating ? css.translatingActive : css.translatingHidden
+        }`}
+        aria-hidden={!isTranslating}
+        aria-live="polite"
+      >
+        <Loader
+          label={t('movie.translatingSlate', 'TRANSLATE')}
+          caption={t('movie.translating', 'Translating...')}
+        />
       </div>
+      <section className={css.similarSection} aria-label={isTv ? t('movie.similarShows') : t('movie.similarMovies')}>
+        <div className={css.headerRow}>
+          <h2 className={css.sectionTitle}>
+            <span className={css.titleIcon}>🎯</span> {isTv ? t('movie.similarShows') : t('movie.similarMovies')}
+          </h2>
+          {movies.length > 0 && (
+            <span className={css.countBadge}>
+              {getSimilarCountText(movies.length)}
+            </span>
+          )}
+        </div>
 
-      {isLoading ? (
-        <Loader caption={t('similar.loading')} />
-      ) : movies.length > 0 ? (
+        {isLoading && !isTranslating ? (
+          <Loader caption={t('similar.loading')} />
+        ) : movies.length > 0 ? (
         <ul className={css.movieGrid}>
           {movies.map(movie => {
             const title = movie.title || movie.name;
@@ -141,8 +172,9 @@ export const SimilarMovies: React.FC = () => {
             {t('similar.empty')}
           </p>
         </div>
-      )}
-    </section>
+        )}
+      </section>
+    </div>
   );
 };
 

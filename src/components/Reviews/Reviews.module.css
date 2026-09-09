@@ -81,4 +81,36 @@
   .reviewCard {
     padding: 14px;
   }
+}/* Translation Overlay */
+.translatingOverlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(18, 4, 8, 0.82);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  z-index: 25;
+  transition: opacity 0.32s cubic-bezier(0.16, 1, 0.3, 1),
+              visibility 0.32s ease,
+              backdrop-filter 0.32s ease;
+}
+
+.translatingActive {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+}
+
+.translatingHidden {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  backdrop-filter: blur(0px);
 }

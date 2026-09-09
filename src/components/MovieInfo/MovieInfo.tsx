@@ -157,9 +157,11 @@ export const MovieInfo: React.FC = () => {
   const [providersData, setProvidersData] = useState<{ results?: Record<string, CountryWatchProviders> } | null>(null);
   const [selectedCountry, setSelectedCountry] = useState<string>('');
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isTranslating, setIsTranslating] = useState<boolean>(false);
   const movieRef = useRef(movie);
   movieRef.current = movie;
   const prevLangRef = useRef<string>(language);
+  const hasDataRef = useRef<boolean>(false);
 
   useEffect(() => {
     if (!movieId) return;
@@ -167,20 +169,31 @@ export const MovieInfo: React.FC = () => {
     const isLangChange = prevLangRef.current !== language;
     prevLangRef.current = language;
 
-    if (!movieRef.current || isLangChange) {
+    if (!hasDataRef.current || (isLangChange && !hasDataRef.current)) {
       setIsLoading(true);
+    } else if (isLangChange && hasDataRef.current) {
+      setIsTranslating(true);
     }
 
     const fetchData = async () => {
+      const startTime = Date.now();
       try {
         const [details, providers] = await Promise.all([
           getMovieDetails(movieId),
           getMovieWatchProviders(movieId).catch(() => ({ results: {} })),
         ]);
 
+        if (isLangChange && hasDataRef.current) {
+          const elapsed = Date.now() - startTime;
+          if (elapsed < 420) {
+            await new Promise(resolve => setTimeout(resolve, 420 - elapsed));
+          }
+        }
+
         if (!isMounted) return;
         setMovie(details);
         setProvidersData(providers);
+        hasDataRef.current = true;
 
         const availableCountries = Object.keys(providers?.results || {});
         let detectedCountry = 'US';
@@ -206,7 +219,10 @@ export const MovieInfo: React.FC = () => {
       } catch (error) {
         console.error('Failed to load movie info & providers:', error);
       } finally {
-        if (isMounted) setIsLoading(false);
+        if (isMounted) {
+          setIsLoading(false);
+          setIsTranslating(false);
+        }
       }
     };
 
@@ -266,7 +282,7 @@ export const MovieInfo: React.FC = () => {
     return `${seasons} ${seasons === 1 ? 'Season' : 'Seasons'} • ${episodes} Episodes`;
   };
 
-  if (isLoading) {
+  if (isLoading && !isTranslating) {
     return <Loader caption={t('movieInfo.loading')} />;
   }
 
@@ -303,7 +319,21 @@ export const MovieInfo: React.FC = () => {
     streamProviders.length > 0 || rentProviders.length > 0 || buyProviders.length > 0;
 
   return (
-    <section className={css.infoSection} aria-label={isTvShow ? t('movieInfo.aboutSeriesTitle') : t('movieInfo.aboutMovieTitle')}>
+    <div style={{ position: 'relative' }}>
+      {/* Translating overlay */}
+      <div
+        className={`${css.translatingOverlay} ${
+          isTranslating ? css.translatingActive : css.translatingHidden
+        }`}
+        aria-hidden={!isTranslating}
+        aria-live="polite"
+      >
+        <Loader
+          label={t('movie.translatingSlate', 'TRANSLATE')}
+          caption={t('movie.translating', 'Translating...')}
+        />
+      </div>
+      <section className={css.infoSection} aria-label={isTvShow ? t('movieInfo.aboutSeriesTitle') : t('movieInfo.aboutMovieTitle')}>
       <div className={css.headerRow}>
         <h2 className={css.sectionTitle}>
           <span className={css.titleIcon}>ℹ️</span>{' '}
@@ -311,18 +341,19 @@ export const MovieInfo: React.FC = () => {
         </h2>
       </div>
 
+      {Boolean(movie.tagline && movie.tagline.trim()) && (
+        <div className={`${css.factCard} ${css.taglineCard}`}>
+          <span className={css.factLabel}>💬 {t('movieInfo.tagline')}</span>
+          <span className={css.taglineValue}>"{movie.tagline?.trim()}"</span>
+        </div>
+      )}
+
       <div className={css.blockSubheader}>
         <span className={css.subIcon}>⚡</span>
         <h3 className={css.subTitle}>{t('movieInfo.quickFacts')}</h3>
       </div>
 
       <div className={css.factsGrid}>
-        {Boolean(movie.tagline && movie.tagline.trim()) && (
-          <div className={`${css.factCard} ${css.taglineCard}`}>
-            <span className={css.factLabel}>💬 {t('movieInfo.tagline')}</span>
-            <span className={css.taglineValue}>"{movie.tagline?.trim()}"</span>
-          </div>
-        )}
 
         <div className={css.factCard}>
           <span className={css.factLabel}>🔞 {t('movieInfo.ageRestriction')}</span>
@@ -381,58 +412,11 @@ export const MovieInfo: React.FC = () => {
         )}
 
         {isTvShow && (
-          <>
-            <div className={css.factCard}>
-              <span className={css.factLabel}>📺 {t('movieInfo.seasonsAndEpisodes')}</span>
-              <span className={css.factValue}>
-                {formatSeasonsLabel(movie.number_of_seasons || 0, movie.number_of_episodes || 0)}
-              </span>
-            </div>
-
-            {movie.networks && (movie.networks as any[]).length > 0 && (
-              <div className={`${css.factCard} ${css.wideCard}`}>
-                <span className={css.factLabel}>📡 {t('movieInfo.networks')}</span>
-                <div className={css.companiesRow}>
-                  {(movie.networks as any[]).map((net: any) => (
-                    <div key={net.id} className={css.companyItem}>
-                      {net.logo_path ? (
-                        <div className={css.logoBox}>
-                          <img
-                            src={`https://image.tmdb.org/t/p/w154${net.logo_path}`}
-                            alt={net.name}
-                            className={css.companyLogo}
-                          />
-                        </div>
-                      ) : null}
-                      <span className={css.companyName}>{net.name}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </>
-        )}
-
-        {movie.production_companies && movie.production_companies.length > 0 && (
-          <div className={`${css.factCard} ${css.wideCard}`}>
-            <span className={css.factLabel}>🏢 {t('movieInfo.companies')}</span>
-            <div className={css.companiesRow}>
-              {movie.production_companies.map(comp => (
-                <div key={comp.id} className={css.companyItem}>
-                  {comp.logo_path ? (
-                    <div className={css.logoBox}>
-                      <img
-                        src={`https://image.tmdb.org/t/p/w154${comp.logo_path}`}
-                        alt={comp.name}
-                        className={css.companyLogo}
-                        loading="lazy"
-                      />
-                    </div>
-                  ) : null}
-                  <span className={css.companyName}>{comp.name}</span>
-                </div>
-              ))}
-            </div>
+          <div className={css.factCard}>
+            <span className={css.factLabel}>📺 {t('movieInfo.seasonsAndEpisodes')}</span>
+            <span className={css.factValue}>
+              {formatSeasonsLabel(movie.number_of_seasons || 0, movie.number_of_episodes || 0)}
+            </span>
           </div>
         )}
 
@@ -456,6 +440,80 @@ export const MovieInfo: React.FC = () => {
             </span>
           </div>
         )}
+
+        <div className={css.factCard}>
+          <span className={css.factLabel}>🌐 {t('movieInfo.homepage')}</span>
+          <span className={css.factValue}>
+            {movie.homepage ? (
+              <a href={movie.homepage} target="_blank" rel="noopener noreferrer" className={css.homepageLink}>
+                {t('movieInfo.visitWebsite')}
+              </a>
+            ) : (
+              <span className={css.textMuted}>{t('movieInfo.noWebsite')}</span>
+            )}
+          </span>
+        </div>
+
+        {isTvShow && movie.networks && (movie.networks as any[]).length > 0 && (
+          <div className={`${css.factCard} ${css.wideCard}`}>
+            <span className={css.factLabel}>📡 {t('movieInfo.networks')}</span>
+            <div className={css.companiesRow}>
+              {(movie.networks as any[]).map((net: any) => (
+                <a
+                  key={net.id}
+                  href={`https://www.google.com/search?q=${encodeURIComponent(net.name + ' tv network')}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={css.companyItem}
+                  title={t('movieInfo.searchOnGoogle', 'Search {query} on Google').replace('{query}', net.name)}
+                >
+                  {net.logo_path ? (
+                    <div className={css.logoBox}>
+                      <img
+                        src={`https://image.tmdb.org/t/p/w154${net.logo_path}`}
+                        alt={net.name}
+                        className={css.companyLogo}
+                      />
+                    </div>
+                  ) : null}
+                  <span className={css.companyName}>{net.name}</span>
+                </a>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {movie.production_companies && movie.production_companies.length > 0 && (
+          <div className={`${css.factCard} ${css.wideCard}`}>
+            <span className={css.factLabel}>🏢 {t('movieInfo.companies')}</span>
+            <div className={css.companiesRow}>
+              {movie.production_companies.map(comp => (
+                <a
+                  key={comp.id}
+                  href={`https://www.google.com/search?q=${encodeURIComponent(comp.name + ' production company')}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={css.companyItem}
+                  title={t('movieInfo.searchOnGoogle', 'Search {query} on Google').replace('{query}', comp.name)}
+                >
+                  {comp.logo_path ? (
+                    <div className={css.logoBox}>
+                      <img
+                        src={`https://image.tmdb.org/t/p/w154${comp.logo_path}`}
+                        alt={comp.name}
+                        className={css.companyLogo}
+                        loading="lazy"
+                      />
+                    </div>
+                  ) : null}
+                  <span className={css.companyName}>{comp.name}</span>
+                </a>
+              ))}
+            </div>
+          </div>
+        )}
+
+
       </div>
 
       <div className={css.whereToWatchSection}>
@@ -602,6 +660,7 @@ export const MovieInfo: React.FC = () => {
         )}
       </div>
     </section>
+    </div>
   );
 };
 

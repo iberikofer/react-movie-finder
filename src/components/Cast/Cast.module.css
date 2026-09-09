@@ -43,6 +43,7 @@
 
 .castItem {
   position: relative;
+  z-index: 0;
   text-align: center;
   background: rgba(6, 44, 38, 0.45);
   border: 1px solid rgba(254, 243, 199, 0.12);
@@ -55,6 +56,7 @@
 .castItem::before {
   content: '';
   position: absolute;
+  z-index: -1;
   inset: -4px -2px -10px -2px;
   border-radius: inherit;
   pointer-events: auto;
@@ -74,14 +76,14 @@
   display: block;
 }
 
-.actorName {
+.actorName { user-select: text; -webkit-user-select: text;
   font-weight: 700;
   font-size: 0.9rem;
   color: var(--color-text);
   margin: 4px 0 2px 0;
 }
 
-.characterName {
+.characterName { user-select: text; -webkit-user-select: text;
   font-size: 0.8rem;
   color: var(--color-text-muted);
   margin: 0;
@@ -100,4 +102,36 @@
   .castImage {
     height: 160px;
   }
+}/* Translation Overlay */
+.translatingOverlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(18, 4, 8, 0.82);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  z-index: 25;
+  transition: opacity 0.32s cubic-bezier(0.16, 1, 0.3, 1),
+              visibility 0.32s ease,
+              backdrop-filter 0.32s ease;
+}
+
+.translatingActive {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+}
+
+.translatingHidden {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  backdrop-filter: blur(0px);
 }

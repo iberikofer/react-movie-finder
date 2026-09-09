@@ -8,8 +8,8 @@
   flex-direction: column;
   gap: 10px;
   width: 100%;
-  user-select: none;
-  -webkit-user-select: none;
+
+
 }
 
 .ratingsHeading {
@@ -73,7 +73,7 @@
   background: rgba(1, 180, 228, 0.12);
   border: 1px solid rgba(1, 180, 228, 0.35);
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  user-select: none;
+
   line-height: 1;
 }
 
@@ -99,7 +99,7 @@
   background: rgba(245, 197, 24, 0.12);
   border: 1px solid rgba(245, 197, 24, 0.35);
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  user-select: none;
+
   line-height: 1;
 }
 
@@ -122,7 +122,7 @@
   border-radius: 6px;
   background: rgba(244, 63, 94, 0.12);
   border: 1px solid rgba(244, 63, 94, 0.35);
-  user-select: none;
+
   line-height: 1;
 }
 
@@ -140,7 +140,7 @@
   background: rgba(244, 63, 94, 0.12);
   border: 1px solid rgba(244, 63, 94, 0.35);
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  user-select: none;
+
   line-height: 1;
   cursor: pointer;
 }
@@ -225,20 +225,20 @@
   min-height: 32px;
 }
 
-.criticsScoreWrapper {
+.criticsScoreWrapper { user-select: text; -webkit-user-select: text;
   margin: 18px 0 20px 0;
   display: flex;
   flex-direction: column;
   gap: 16px;
   width: 100%;
-  user-select: none;
-  -webkit-user-select: none;
+
+
   cursor: default;
 }
 
 .criticsScoreWrapper * {
-  user-select: none;
-  -webkit-user-select: none;
+
+
 }
 
 /* ==========================================================================
@@ -320,8 +320,8 @@
   align-items: center;
   gap: 7px;
   line-height: 1;
-  user-select: none;
-  -webkit-user-select: none;
+
+
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
@@ -367,7 +367,7 @@
   border-radius: 6px;
   background: rgba(16, 185, 129, 0.16);
   border: 1px solid rgba(16, 185, 129, 0.45);
-  user-select: none;
+
   line-height: 1;
   min-height: 24px;
   box-sizing: border-box;
@@ -388,7 +388,7 @@
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  user-select: none;
+
   width: 32px;
   height: 32px;
   transition: transform 0.15s ease;
@@ -565,14 +565,14 @@
   display: flex;
   flex-direction: column;
   gap: 28px;
-  user-select: none;
-  -webkit-user-select: none;
+
+
   cursor: default;
 }
 
 .distributionContainer * {
-  user-select: none;
-  -webkit-user-select: none;
+
+
 }
 
 .distributionContainer .headerRow {

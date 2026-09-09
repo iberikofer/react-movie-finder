@@ -44,27 +44,46 @@ export const Reviews: React.FC = () => {
   const { language, t } = useLanguage();
   const [reviews, setReviews] = useState<Review[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isTranslating, setIsTranslating] = useState<boolean>(false);
   const reviewsRef = useRef(reviews);
   reviewsRef.current = reviews;
+  const prevLangRef = useRef<string>(language);
+  const hasDataRef = useRef<boolean>(false);
 
   useEffect(() => {
     if (!movieId) return;
     let isMounted = true;
-    if (reviewsRef.current.length === 0) {
+    const isLangChange = prevLangRef.current !== language;
+    prevLangRef.current = language;
+
+    if (!hasDataRef.current || (isLangChange && !hasDataRef.current)) {
       setIsLoading(true);
+    } else if (isLangChange && hasDataRef.current) {
+      setIsTranslating(true);
     }
 
     const fetchReviews = async () => {
+      const startTime = Date.now();
       try {
         const data = await getMovieReviews(movieId);
+        
+        if (isLangChange && hasDataRef.current) {
+          const elapsed = Date.now() - startTime;
+          if (elapsed < 420) {
+            await new Promise(resolve => setTimeout(resolve, 420 - elapsed));
+          }
+        }
+
         if (isMounted) {
           setReviews(data.results || []);
+          hasDataRef.current = true;
         }
       } catch (error) {
         console.error('Failed to load reviews:', error);
       } finally {
         if (isMounted) {
           setIsLoading(false);
+          setIsTranslating(false);
         }
       }
     };
@@ -76,15 +95,29 @@ export const Reviews: React.FC = () => {
   }, [movieId, language]);
 
   return (
-    <section className={css.reviewsContainer} aria-label={t('movie.communityReviews')}>
-      <div className={css.headerRow}>
-        <h2 className={css.sectionTitle}>
-          <span className={css.titleIcon}>💬</span> {t('movie.communityReviews')}
-        </h2>
+    <div style={{ position: 'relative' }}>
+      {/* Translating overlay */}
+      <div
+        className={`${css.translatingOverlay} ${
+          isTranslating ? css.translatingActive : css.translatingHidden
+        }`}
+        aria-hidden={!isTranslating}
+        aria-live="polite"
+      >
+        <Loader
+          label={t('movie.translatingSlate', 'TRANSLATE')}
+          caption={t('movie.translating', 'Translating...')}
+        />
       </div>
-      {isLoading ? (
-        <Loader caption={t('reviews.loading')} />
-      ) : reviews.length > 0 ? (
+      <section className={css.reviewsContainer} aria-label={t('movie.communityReviews')}>
+        <div className={css.headerRow}>
+          <h2 className={css.sectionTitle}>
+            <span className={css.titleIcon}>💬</span> {t('movie.communityReviews')}
+          </h2>
+        </div>
+        {isLoading && !isTranslating ? (
+          <Loader caption={t('reviews.loading')} />
+        ) : reviews.length > 0 ? (
         <ul className={css.reviewList}>
           {reviews.map((review, index) => {
             const date = review.created_at
@@ -110,8 +143,9 @@ export const Reviews: React.FC = () => {
         <p style={{ textAlign: 'center', color: 'var(--color-text-muted)', padding: '20px' }}>
           {t('reviews.noReviews')}
         </p>
-      )}
-    </section>
+        )}
+      </section>
+    </div>
   );
 };
 

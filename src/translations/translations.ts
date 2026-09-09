@@ -679,6 +679,18 @@ export const translations: TranslationDictionary = {
     en: 'Original Language',
     uk: 'Мова оригіналу',
   },
+  'movieInfo.homepage': {
+    en: 'Official Website',
+    uk: 'Офіційний сайт',
+  },
+  'movieInfo.visitWebsite': {
+    en: 'Visit Site ↗',
+    uk: 'Відвідати сайт ↗',
+  },
+  'movieInfo.noWebsite': {
+    en: 'Not available',
+    uk: 'Немає сайту',
+  },
   'movieInfo.whereToWatch': {
     en: 'Where to Watch',
     uk: 'Де дивитися',

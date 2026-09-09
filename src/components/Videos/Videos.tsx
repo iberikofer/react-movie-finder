@@ -97,6 +97,7 @@ export const Videos: React.FC = () => {
   const [video, setVideo] = useState<VideoTrailer | null>(null);
   const [availableVideos, setAvailableVideos] = useState<VideoTrailer[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isTranslating, setIsTranslating] = useState<boolean>(false);
   const [isIframeLoaded, setIsIframeLoaded] = useState<boolean>(false);
   const hasVideoRef = useRef(false);
   hasVideoRef.current = Boolean(video || availableVideos.length > 0);
@@ -144,9 +145,10 @@ export const Videos: React.FC = () => {
   }, [movieId, availableVideos, video?.key]);
 
   const prevLangRef = useRef(language);
+  const hasDataRef = useRef<boolean>(false);
+
   useEffect(() => {
     if (prevLangRef.current !== language) {
-      prevLangRef.current = language;
       if (movieId) {
         sessionStorage.removeItem(`video_selected_key_${movieId}`);
       }
@@ -156,11 +158,17 @@ export const Videos: React.FC = () => {
   useEffect(() => {
     if (!movieId) return;
     let isMounted = true;
-    if (!hasVideoRef.current) {
+    const isLangChange = prevLangRef.current !== language;
+    prevLangRef.current = language;
+
+    if (!hasDataRef.current || (isLangChange && !hasDataRef.current)) {
       setIsLoading(true);
+    } else if (isLangChange && hasDataRef.current) {
+      setIsTranslating(true);
     }
 
     const fetchVideos = async () => {
+      const startTime = Date.now();
       try {
         const data = await getMovieVideos(movieId);
         if (!isMounted) return;
@@ -216,12 +224,23 @@ export const Videos: React.FC = () => {
           : null;
         const chosen = selectedFromStorage || sorted[0] || null;
 
-        setVideo(chosen);
+        if (isLangChange && hasDataRef.current) {
+          const elapsed = Date.now() - startTime;
+          if (elapsed < 420) {
+            await new Promise(resolve => setTimeout(resolve, 420 - elapsed));
+          }
+        }
+
+        if (isMounted) {
+          setVideo(chosen);
+          hasDataRef.current = true;
+        }
       } catch (error) {
         console.error('Failed to load videos:', error);
       } finally {
         if (isMounted) {
           setIsLoading(false);
+          setIsTranslating(false);
         }
       }
     };
@@ -233,16 +252,29 @@ export const Videos: React.FC = () => {
   }, [movieId, language]);
 
   return (
-    <section className={css.videosSection} aria-label={t('movie.officialTrailer')}>
-      <div className={css.headerRow}>
-        <h2 className={css.sectionTitle}>
-          <span className={css.titleIcon}>▶</span> {t('movie.officialTrailer')}
-        </h2>
+    <div style={{ position: 'relative' }}>
+      {/* Translating overlay */}
+      <div
+        className={`${css.translatingOverlay} ${
+          isTranslating ? css.translatingActive : css.translatingHidden
+        }`}
+        aria-hidden={!isTranslating}
+        aria-live="polite"
+      >
+        <Loader
+          label={t('movie.translatingSlate', 'TRANSLATE')}
+          caption={t('movie.translating', 'Translating...')}
+        />
       </div>
-
-      {isLoading ? (
-        <Loader caption={t('trailer.loading')} />
-      ) : video ? (
+      <section className={css.videosSection} aria-label={t('movie.officialTrailer')}>
+        <div className={css.headerRow}>
+          <h2 className={css.sectionTitle}>
+            <span className={css.titleIcon}>▶</span> {t('movie.officialTrailer')}
+          </h2>
+        </div>
+        {isLoading && !isTranslating ? (
+          <Loader caption={t('videos.loading')} />
+        ) : video ? (
         <div className={css.videoWrapper}>
           {video && (
             <h3 key={video.key} className={css.videoCaption}>
@@ -301,8 +333,9 @@ export const Videos: React.FC = () => {
           </span>
           <p className={css.emptyText}>{t('trailer.empty')}</p>
         </div>
-      )}
-    </section>
+        )}
+      </section>
+    </div>
   );
 };
 

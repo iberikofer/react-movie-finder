@@ -11,27 +11,46 @@ export const Cast: React.FC = () => {
   const { language, t } = useLanguage();
   const [cast, setCast] = useState<CastMember[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isTranslating, setIsTranslating] = useState<boolean>(false);
   const castRef = useRef(cast);
   castRef.current = cast;
+  const prevLangRef = useRef<string>(language);
+  const hasDataRef = useRef<boolean>(false);
 
   useEffect(() => {
     if (!movieId) return;
     let isMounted = true;
-    if (castRef.current.length === 0) {
+    const isLangChange = prevLangRef.current !== language;
+    prevLangRef.current = language;
+
+    if (!hasDataRef.current || (isLangChange && !hasDataRef.current)) {
       setIsLoading(true);
+    } else if (isLangChange && hasDataRef.current) {
+      setIsTranslating(true);
     }
 
     const fetchCredits = async () => {
+      const startTime = Date.now();
       try {
         const data = await getMovieCredits(movieId);
+        
+        if (isLangChange && hasDataRef.current) {
+          const elapsed = Date.now() - startTime;
+          if (elapsed < 420) {
+            await new Promise(resolve => setTimeout(resolve, 420 - elapsed));
+          }
+        }
+
         if (isMounted) {
           setCast(data.cast || []);
+          hasDataRef.current = true;
         }
       } catch (error) {
         console.error('Failed to load cast:', error);
       } finally {
         if (isMounted) {
           setIsLoading(false);
+          setIsTranslating(false);
         }
       }
     };
@@ -43,15 +62,29 @@ export const Cast: React.FC = () => {
   }, [movieId, language]);
 
   return (
-    <section className={css.castSection} aria-label={t('movie.castAndCrew')}>
-      <div className={css.headerRow}>
-        <h2 className={css.sectionTitle}>
-          <span className={css.titleIcon}>👥</span> {t('movie.castAndCrew')}
-        </h2>
+    <div style={{ position: 'relative' }}>
+      {/* Translating overlay */}
+      <div
+        className={`${css.translatingOverlay} ${
+          isTranslating ? css.translatingActive : css.translatingHidden
+        }`}
+        aria-hidden={!isTranslating}
+        aria-live="polite"
+      >
+        <Loader
+          label={t('movie.translatingSlate', 'TRANSLATE')}
+          caption={t('movie.translating', 'Translating...')}
+        />
       </div>
-      {isLoading ? (
-        <Loader caption={t('cast.loading')} />
-      ) : (
+      <section className={css.castSection} aria-label={t('movie.castAndCrew')}>
+        <div className={css.headerRow}>
+          <h2 className={css.sectionTitle}>
+            <span className={css.titleIcon}>👥</span> {t('movie.castAndCrew')}
+          </h2>
+        </div>
+        {isLoading && !isTranslating ? (
+          <Loader caption={t('cast.loading')} />
+        ) : (
         <div className={css.castContainer}>
           {cast.length > 0 ? (
             <ul className={css.castList}>
@@ -81,8 +114,9 @@ export const Cast: React.FC = () => {
             </p>
           )}
         </div>
-      )}
-    </section>
+        )}
+      </section>
+    </div>
   );
 };
 
