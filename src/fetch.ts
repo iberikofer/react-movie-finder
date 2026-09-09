@@ -17,7 +17,7 @@ const DEFAULT_TOKEN =
   'eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiIyZWU3MDU4M2UzZTJjYzBmY2I4NjViMjQ0NTE1YWQ1MSIsInN1YiI6IjY0OTg2N2Y1OTU1YzY1MDBjN2FlZjJkYyIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.spmomChu1pxtxgfJXLkIEdZqVnZerBWxKn52_1eEjwg';
 
 const rawRequest = async <T = any>(endpoint: string): Promise<T> => {
-  const token = process.env.REACT_APP_TMDB_TOKEN || DEFAULT_TOKEN;
+  const token = import.meta.env.VITE_TMDB_TOKEN || DEFAULT_TOKEN;
   const options: RequestInit = {
     method: 'GET',
     headers: {
@@ -33,7 +33,7 @@ const rawRequest = async <T = any>(endpoint: string): Promise<T> => {
 };
 
 const request = async <T = any>(endpoint: string): Promise<T> => {
-  const token = process.env.REACT_APP_TMDB_TOKEN || DEFAULT_TOKEN;
+  const token = import.meta.env.VITE_TMDB_TOKEN || DEFAULT_TOKEN;
   const options: RequestInit = {
     method: 'GET',
     headers: {

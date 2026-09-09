@@ -8,7 +8,7 @@ import { registerRoute } from 'workbox-routing';
 import { StaleWhileRevalidate, CacheFirst, NetworkFirst } from 'workbox-strategies';
 import { CacheableResponsePlugin } from 'workbox-cacheable-response';
 
-declare const self: ServiceWorkerGlobalScope;
+declare let self: ServiceWorkerGlobalScope & { __WB_MANIFEST: any };
 
 clientsClaim();
 
@@ -44,13 +44,13 @@ registerRoute(
     // Return true to signal that we want to use the handler.
     return true;
   },
-  createHandlerBoundToURL(process.env.PUBLIC_URL + '/index.html')
+  createHandlerBoundToURL(import.meta.env.BASE_URL + 'index.html')
 );
 
 // 1. Image Caching (TMDB posters, backdrops, and actor profiles)
 // Use CacheFirst strategy: images are immutable by URL on TMDB CDN
 registerRoute(
-  ({ url }) =>
+  ({ url }: { url: URL }) =>
     url.origin === 'https://image.tmdb.org' ||
     url.pathname.endsWith('.png') ||
     url.pathname.endsWith('.jpg') ||
@@ -75,7 +75,7 @@ registerRoute(
 // 2. TMDB API responses caching (Trending, Movie Details, Genres, Search)
 // Use NetworkFirst: fetch fresh data when online; fallback to cached responses when offline
 registerRoute(
-  ({ url }) =>
+  ({ url }: { url: URL }) =>
     url.origin === 'https://api.themoviedb.org' ||
     url.origin === 'https://www.omdbapi.com',
   new NetworkFirst({
@@ -96,7 +96,7 @@ registerRoute(
 
 // 3. Google Fonts stylesheets & webfonts
 registerRoute(
-  ({ url }) =>
+  ({ url }: { url: URL }) =>
     url.origin === 'https://fonts.googleapis.com' ||
     url.origin === 'https://fonts.gstatic.com',
   new StaleWhileRevalidate({

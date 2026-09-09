@@ -26,10 +26,10 @@ jobs:
       - name: Build 🔧
         run: npm run build
         env:
-          REACT_APP_TMDB_TOKEN: ${{ secrets.REACT_APP_TMDB_TOKEN }}
+          VITE_TMDB_TOKEN: ${{ secrets.REACT_APP_TMDB_TOKEN }}
 
       - name: Deploy 🚀
         uses: JamesIves/github-pages-deploy-action@v4
         with:
           branch: gh-pages
-          folder: build
+          folder: dist
