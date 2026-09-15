@@ -172,7 +172,7 @@ export const Trending: React.FC = () => {
     isRestoringScrollRef.current = true;
 
     let rafId: number | null = null;
-    let timeoutId = setTimeout(() => {
+    const timeoutId = setTimeout(() => {
       const startY = window.scrollY;
       const diff = targetY - startY;
       if (Math.abs(diff) < 8) {
@@ -338,7 +338,7 @@ export const Trending: React.FC = () => {
         } else {
           let p = 1;
           let fetchedCount = 0;
-          let maxPagesToScan = 4;
+          const maxPagesToScan = 4;
           totPages = 1;
 
           while (isCurrent && items.length < 15 && p <= totPages && fetchedCount < maxPagesToScan) {
@@ -472,9 +472,9 @@ export const Trending: React.FC = () => {
         }
       } else {
         let p = page + 1;
-        let newItems: MediaItem[] = [];
+        const newItems: MediaItem[] = [];
         let fetchedCount = 0;
-        let maxPagesToScan = 3;
+        const maxPagesToScan = 3;
         let totPages = totalPages;
 
         while (newItems.length < 10 && p <= totPages && fetchedCount < maxPagesToScan) {

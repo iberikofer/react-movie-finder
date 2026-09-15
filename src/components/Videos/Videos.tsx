@@ -69,7 +69,7 @@ export const formatVideoTitle = (
   if (lower === 'bloopers') return 'Невдалі дублі';
 
   // Compound / Substring replacements
-  let translated = text
+  const translated = text
     .replace(/\bOfficial Teaser Trailer\b/gi, 'Офіційний тизер-трейлер')
     .replace(/\bOfficial Trailer\b/gi, 'Офіційний трейлер')
     .replace(/\bTeaser Trailer\b/gi, 'Тизер-трейлер')
